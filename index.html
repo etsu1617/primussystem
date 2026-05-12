@@ -2552,11 +2552,11 @@ function loadLoginLog(){
   const el = document.getElementById('loginlog-list');
   if(!el){return;}
   el.innerHTML='<div style="color:var(--mu);font-size:13px;padding:8px">読み込み中...</div>';
-  firebase.database().ref('purims_loginlog').orderByKey().limitToLast(100).get().then(snap=>{
+  firebase.database().ref('purims_loginlog').get().then(snap=>{
     if(!snap.exists()){el.innerHTML='<div style="color:var(--mu);font-size:13px;padding:8px">ログイン履歴がありません</div>';return;}
     const logs=[];
     snap.forEach(child=>logs.push(child.val()));
-    logs.reverse();
+    logs.sort((a,b)=>new Date(b.loginAt)-new Date(a.loginAt));
     el.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:13px">'
       +'<thead><tr style="background:var(--nv);color:#fff"><th style="padding:8px 12px;text-align:left">日時</th><th style="padding:8px 12px;text-align:left">ユーザー名</th></tr></thead>'
       +'<tbody>'+logs.map((l,i)=>`<tr style="background:${i%2===0?'var(--w)':'var(--s)'}"><td style="padding:8px 12px">${new Date(l.loginAt).toLocaleString('ja-JP')}</td><td style="padding:8px 12px;font-weight:600">${l.username}</td></tr>`).join('')
