@@ -931,7 +931,10 @@ function load(){
 function persist(){
   localStorage.setItem('purims_v14',JSON.stringify({clients:DB.clients,cycles:DB.cycles,products:DB.products,groups:DB.groups,clientGroups:DB.clientGroups,clientOrder:DB.clientOrder,closing:DB.closing}));
   clearTimeout(persist._t);
-  persist._t=setTimeout(fbSave,1500);
+  persist._t=setTimeout(()=>{
+    const data={clients:DB.clients,cycles:DB.cycles,products:DB.products,groups:DB.groups,clientGroups:DB.clientGroups,clientOrder:DB.clientOrder,closing:DB.closing,history:DB.history,updatedAt:Date.now()};
+    firebase.database().ref('purims').set(data).catch(e=>console.warn('自動保存失敗:',e.message));
+  },2000);
 }
 
 // グループ情報取得ヘルパー
@@ -1540,8 +1543,6 @@ function showPrev(){
   window.scrollTo({top:0,behavior:'smooth'});
   lastSlip={client:curC,date:new Date().toLocaleDateString('ja-JP'),deliveryDate:ds,items:allItems,total:allItems.reduce((s,it)=>s+it.qty,0),issuedBy:currentUser?currentUser.username:''};
   DB.history.unshift({...lastSlip,id:Date.now()});
-  const _d=new Date();const _cutoff=new Date(_d.getFullYear(),_d.getMonth()-2,1);
-  DB.history=DB.history.filter(r=>r.id>=_cutoff.getTime());
   localStorage.setItem('purims_h',JSON.stringify(DB.history));
   renderHistory();
   fbSave();
