@@ -996,6 +996,13 @@ function nextPCode(){
 
 function init(){
   load();
+  // 印刷モードを復元
+  const savedMode=localStorage.getItem('purims_printMode');
+  if(savedMode){
+    printMode=savedMode;
+    const radio=document.querySelector(`input[name="printMode"][value="${savedMode}"]`);
+    if(radio){radio.checked=true;setPrintMode(savedMode);}
+  }
   const now=new Date();
   document.getElementById('hdr-d').innerHTML=`${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日<br>${WD[now.getDay()]}曜日`;
   fillSel('csel');fillSel('msel');
@@ -1381,6 +1388,7 @@ function doPrint(){
 }
 function setPrintMode(mode){
   printMode=mode;
+  localStorage.setItem('purims_printMode',mode);
   const badge=document.getElementById('queue-badge');
   const printBtn=document.getElementById('batch-print-btn');
   const clearBtn=document.getElementById('batch-clear-btn');
