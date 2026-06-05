@@ -3,6 +3,7 @@
   "short_name": "Purims",
   "description": "プリームス伝票発行システム",
   "start_url": "/primussystem/client/index.html",
+  "scope": "/primussystem/client/",
   "display": "standalone",
   "background_color": "#1a2744",
   "theme_color": "#1a2744",
