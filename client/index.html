@@ -1376,17 +1376,7 @@ function openPrintWindow(html){
 function doPrint(){
   const html=document.getElementById('print-area').innerHTML;
   if(!html){toast('印刷データがありません','e');return;}
-  if(printMode==='batch'){
-    const label=(lastSlip?lastSlip.client+' '+lastSlip.deliveryDate:'伝票');
-    printQueue.push({html,label});
-    updateQueueBadge();
-    toast('📋 キューに追加しました（'+printQueue.length+'件）');
-    // ボタンを「キューに追加済み」表示に
-    const btn=document.getElementById('complete-print-btn');
-    if(btn){btn.textContent='✅ キューに追加済み';btn.disabled=true;btn.style.opacity='0.6';}
-  } else {
-    openPrintWindow(html);
-  }
+  openPrintWindow(html);
 }
 function setPrintMode(mode){
   printMode=mode;
@@ -2208,7 +2198,7 @@ function importCSV(e){
       if(!Object.keys(nc).length){toast('読み込めるデータがありませんでした','e');return;}
       if(!confirm(`${Object.keys(nc).length}件の客先データをインポートします。続けますか？`))return;
       Object.assign(DB.clients,nc);Object.assign(DB.cycles,ncy);
-      persist();fillSel('csel');fillSel('msel');toast(`${Object.keys(nc).length}件をインポートしました`);
+      persist();fbSave();fillSel('csel');fillSel('msel');toast(`${Object.keys(nc).length}件をインポートしました`);
     }catch(err){toast('CSVの読み込みに失敗しました','e');}
     e.target.value='';
   };
@@ -2226,8 +2216,9 @@ function importJSON(e){
       if(d.products&&d.products.length)DB.products=d.products;
       if(d.groups&&d.groups.length)DB.groups=d.groups;
       if(d.clientGroups)DB.clientGroups=d.clientGroups;
-      persist();fillSel('csel');fillSel('msel');fillGrpSel('e-grp');fillGrpSel('nc-grp');
-      renderProducts();renderGroups();renderClientGrpList();
+      if(d.history&&d.history.length){DB.history=d.history;localStorage.setItem('purims_h',JSON.stringify(DB.history));}
+      persist();fbSave();fillSel('csel');fillSel('msel');fillGrpSel('e-grp');fillGrpSel('nc-grp');
+      renderProducts();renderGroups();renderClientGrpList();renderHistory();
       toast(`${Object.keys(DB.clients).length}件を復元しました`);
     }catch(err){toast('JSONの読み込みに失敗しました','e');}
     e.target.value='';
