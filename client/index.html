@@ -1,3 +1,7 @@
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1a2744">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Purims">
 
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -2618,6 +2622,11 @@ document.addEventListener('DOMContentLoaded',()=>{
 
 
 init();
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('sw.js').then(()=>console.log('SW登録完了')).catch(e=>console.log('SW登録失敗',e));
+  });
+}
 window.addEventListener('load', function(){
   resizeScrollPanel();
   setTimeout(fbLoad, 1200);
