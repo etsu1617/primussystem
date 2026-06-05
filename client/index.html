@@ -1272,7 +1272,7 @@ function buildUnit(items,client,ds,pg,tp){
     ${pgLabel?`<div style="font-size:7px;color:#999;text-align:right;margin-bottom:1px">${pgLabel}</div>`:''}
     <div class="s-title">委託洗濯伝票　(納品控)</div>
     <div class="s-head">
-      <div class="s-client-area"><span class="s-client-name" style="font-size:${client.length<=10?'17px':client.length<=14?'14px':client.length<=18?'12px':client.length<=22?'10px':'8px'}">${client}</span><span class="s-sama">様</span></div>
+      <div class="s-client-area"><span class="s-client-name" style="font-size:${client.length<=8?'17px':client.length<=12?'15px':client.length<=16?'13px':client.length<=20?'11px':'9px'}">${client}</span><span class="s-sama">様</span></div>
       <div class="s-date-area"><span class="s-date-label">納品日</span><span class="s-date-val">${ds}</span></div>
     </div>
     <div class="s-table-wrap">
