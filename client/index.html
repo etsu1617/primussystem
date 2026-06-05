@@ -659,296 +659,100 @@ select.cs:focus{outline:none;border-color:var(--ac)}
   </div>
 </div>
 
-<!-- 毎日の伝票発行 -->
+<!-- 操作方法 -->
 <div class="help-section help-collapsed" id="help-basic">
   <div class="help-section-hd" onclick="toggleHelp('basic')">
-    📋 毎日の伝票発行の手順
+    📋 操作方法
     <span class="help-toggle" id="help-toggle-basic">▶</span>
   </div>
   <div class="help-section-body">
 
-    <!-- 共通手順 -->
+    <div style="font-weight:600;margin-bottom:10px;color:var(--nv);font-size:14px">■ ログイン・ログアウト</div>
     <div class="help-step">
       <div class="help-step-num">1</div>
-      <div class="help-step-body">
-        <div class="help-step-title">ログインする</div>
-        システムを開くとパスワード入力画面が表示されます。自分のパスワードを入力して <span class="help-tag">ログイン</span> を押します。
-      </div>
+      <div class="help-step-body">システムを開くとパスワード入力画面が表示されます。自分のパスワードを入力して <span class="help-tag">ログイン</span> を押します。</div>
     </div>
     <div class="help-step">
       <div class="help-step-num">2</div>
-      <div class="help-step-body">
-        <div class="help-step-title">印刷モードを選ぶ</div>
-        画面上部の「🖨 印刷モード」バーで <span class="help-tag">1件ずつ印刷</span> か <span class="help-tag">一括印刷</span> を選びます。<br>
-        <span style="font-size:12px;color:var(--mu)">※ どちらのモードか迷ったら下の説明を参考にしてください。</span>
-      </div>
+      <div class="help-step-body">終了するときは右上の <span class="help-tag">ログアウト</span> を押してください。</div>
+    </div>
+    <div class="help-note">💡 パスワードを忘れた場合は管理者に連絡してください。</div>
+
+    <div style="font-weight:600;margin:18px 0 10px;color:var(--nv);font-size:14px">■ 伝票を発行する</div>
+    <div class="help-step">
+      <div class="help-step-num">1</div>
+      <div class="help-step-body">画面上部の印刷モードで <span class="help-tag">1件ずつ印刷</span> か <span class="help-tag">一括印刷</span> を選びます。</div>
+    </div>
+    <div class="help-step">
+      <div class="help-step-num">2</div>
+      <div class="help-step-body">プルダウンから客先を選ぶと、品目一覧と納品日が表示されます。</div>
     </div>
     <div class="help-step">
       <div class="help-step-num">3</div>
-      <div class="help-step-body">
-        <div class="help-step-title">客先をプルダウンで選ぶ</div>
-        「客先を選択してください」のプルダウンから届け先を選びます。グループ別にまとまっており、グループ内はカスタム順で並んでいます。
-      </div>
+      <div class="help-step-body">各品目の数量欄に枚数を入力します。0のままの品目は伝票に載りません。Enterキーで次の行に移動できます。</div>
     </div>
     <div class="help-step">
       <div class="help-step-num">4</div>
-      <div class="help-step-body">
-        <div class="help-step-title">納品日・サイクルを確認する</div>
-        納品サイクルから次回納品日が自動計算されて表示されます。<br>
-        <strong>納品日がイレギュラーな場合</strong>は <span class="help-tag">📅 変更</span> ボタンでカレンダーから日付を選べます。<span style="color:#e67e22;font-weight:600">オレンジ色</span>になっていれば手動設定中です。<span class="help-tag">↩ 自動に戻す</span> で自動計算に戻せます。
-      </div>
-    </div>
-    <div class="help-step">
-      <div class="help-step-num">5</div>
-      <div class="help-step-body">
-        <div class="help-step-title">数量を入力する</div>
-        品目の一覧が表示されるので、数量の欄に枚数を入力します。0のままの品目は伝票に載りません。Enterキーで次の行に移動できます。
-      </div>
-    </div>
-    <div class="help-step">
-      <div class="help-step-num">6</div>
-      <div class="help-step-body">
-        <div class="help-step-title">「伝票発行」ボタンを押す</div>
-        画面右上または右下の <span class="help-tag">伝票発行</span> ボタンを押すと確認・完了画面が出ます。発行と同時にクラウドに自動保存されます。
-      </div>
+      <div class="help-step-body"><span class="help-tag">伝票発行</span> ボタンを押します。発行と同時にクラウドに自動保存されます。</div>
     </div>
 
-    <!-- 1件ずつ印刷 -->
-    <div style="margin:18px 0 8px;padding:10px 14px;background:#f0f4fa;border-left:4px solid #185fa5;border-radius:0 6px 6px 0">
-      <div style="font-weight:700;font-size:13px;color:#185fa5;margin-bottom:10px">🖨 1件ずつ印刷モード</div>
-      <div class="help-step">
-        <div class="help-step-num" style="background:#185fa5">1</div>
-        <div class="help-step-body">
-          <div class="help-step-title">「印刷する」を押す</div>
-          完了画面の <span class="help-tag">印刷する</span> ボタンを押すとすぐに印刷ダイアログが開きます。
-        </div>
-      </div>
-      <div class="help-step">
-        <div class="help-step-num" style="background:#185fa5">2</div>
-        <div class="help-step-body">
-          <div class="help-step-title">次の客先へ進む</div>
-          印刷後、<span class="help-tag acc">次の客先へ</span> または <span class="help-tag acc">▶ 客先名</span> ボタンで次の客先に移動します。
-        </div>
-      </div>
-      <div class="help-note" style="margin-top:8px">💡 客先ごとにすぐ印刷したいときに便利です。</div>
+    <div style="margin:14px 0 8px;padding:10px 14px;background:#f0f4fa;border-left:4px solid #185fa5;border-radius:0 6px 6px 0">
+      <div style="font-weight:700;font-size:13px;color:#185fa5;margin-bottom:8px">🖨 1件ずつ印刷モード</div>
+      <p style="font-size:13px">発行後に <span class="help-tag">印刷する</span> を押すとすぐ印刷されます。印刷後は <span class="help-tag acc">次の客先へ</span> で次に進めます。</p>
+      <div class="help-note" style="margin-top:8px">💡 客先ごとにその場で印刷したいときに便利です。</div>
     </div>
 
-    <!-- 一括印刷 -->
-    <div style="margin:18px 0 8px;padding:10px 14px;background:#f0faf4;border-left:4px solid #27ae60;border-radius:0 6px 6px 0">
-      <div style="font-weight:700;font-size:13px;color:#27ae60;margin-bottom:10px">📋 一括印刷モード（キュー機能）</div>
-      <div class="help-step">
-        <div class="help-step-num" style="background:#27ae60">1</div>
-        <div class="help-step-body">
-          <div class="help-step-title">伝票発行すると自動でキューに追加される</div>
-          <span class="help-tag">伝票発行</span> ボタンを押すと自動的にキューに追加されます。印刷はまだされません。画面上部に「キュー: ○件」と件数が表示されます。
-        </div>
-      </div>
-      <div class="help-step">
-        <div class="help-step-num" style="background:#27ae60">2</div>
-        <div class="help-step-body">
-          <div class="help-step-title">全客先分を続けて発行する</div>
-          <span class="help-tag acc">次の客先へ</span> で次の客先に進み、同じように数量を入力して発行を繰り返します。発行のたびに自動でキューに追加されます。
-        </div>
-      </div>
-      <div class="help-step">
-        <div class="help-step-num" style="background:#27ae60">3</div>
-        <div class="help-step-body">
-          <div class="help-step-title">「まとめて印刷」を押す</div>
-          全客先分の発行が終わったら、画面上部の <span class="help-tag ok">📋 まとめて印刷</span> ボタンを押します。キューに溜めた全伝票が一度に印刷されます。
-        </div>
-      </div>
-      <div class="help-step">
-        <div class="help-step-num" style="background:#27ae60">4</div>
-        <div class="help-step-body">
-          <div class="help-step-title">キューをクリアする（やり直したいとき）</div>
-          <span class="help-tag">🗑 クリア</span> ボタンでキューの内容を全部削除できます。
-        </div>
-      </div>
-      <div class="help-note" style="margin-top:8px">💡 全客先分まとめて発行してから一度に印刷したいときに便利です。</div>
+    <div style="margin:14px 0 8px;padding:10px 14px;background:#f0faf4;border-left:4px solid #27ae60;border-radius:0 6px 6px 0">
+      <div style="font-weight:700;font-size:13px;color:#27ae60;margin-bottom:8px">📋 一括印刷モード</div>
+      <p style="font-size:13px">伝票発行のたびに自動でキューに追加されます。全客先分の発行が終わったら <span class="help-tag ok">📋 まとめて印刷</span> を押すと一度に印刷できます。</p>
+      <div class="help-note" style="margin-top:8px">💡 全客先分まとめて印刷したいときに便利です。やり直したいときは <span class="help-tag">🗑 クリア</span> でキューを削除できます。</div>
     </div>
 
-    <div class="help-step" style="margin-top:14px">
-      <div class="help-step-num">7</div>
-      <div class="help-step-body">
-        <div class="help-step-title">終了するときは「💾 保存して終了」</div>
-        ヘッダー右上の <span class="help-tag">💾 保存して終了</span> ボタンを押すとローカルバックアップが保存されてタブが閉じます。
-      </div>
-    </div>
-    <div class="help-note">💡 データはクラウドに自動保存されます。別のPCで開いても同じデータが表示されます。</div>
-  </div>
-</div>
+    <div style="font-weight:600;margin:18px 0 10px;color:var(--nv);font-size:14px">■ 納品日を変更したいとき</div>
+    <p>客先を選んだあと、納品日の横にある <span class="help-tag">📅 変更</span> ボタンを押してカレンダーから日付を選べます。<span style="color:#e67e22;font-weight:600">オレンジ色</span>になっていれば手動設定中です。<span class="help-tag">↩ 自動に戻す</span> で自動計算に戻せます。</p>
 
-<!-- ログイン・ユーザー管理 -->
-<div class="help-section help-collapsed" id="help-login">
-  <div class="help-section-hd" onclick="toggleHelp('login')">
-    🔐 ログイン・ユーザー管理
-    <span class="help-toggle" id="help-toggle-login">▶</span>
-  </div>
-  <div class="help-section-body">
-    <div style="font-weight:600;margin-bottom:8px;color:var(--nv)">■ ログイン方法</div>
-    <p>システムを開くとパスワード入力画面が表示されます。自分のパスワードを入力してログインします。パスワードはひとりひとり異なるため、誰がログインしたか自動で識別されます。</p>
-    <div style="font-weight:600;margin:14px 0 8px;color:var(--nv)">■ ログアウト</div>
-    <p>ヘッダー右上の <span class="help-tag">ログアウト</span> ボタンを押します。</p>
-    <div style="font-weight:600;margin:14px 0 8px;color:var(--nv)">■ ユーザーの追加・削除（管理者のみ）</div>
-    <div class="help-step">
-      <div class="help-step-num">1</div>
-      <div class="help-step-body">ヘッダーの <span class="help-tag">👥 ユーザー管理</span> ボタンを押す（管理者のみ表示）</div>
-    </div>
-    <div class="help-step">
-      <div class="help-step-num">2</div>
-      <div class="help-step-body">ユーザー名・パスワードを入力して追加する。管理者権限を付与することも可能</div>
-    </div>
-    <div class="help-note">💡 パスワードを忘れた場合は管理者に連絡してください。</div>
-    <div style="font-weight:600;margin:14px 0 8px;color:var(--nv)">■ ログイン履歴の確認</div>
-    <p>ヘッダーの <span class="help-tag">🔐 ログイン履歴</span> ボタンを押すと、誰がいつログインしたか確認できます。</p>
-  </div>
-</div>
-
-<!-- 品目の追加 -->
-<div class="help-section help-collapsed" id="help-extra">
-  <div class="help-section-hd" onclick="toggleHelp('extra')">
-    ➕ その場で品目を追加する方法
-    <span class="help-toggle" id="help-toggle-extra">▶</span>
-  </div>
-  <div class="help-section-body">
-    <p>客先のマスタに登録されていない品目でも、伝票発行のたびに一時的に追加できます。客先を選んだあと、右上の <span class="help-tag">＋ 品目を追加</span> ボタンを押すと追加エリアが開きます。</p>
-    <div style="font-weight:600;margin:12px 0 8px;color:var(--nv)">■ マスタから追加</div>
-    <div class="help-step">
-      <div class="help-step-num">1</div>
-      <div class="help-step-body">「マスタから追加」タブを選ぶ</div>
-    </div>
-    <div class="help-step">
-      <div class="help-step-num">2</div>
-      <div class="help-step-body">プルダウンから品目を選んで <span class="help-tag ok">追加</span> を押す</div>
-    </div>
-    <div style="font-weight:600;margin:14px 0 8px;color:var(--nv)">■ 自由入力で追加</div>
-    <div class="help-step">
-      <div class="help-step-num">1</div>
-      <div class="help-step-body">「自由入力で追加」タブを選ぶ</div>
-    </div>
-    <div class="help-step">
-      <div class="help-step-num">2</div>
-      <div class="help-step-body">品名を入力して <span class="help-tag ok">追加</span> を押す</div>
-    </div>
-    <div class="help-note">💡 この追加はその伝票のみ有効です。毎回必要な品目はマスタ管理で登録してください。</div>
-  </div>
-</div>
-
-<!-- 発行履歴 -->
-<div class="help-section help-collapsed" id="help-history">
-  <div class="help-section-hd" onclick="toggleHelp('history')">
-    📂 発行履歴の確認・再印刷
-    <span class="help-toggle" id="help-toggle-history">▶</span>
-  </div>
-  <div class="help-section-body">
-    <p>過去に発行した伝票は <span class="help-tag">発行履歴</span> タブから確認できます。誰が発行したかも履歴に表示されます。</p>
-    <div style="font-weight:600;margin:12px 0 8px;color:var(--nv)">■ 再印刷・削除</div>
-    <p>履歴一覧から伝票をクリックすると詳細が開きます。<span class="help-tag">伝票印刷</span>・<span class="help-tag ng">削除</span> ボタンで操作できます。</p>
+    <div style="font-weight:600;margin:18px 0 10px;color:var(--nv);font-size:14px">■ 発行履歴を見る</div>
+    <p>上部の <span class="help-tag">発行履歴</span> タブから過去の伝票を確認できます。履歴をクリックすると詳細が開き、再印刷や削除もできます。</p>
     <div class="help-warn">⚠️ 削除した履歴は元に戻せません。</div>
+
+    <div style="font-weight:600;margin:18px 0 10px;color:var(--nv);font-size:14px">■ マスタにない品目を追加したいとき</div>
+    <p>客先を選んだあと <span class="help-tag acc">＋ 品目を追加</span> ボタンを押すと、マスタにない品目をその伝票だけに一時的に追加できます。</p>
+    <div class="help-note">💡 毎回必要な品目はマスタ管理で登録してください。</div>
+
   </div>
 </div>
 
-<!-- 客先・品目の管理 -->
-<div class="help-section help-collapsed" id="help-master">
-  <div class="help-section-hd" onclick="toggleHelp('master')">
-    📝 客先・品目の追加・編集方法
-    <span class="help-toggle" id="help-toggle-master">▶</span>
+<!-- こんなときは -->
+<div class="help-section help-collapsed" id="help-trouble">
+  <div class="help-section-hd" onclick="toggleHelp('trouble')">
+    🆘 こんなときは
+    <span class="help-toggle" id="help-toggle-trouble">▶</span>
   </div>
   <div class="help-section-body">
-    <div style="font-weight:600;margin-bottom:8px;color:var(--nv)">■ 新しい客先を追加する</div>
-    <div class="help-step">
-      <div class="help-step-num">1</div>
-      <div class="help-step-body"><span class="help-tag">マスタ管理</span> →「客先・品目管理」→「＋ 新規客先を追加」タブを開く</div>
-    </div>
-    <div class="help-step">
-      <div class="help-step-num">2</div>
-      <div class="help-step-body">客先名・納品サイクル・グループを入力して <span class="help-tag ok">＋ 客先を追加</span> を押す</div>
-    </div>
-    <div class="help-step">
-      <div class="help-step-num">3</div>
-      <div class="help-step-body">「品目の管理」欄から品目を追加する。単価も登録できます（伝票には表示されません）</div>
-    </div>
-    <div class="help-note">💡 品番は空欄のままにすると自動で連番が振られます。</div>
-  </div>
-</div>
 
-<!-- バックアップ -->
-<div class="help-section help-collapsed" id="help-backup">
-  <div class="help-section-hd" onclick="toggleHelp('backup')">
-    💾 バックアップについて
-    <span class="help-toggle" id="help-toggle-backup">▶</span>
-  </div>
-  <div class="help-section-body">
-    <div style="font-weight:600;margin-bottom:8px;color:var(--nv)">■ クラウド自動保存（通常はこれだけでOK）</div>
-    <p>データは伝票発行・マスタ変更のたびに自動でクラウドに保存されます。別のPCで開いてもログイン後すぐに最新データが表示されます。</p>
-    <div style="font-weight:600;margin:14px 0 8px;color:var(--nv)">■ ローカルバックアップ（念のため）</div>
-    <div class="help-step">
-      <div class="help-step-num">1</div>
-      <div class="help-step-body"><span class="help-tag">データ</span> タブ →「全データバックアップ（JSON）」をクリック</div>
-    </div>
-    <div class="help-step">
-      <div class="help-step-num">2</div>
-      <div class="help-step-body">ダウンロードされたファイルを安全な場所に保存する</div>
-    </div>
-    <div class="help-note">💡 月1回程度ローカルバックアップを取っておくと安心です。</div>
-    <div style="font-weight:600;margin:14px 0 8px;color:var(--nv)">■ バックアップから復元する</div>
-    <div class="help-step">
-      <div class="help-step-num">1</div>
-      <div class="help-step-body"><span class="help-tag">データ</span> タブ →「バックアップから復元（JSON）」をクリック</div>
-    </div>
-    <div class="help-step">
-      <div class="help-step-num">2</div>
-      <div class="help-step-body">保存しておいたJSONファイルを選択する</div>
-    </div>
-    <div class="help-warn">⚠️ 復元すると現在のデータが上書きされます。</div>
-  </div>
-</div>
-
-<!-- 印刷トラブル -->
-<div class="help-section help-collapsed" id="help-print">
-  <div class="help-section-hd" onclick="toggleHelp('print')">
-    📄 印刷がうまくいかないとき
-    <span class="help-toggle" id="help-toggle-print">▶</span>
-  </div>
-  <div class="help-section-body">
-    <div style="margin-bottom:14px">
-      <div style="font-weight:600;margin-bottom:4px">🔸 伝票が小さく印刷される</div>
-      <p>印刷ダイアログの「倍率」を <strong>100%</strong> に設定してください。</p>
-    </div>
-    <div style="margin-bottom:14px">
-      <div style="font-weight:600;margin-bottom:4px">🔸 余白が大きすぎる</div>
-      <p>印刷ダイアログで「余白」を <strong>「なし」または「最小」</strong> に設定してください。</p>
-    </div>
-    <div style="margin-bottom:14px">
-      <div style="font-weight:600;margin-bottom:4px">🔸 背景色が印刷されない</div>
-      <p>ブラウザの印刷設定で <strong>「背景のグラフィック」をオン</strong> にしてください。</p>
-    </div>
+    <div style="font-weight:600;margin-bottom:6px;color:var(--nv);font-size:14px">■ 印刷がうまくいかない</div>
+    <div style="margin-bottom:8px">🔸 <strong>伝票が小さく印刷される</strong>　→　印刷ダイアログの「倍率」を <strong>100%</strong> に設定してください。</div>
+    <div style="margin-bottom:8px">🔸 <strong>余白が大きすぎる</strong>　→　印刷ダイアログで「余白」を <strong>「なし」または「最小」</strong> に設定してください。</div>
+    <div style="margin-bottom:8px">🔸 <strong>背景色が印刷されない</strong>　→　ブラウザの印刷設定で <strong>「背景のグラフィック」をオン</strong> にしてください。</div>
     <div class="help-note">💡 Chromeブラウザでの印刷が最も安定しています。</div>
-  </div>
-</div>
 
-<!-- データトラブル -->
-<div class="help-section help-collapsed" id="help-data">
-  <div class="help-section-hd" onclick="toggleHelp('data')">
-    😱 データが消えた・おかしいとき
-    <span class="help-toggle" id="help-toggle-data">▶</span>
-  </div>
-  <div class="help-section-body">
-    <div style="font-weight:600;margin-bottom:8px;color:var(--nv)">■ まずクラウドから再読み込みを試す</div>
+    <div style="font-weight:600;margin:18px 0 6px;color:var(--nv);font-size:14px">■ データが消えた・おかしい</div>
     <div class="help-step">
       <div class="help-step-num">1</div>
-      <div class="help-step-body"><span class="help-tag">データ</span> タブ →「⬇️ 今すぐ読み込む」を押す</div>
+      <div class="help-step-body"><span class="help-tag">データ</span> タブ →「⬇️ 今すぐ読み込む」を押してください。クラウドから最新データを取得します。</div>
+    </div>
+    <div class="help-step">
+      <div class="help-step-num">2</div>
+      <div class="help-step-body">それでも解決しない場合は管理者に連絡してください。</div>
     </div>
     <div class="help-note">💡 データはクラウドに自動保存されているため、再読み込みで復元できる場合がほとんどです。</div>
-    <div style="font-weight:600;margin:14px 0 8px;color:var(--nv)">■ クラウドからも消えてしまった場合</div>
-    <div class="help-step">
-      <div class="help-step-num">1</div>
-      <div class="help-step-body"><span class="help-tag">データ</span> タブ →「バックアップから復元（JSON）」をクリック</div>
-    </div>
-    <div class="help-step">
-      <div class="help-step-num">2</div>
-      <div class="help-step-body">バックアップJSONファイルを選択する</div>
-    </div>
+
+    <div style="font-weight:600;margin:18px 0 6px;color:var(--nv);font-size:14px">■ パスワードを忘れた</div>
+    <p>管理者に連絡してパスワードをリセットしてもらってください。</p>
+
+    <div style="font-weight:600;margin:18px 0 6px;color:var(--nv);font-size:14px">■ 画面が固まった・動かない</div>
+    <p>ブラウザの再読み込み（F5キー）を押してください。データはクラウドに保存されているので消えません。</p>
+
   </div>
 </div>
 
@@ -2511,7 +2315,7 @@ function toggleHelp(id){
   if(tog)tog.textContent=collapsed?'▶':'▼';
 }
 function helpExpandAll(){
-  ['basic','login','extra','history','master','backup','print','data'].forEach(id=>{
+  ['basic','trouble'].forEach(id=>{
     const sec=document.getElementById('help-'+id);
     const tog=document.getElementById('help-toggle-'+id);
     if(sec){sec.classList.remove('help-collapsed');if(tog)tog.textContent='▼';}
