@@ -739,15 +739,15 @@ select.cs:focus{outline:none;border-color:var(--ac)}
       <div class="help-step">
         <div class="help-step-num" style="background:#27ae60">1</div>
         <div class="help-step-body">
-          <div class="help-step-title">「キューに追加」を押す</div>
-          完了画面の <span class="help-tag">📋 キューに追加</span> ボタンを押します。印刷はまだされません。画面上部に「キュー: ○件」と件数が表示されます。
+          <div class="help-step-title">伝票発行すると自動でキューに追加される</div>
+          <span class="help-tag">伝票発行</span> ボタンを押すと自動的にキューに追加されます。印刷はまだされません。画面上部に「キュー: ○件」と件数が表示されます。
         </div>
       </div>
       <div class="help-step">
         <div class="help-step-num" style="background:#27ae60">2</div>
         <div class="help-step-body">
           <div class="help-step-title">全客先分を続けて発行する</div>
-          <span class="help-tag acc">次の客先へ</span> で次の客先に進み、同じように数量を入力して発行→キューに追加を繰り返します。
+          <span class="help-tag acc">次の客先へ</span> で次の客先に進み、同じように数量を入力して発行を繰り返します。発行のたびに自動でキューに追加されます。
         </div>
       </div>
       <div class="help-step">
@@ -1699,7 +1699,18 @@ function showPrev(){
   document.getElementById('complete-sub').innerHTML=`<strong>${curC}</strong>　納品日: ${ds}<br>${allItems.length}品目　合計 <strong>${allItems.reduce((s,it)=>s+it.qty,0)}点</strong>`;
   // 印刷ボタンをモードに応じてリセット
   const cpBtn=document.getElementById('complete-print-btn');
-  if(cpBtn){cpBtn.disabled=false;cpBtn.style.opacity='1';cpBtn.textContent=printMode==='batch'?'📋 キューに追加':'印刷する';}
+  if(cpBtn){cpBtn.disabled=false;cpBtn.style.opacity='1';cpBtn.textContent='印刷する';}
+  // 一括モードの場合は自動でキューに追加
+  if(printMode==='batch'){
+    const html=document.getElementById('print-area').innerHTML;
+    const label=curC+' '+ds;
+    printQueue.push({html,label});
+    updateQueueBadge();
+    toast('📋 キューに自動追加しました（'+printQueue.length+'件）');
+    if(cpBtn){cpBtn.style.display='none';}
+  } else {
+    if(cpBtn){cpBtn.style.display='inline-block';}
+  }
   // 次の客先ボタンを更新
   const nextBtn=document.getElementById('next-client-btn');
   if(nextBtn){const next=getNextClient();if(next){nextBtn.textContent='▶ '+next;nextBtn.style.display='inline-block';}else{nextBtn.style.display='none';}}
