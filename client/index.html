@@ -985,7 +985,7 @@ function nxtDel(cyc){
   if(!cyc)return null;
   const m={月:1,火:2,水:3,木:4,金:5,土:6,日:0};
   const tw=new Date().getDay();let min=99;
-  for(const c of cyc){if(m[c]!==undefined){const d=(m[c]-tw+7)%7;if(d<min)min=d;}}
+  for(const c of cyc){if(m[c]!==undefined){const d=(m[c]-tw+7)%7||7;if(d<min)min=d;}}
   if(min===99)return null;
   const r=new Date();r.setDate(r.getDate()+min);return r;
 }
@@ -1089,7 +1089,6 @@ function onCC(){
   if(st)st.style.display='flex';
   renderItems();
   setTimeout(fitIareaBody,100);
-  window.addEventListener('resize',fitIareaBody);
 }
 function updateChips(){
   if(!curC)return;
@@ -2647,6 +2646,15 @@ window.addEventListener('beforeunload',function(e){
   if(!sessionStorage.getItem('purims_backed_up')){
     const msg='バックアップをまだ行っていません。\nバックアップしてから閉じることをおすすめします。';
     e.preventDefault();e.returnValue=msg;return msg;
+  }
+});
+// PWA対応：ページ非表示時に自動保存
+document.addEventListener('visibilitychange',function(){
+  if(document.visibilityState==='hidden'){
+    const data={clients:DB.clients,cycles:DB.cycles,products:DB.products,groups:DB.groups,clientGroups:DB.clientGroups,clientOrder:DB.clientOrder,closing:DB.closing,history:DB.history,updatedAt:Date.now()};
+    navigator.sendBeacon?
+      navigator.sendBeacon('https://nexus-laundry-default-rtdb.asia-southeast1.firebasedatabase.app/purims.json',JSON.stringify(data)):
+      firebase.database().ref('purims').set(data).catch(()=>{});
   }
 });
 function exitApp(){
