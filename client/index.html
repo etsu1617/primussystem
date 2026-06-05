@@ -1072,7 +1072,8 @@ function onCC(){
   document.getElementById('sbtns').style.display='flex';
   if(st)st.style.display='flex';
   renderItems();
-  setTimeout(fitIareaBody,80);
+  setTimeout(fitIareaBody,100);
+  window.addEventListener('resize',fitIareaBody);
 }
 function updateChips(){
   if(!curC)return;
@@ -1159,14 +1160,18 @@ function calcStickyTop(){
 function fitIareaBody(){
   const body=document.getElementById('iarea-body');
   if(!body)return;
-  // 固定されている要素の下端から画面下端までの高さをセット
   const wrap=document.querySelector('.iarea-wrap');
   if(!wrap)return;
   const thead=wrap.querySelector('.iarea-thead');
   const wrapTop=wrap.getBoundingClientRect().top;
   const theadH=thead?thead.offsetHeight:0;
-  const available=window.innerHeight-wrapTop-theadH-16;
-  body.style.maxHeight=Math.max(available,200)+'px';
+  // 画面下端から品目テーブルヘッダー下端までの高さを計算
+  // 余白16px + 品目追加エリアの高さを考慮
+  const addArea=document.getElementById('add-item-area');
+  const addAreaH=(addArea&&addArea.style.display!=='none')?addArea.offsetHeight:0;
+  const available=window.innerHeight-wrapTop-theadH-addAreaH-20;
+  body.style.height=Math.max(available,150)+'px';
+  body.style.overflowY='auto';
 }
 window.addEventListener('resize',()=>{fitIareaBody();resizeScrollPanel();});
 function resizeScrollPanel(){
@@ -2616,6 +2621,7 @@ init();
 window.addEventListener('load', function(){
   resizeScrollPanel();
   setTimeout(fbLoad, 1200);
+  setTimeout(fitIareaBody, 300);
 });
 window.addEventListener('beforeunload',function(e){
   if(!sessionStorage.getItem('purims_backed_up')){
