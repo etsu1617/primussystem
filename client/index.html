@@ -2198,7 +2198,7 @@ function importCSV(e){
       if(!Object.keys(nc).length){toast('読み込めるデータがありませんでした','e');return;}
       if(!confirm(`${Object.keys(nc).length}件の客先データをインポートします。続けますか？`))return;
       Object.assign(DB.clients,nc);Object.assign(DB.cycles,ncy);
-      persist();fbSave();fillSel('csel');fillSel('msel');toast(`${Object.keys(nc).length}件をインポートしました`);
+      persist();fillSel('csel');fillSel('msel');toast(`${Object.keys(nc).length}件をインポートしました`);
     }catch(err){toast('CSVの読み込みに失敗しました','e');}
     e.target.value='';
   };
@@ -2217,7 +2217,7 @@ function importJSON(e){
       if(d.groups&&d.groups.length)DB.groups=d.groups;
       if(d.clientGroups)DB.clientGroups=d.clientGroups;
       if(d.history&&d.history.length){DB.history=d.history;localStorage.setItem('purims_h',JSON.stringify(DB.history));}
-      persist();fbSave();fillSel('csel');fillSel('msel');fillGrpSel('e-grp');fillGrpSel('nc-grp');
+      persist();fillSel('csel');fillSel('msel');fillGrpSel('e-grp');fillGrpSel('nc-grp');
       renderProducts();renderGroups();renderClientGrpList();renderHistory();
       toast(`${Object.keys(DB.clients).length}件を復元しました`);
     }catch(err){toast('JSONの読み込みに失敗しました','e');}
@@ -2383,7 +2383,8 @@ function applyFbData(d){
   if(d.clientOrder) DB.clientOrder = d.clientOrder;
   if(d.closing) DB.closing = d.closing;
   if(d.history) DB.history = d.history;
-  persist();
+  // Firebaseから読み込んだデータはlocalStorageにのみ保存（Firebase再書き込み不要）
+  localStorage.setItem('purims_v14',JSON.stringify({clients:DB.clients,cycles:DB.cycles,products:DB.products,groups:DB.groups,clientGroups:DB.clientGroups,clientOrder:DB.clientOrder,closing:DB.closing}));
   localStorage.setItem('purims_h', JSON.stringify(DB.history));
   fillSel('csel');fillSel('msel');fillGrpSel('e-grp');fillGrpSel('nc-grp');
   renderProducts();renderGroups();renderClientGrpList();renderHistory();
@@ -2639,13 +2640,11 @@ window.addEventListener('beforeunload',function(e){
     e.preventDefault();e.returnValue=msg;return msg;
   }
 });
-// PWA対応：ページ非表示時に自動保存
+// PWA対応：ページ非表示時にlocalStorageに保存
 document.addEventListener('visibilitychange',function(){
   if(document.visibilityState==='hidden'){
-    const data={clients:DB.clients,cycles:DB.cycles,products:DB.products,groups:DB.groups,clientGroups:DB.clientGroups,clientOrder:DB.clientOrder,closing:DB.closing,history:DB.history,updatedAt:Date.now()};
-    navigator.sendBeacon?
-      navigator.sendBeacon('https://nexus-laundry-default-rtdb.asia-southeast1.firebasedatabase.app/purims.json',JSON.stringify(data)):
-      firebase.database().ref('purims').set(data).catch(()=>{});
+    localStorage.setItem('purims_v14',JSON.stringify({clients:DB.clients,cycles:DB.cycles,products:DB.products,groups:DB.groups,clientGroups:DB.clientGroups,clientOrder:DB.clientOrder,closing:DB.closing}));
+    localStorage.setItem('purims_h',JSON.stringify(DB.history));
   }
 });
 function exitApp(){
