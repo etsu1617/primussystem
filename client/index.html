@@ -2084,7 +2084,7 @@ function renderHistory(){
   el.innerHTML=dates.map(date=>{
     const items=groups[date];
     const total=items.reduce((s,h)=>s+h.total,0);
-    const isOpen=histFolderCollapsed[date]!==false; // デフォルトは開く
+    const isOpen=histFolderCollapsed[date]===true; // デフォルトは閉じる
     return`<div style="margin-bottom:10px">
       <!-- 日付フォルダヘッダー -->
       <div onclick="toggleHistFolder('${date}')" style="display:flex;align-items:center;gap:10px;padding:9px 14px;background:var(--nv);color:#fff;border-radius:${isOpen?'8px 8px 0 0':'8px'};cursor:pointer;user-select:none">
@@ -2140,8 +2140,7 @@ function renderHistory(){
 }
 let histFolderCollapsed={};
 function toggleHistFolder(date){
-  // デフォルトは開いている（undefined=開く）ので、トグルはfalse→true→false
-  histFolderCollapsed[date]=histFolderCollapsed[date]!==false?false:undefined;
+  histFolderCollapsed[date]=histFolderCollapsed[date]===true?false:true;
   renderHistory();
 }
 function toggleHist(id){openHistId=openHistId===id?null:id;renderHistory();}
