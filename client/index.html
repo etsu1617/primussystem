@@ -2071,14 +2071,16 @@ function addProduct(){
 function renderHistory(){
   const el=document.getElementById('hlist');
   if(!DB.history.length){el.innerHTML='<div class="emp">発行履歴はありません</div>';return;}
-  // 発行日でグループ化
+  // 発行日でグループ化（idで最新順にソート済みのDB.historyを使う）
   const groups={};
+  const dateOrder=[];
   DB.history.forEach(h=>{
     const d=h.date||'不明';
-    if(!groups[d])groups[d]=[];
+    if(!groups[d]){groups[d]=[];dateOrder.push(d);}
     groups[d].push(h);
   });
-  const dates=Object.keys(groups).sort((a,b)=>b.localeCompare(a)); // 新しい順
+  // dateOrderは登録順（新しい順）なので重複を除いてそのまま使う
+  const dates=[...new Set(dateOrder)];
   el.innerHTML=dates.map(date=>{
     const items=groups[date];
     const total=items.reduce((s,h)=>s+h.total,0);
