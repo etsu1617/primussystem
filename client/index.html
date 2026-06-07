@@ -1237,6 +1237,7 @@ function addFromMaster(){
   document.getElementById('master-add-qty').value=1;
   document.getElementById('master-add-biko').value='';
   renderItems();
+  setTimeout(fitIareaBody,80);
   toast('「'+prod.name+'」を追加しました');
 }
 function onFreeNameInput(el){
@@ -1274,6 +1275,7 @@ function addFromFree(){
   document.getElementById('free-add-biko').value='';
   document.getElementById('free-match-hint').textContent='';
   renderItems();
+  setTimeout(fitIareaBody,80);
   toast(matched?'「'+name+'」（マスタ一致）を追加しました':'「'+name+'」を追加しました');
 }
 
@@ -1544,6 +1546,7 @@ function backToInput(){
 function resetToSelect(){
   document.getElementById('complete-view').style.display='none';
   document.getElementById('input-view').style.display='block';
+  document.getElementById('print-area').innerHTML='';
   curC=null;qtys={};bikos={};extraItems=[];customDeliveryDate=null;
   const picker2=document.getElementById('nd-picker');if(picker2)picker2.style.display='none';
   const resetBtn2=document.getElementById('nd-reset-btn');if(resetBtn2)resetBtn2.style.display='none';
@@ -1988,6 +1991,10 @@ function saveBasic(){
     if(DB.cycles[editC]){DB.cycles[newN]=DB.cycles[editC];delete DB.cycles[editC];}
     if(DB.closing[editC]){DB.closing[newN]=DB.closing[editC];delete DB.closing[editC];}
     if(DB.clientGroups[editC]){DB.clientGroups[newN]=DB.clientGroups[editC];delete DB.clientGroups[editC];}
+    Object.keys(DB.clientOrder).forEach(gid=>{
+      const idx=DB.clientOrder[gid].indexOf(editC);
+      if(idx>=0)DB.clientOrder[gid][idx]=newN;
+    });
     if(curC===editC)curC=newN;editC=newN;
   }
   DB.cycles[editC]=newC;
