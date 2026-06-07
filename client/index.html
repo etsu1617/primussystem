@@ -2395,8 +2395,8 @@ function startFbListener(){
   _fbListenerActive = true;
   firebase.database().ref('purims').on('value', snapshot=>{
     if(!snapshot.exists()) return;
-    // 自分が保存してから2秒以内は無視（自分の保存でトリガーされた場合）
-    if(Date.now() - _fbLastSaveTime < 2000) return;
+    // 自分が保存してから1秒以内は無視（自分の保存でトリガーされた場合）
+    if(Date.now() - _fbLastSaveTime < 1000) return;
     applyFbData(snapshot.val());
     toast('☁️ 他のPCのデータを自動反映しました');
   });
