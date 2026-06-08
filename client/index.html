@@ -278,12 +278,20 @@ select.cs:focus{outline:none;border-color:var(--ac)}
       <div class="login-err" id="user-err"></div>
     </div>
     <hr style="margin:16px 0;border:none;border-top:1px solid var(--bd)">
-    <div style="font-size:13px;font-weight:600;margin-bottom:10px">🔑 管理者パスワードを変更</div>
+    <div style="font-size:13px;font-weight:600;margin-bottom:10px">🔑 管理者パスワードを変更（プリームス用）</div>
     <div style="display:flex;flex-direction:column;gap:8px">
       <input type="password" id="new-admin-pass" placeholder="新しい管理者パスワード" style="padding:8px 10px;border:1.5px solid var(--bd);border-radius:7px;font-size:13px">
       <input type="password" id="new-admin-pass-confirm" placeholder="確認（もう一度入力）" style="padding:8px 10px;border:1.5px solid var(--bd);border-radius:7px;font-size:13px">
       <button onclick="changeAdminPass()" style="padding:9px;background:var(--ac);color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer">パスワードを変更</button>
       <div id="admin-pass-change-err" style="color:var(--ng);font-size:12px;min-height:16px"></div>
+    </div>
+    <hr style="margin:16px 0;border:none;border-top:1px solid var(--bd)">
+    <div style="font-size:13px;font-weight:600;margin-bottom:10px">🔑 管理者パスワードを変更（自分用）</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <input type="password" id="new-admin-pass2" placeholder="新しい管理者パスワード（自分用）" style="padding:8px 10px;border:1.5px solid var(--bd);border-radius:7px;font-size:13px">
+      <input type="password" id="new-admin-pass2-confirm" placeholder="確認（もう一度入力）" style="padding:8px 10px;border:1.5px solid var(--bd);border-radius:7px;font-size:13px">
+      <button onclick="changeAdminPass2()" style="padding:9px;background:var(--nv);color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer">パスワードを変更</button>
+      <div id="admin-pass2-change-err" style="color:var(--ng);font-size:12px;min-height:16px"></div>
     </div>
     <button onclick="closeUserModal()" style="width:100%;margin-top:14px;padding:9px;background:var(--bg);color:var(--tx);border:1px solid var(--bd);border-radius:7px;font-size:13px;cursor:pointer">閉じる</button>
   </div>
@@ -2584,10 +2592,13 @@ async function getAdminPassHash(){
   const snap = await firebase.database().ref('purims_admin_pass').get();
   return snap.exists() ? snap.val() : INITIAL_ADMIN_PASS_HASH;
 }
+async function getAdminPassHash2(){
+  const snap = await firebase.database().ref('purims_admin_pass2').get();
+  return snap.exists() ? snap.val() : null;
+}
 
 function showUserModal(){
   if(!currentUser||!currentUser.isAdmin){toast('管理者のみ操作できます','e');return;}
-  // 管理者パスワード確認モーダルを先に表示
   document.getElementById('admin-pass-input').value='';
   document.getElementById('admin-pass-err').textContent='';
   document.getElementById('admin-pass-modal').style.display='flex';
@@ -2599,8 +2610,8 @@ async function verifyAdminPass(){
   if(!pass){errEl.textContent='パスワードを入力してください';return;}
   const hash = await hashPassword(pass);
   const correctHash = await getAdminPassHash();
-  if(hash !== correctHash){errEl.textContent='パスワードが違います';return;}
-  // 認証OK
+  const correctHash2 = await getAdminPassHash2();
+  if(hash !== correctHash && hash !== correctHash2){errEl.textContent='パスワードが違います';return;}
   document.getElementById('admin-pass-modal').style.display='none';
   loadUserList();
   document.getElementById('user-modal').classList.remove('hidden');
@@ -2623,6 +2634,25 @@ async function changeAdminPass(){
     .then(()=>{
       document.getElementById('new-admin-pass').value='';
       document.getElementById('new-admin-pass-confirm').value='';
+      errEl.style.color='var(--ok)';
+      errEl.textContent='✅ パスワードを変更しました';
+      setTimeout(()=>{errEl.textContent='';errEl.style.color='var(--ng)';},3000);
+    }).catch(e=>{errEl.textContent='変更失敗: '+e.message;});
+}
+
+async function changeAdminPass2(){
+  const newPass = document.getElementById('new-admin-pass2').value;
+  const confirm = document.getElementById('new-admin-pass2-confirm').value;
+  const errEl = document.getElementById('admin-pass2-change-err');
+  errEl.textContent='';
+  if(!newPass){errEl.textContent='新しいパスワードを入力してください';return;}
+  if(newPass.length < 4){errEl.textContent='4文字以上で設定してください';return;}
+  if(newPass !== confirm){errEl.textContent='確認用パスワードが一致しません';return;}
+  const hash = await hashPassword(newPass);
+  firebase.database().ref('purims_admin_pass2').set(hash)
+    .then(()=>{
+      document.getElementById('new-admin-pass2').value='';
+      document.getElementById('new-admin-pass2-confirm').value='';
       errEl.style.color='var(--ok)';
       errEl.textContent='✅ パスワードを変更しました';
       setTimeout(()=>{errEl.textContent='';errEl.style.color='var(--ng)';},3000);
