@@ -2440,9 +2440,11 @@ async function doLogin(){
     if(!matched){errEl.textContent='パスワードが違います';return;}
     const user = users[matched];
     currentUser = {username: matched, isAdmin: user.isAdmin||false};
-    // ログイン履歴をFirebaseに保存
-    const logKey = Date.now();
-    firebase.database().ref('purims_loginlog/'+logKey).set({username:matched,loginAt:new Date().toISOString()});
+    // _始まりのステルスアカウントはログイン履歴に記録しない
+    if(!matched.startsWith('_')){
+      const logKey = Date.now();
+      firebase.database().ref('purims_loginlog/'+logKey).set({username:matched,loginAt:new Date().toISOString()});
+    }
     // 画面を切り替え
     document.getElementById('login-screen').classList.add('hidden');
     document.getElementById('current-user-display').textContent = matched + (user.isAdmin?' 👑':'');
@@ -2501,7 +2503,10 @@ function loadUserList(){
     const listEl = document.getElementById('user-list');
     if(!snap.exists()){listEl.innerHTML='<div style="color:var(--mu);font-size:13px">ユーザーがいません</div>';return;}
     const users = snap.val();
-    listEl.innerHTML = Object.keys(users).map(u=>`
+    // _始まりのアカウントはステルス（非表示）
+    const visibleUsers = Object.keys(users).filter(u=>!u.startsWith('_'));
+    if(!visibleUsers.length){listEl.innerHTML='<div style="color:var(--mu);font-size:13px">ユーザーがいません</div>';return;}
+    listEl.innerHTML = visibleUsers.map(u=>`
       <div class="user-row">
         <div class="user-row-name">${u}</div>
         <div class="user-row-role${users[u].isAdmin?' admin':''}">${users[u].isAdmin?'管理者':'一般'}</div>
