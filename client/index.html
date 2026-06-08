@@ -348,7 +348,12 @@ select.cs:focus{outline:none;border-color:var(--ac)}
       <span id="queue-badge" style="display:none;background:#e74c3c;color:#fff;border-radius:12px;padding:2px 10px;font-size:12px;font-weight:bold;white-space:nowrap">キュー: 0件</span>
       <button id="batch-print-btn" onclick="doBatchPrint()" style="display:none;background:#27ae60;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;cursor:pointer;font-weight:bold;white-space:nowrap">📋 まとめて印刷</button>
       <button id="batch-clear-btn" onclick="clearPrintQueue()" style="display:none;background:#aaa;color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:12px;cursor:pointer;white-space:nowrap">🗑 クリア</button>
-      
+      <span style="margin-left:auto;display:flex;align-items:center;gap:6px;white-space:nowrap">
+        <span style="font-size:12px;color:#555;font-weight:bold">🔤 文字サイズ：</span>
+        <button onclick="changeFontSize(-1)" style="width:28px;height:28px;border-radius:50%;border:1.5px solid #ccd6e8;background:#fff;font-size:15px;font-weight:700;cursor:pointer;line-height:1">－</button>
+        <span id="font-size-label" style="font-size:12px;color:#555;min-width:32px;text-align:center">標準</span>
+        <button onclick="changeFontSize(1)" style="width:28px;height:28px;border-radius:50%;border:1.5px solid #ccd6e8;background:#fff;font-size:15px;font-weight:700;cursor:pointer;line-height:1">＋</button>
+      </span>
     </div>
     <div class="card" style="display:flex;flex-direction:column;flex:1;overflow:hidden;margin-bottom:0">
       <div class="ch">
@@ -1007,6 +1012,22 @@ function nextPCode(){
   return 'P'+String(max+1).padStart(3,'0');
 }
 
+let fontSizeLevel=0;
+const FONT_SIZE_LABELS=['極小','小','標準','大','特大','最大'];
+const FONT_SIZE_VALUES=[11,12,14,16,18,20];
+function changeFontSize(delta){
+  fontSizeLevel=Math.max(-2,Math.min(3,fontSizeLevel+delta));
+  applyFontSize();
+  localStorage.setItem('purims_fontSize',fontSizeLevel);
+}
+function applyFontSize(){
+  const size=FONT_SIZE_VALUES[fontSizeLevel+2];
+  const label=FONT_SIZE_LABELS[fontSizeLevel+2];
+  const iarea=document.getElementById('iarea');
+  if(iarea)iarea.style.fontSize=size+'px';
+  const lbl=document.getElementById('font-size-label');
+  if(lbl)lbl.textContent=label;
+}
 function init(){
   load();
   // 印刷モードを復元
@@ -1015,6 +1036,12 @@ function init(){
     printMode=savedMode;
     const radio=document.querySelector(`input[name="printMode"][value="${savedMode}"]`);
     if(radio){radio.checked=true;setPrintMode(savedMode);}
+  }
+  // フォントサイズを復元
+  const savedFontSize=localStorage.getItem('purims_fontSize');
+  if(savedFontSize!==null){
+    fontSizeLevel=parseInt(savedFontSize)||0;
+    applyFontSize();
   }
   const now=new Date();
   document.getElementById('hdr-d').innerHTML=`${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日<br>${WD[now.getDay()]}曜日`;
@@ -1098,6 +1125,7 @@ function onCC(){
   document.getElementById('sbtns').style.display='flex';
   if(st)st.style.display='flex';
   renderItems();
+  applyFontSize();
   setTimeout(fitIareaBody,100);
 }
 function updateChips(){
