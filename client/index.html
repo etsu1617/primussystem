@@ -1013,21 +1013,21 @@ function nextPCode(){
 }
 
 let fontSizeLevel=0;
-const FONT_SIZE_LABELS=['極小','小','標準','大','特大','最大'];
-const FONT_SIZE_VALUES=[11,12,14,16,18,20];
+const FONT_SIZE_LEVELS=[-30,-20,-10,0,10,20,30,40,50];
 function changeFontSize(delta){
-  fontSizeLevel=Math.max(-2,Math.min(3,fontSizeLevel+delta));
+  const idx=FONT_SIZE_LEVELS.indexOf(fontSizeLevel);
+  const newIdx=Math.max(0,Math.min(FONT_SIZE_LEVELS.length-1,idx+delta));
+  fontSizeLevel=FONT_SIZE_LEVELS[newIdx];
   applyFontSize();
   localStorage.setItem('purims_fontSize',fontSizeLevel);
 }
 function applyFontSize(){
-  const size=FONT_SIZE_VALUES[fontSizeLevel+2];
-  const label=FONT_SIZE_LABELS[fontSizeLevel+2];
-  // iarea-body内のtd・inputに直接サイズを適用
+  const pct=100+fontSizeLevel;
+  const label=(fontSizeLevel===0?'100%':(fontSizeLevel>0?'+':'')+fontSizeLevel+'%');
   const body=document.getElementById('iarea-body');
   if(body){
-    body.querySelectorAll('td').forEach(td=>td.style.fontSize=size+'px');
-    body.querySelectorAll('input.qty').forEach(el=>el.style.fontSize=size+'px');
+    body.querySelectorAll('td').forEach(td=>td.style.fontSize=(13*pct/100)+'px');
+    body.querySelectorAll('input.qty').forEach(el=>el.style.fontSize=(14*pct/100)+'px');
   }
   const lbl=document.getElementById('font-size-label');
   if(lbl)lbl.textContent=label;
