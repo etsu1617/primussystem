@@ -1023,8 +1023,12 @@ function changeFontSize(delta){
 function applyFontSize(){
   const size=FONT_SIZE_VALUES[fontSizeLevel+2];
   const label=FONT_SIZE_LABELS[fontSizeLevel+2];
-  const iarea=document.getElementById('iarea');
-  if(iarea)iarea.style.fontSize=size+'px';
+  // iarea-body内のtd・inputに直接サイズを適用
+  const body=document.getElementById('iarea-body');
+  if(body){
+    body.querySelectorAll('td').forEach(td=>td.style.fontSize=size+'px');
+    body.querySelectorAll('input.qty').forEach(el=>el.style.fontSize=size+'px');
+  }
   const lbl=document.getElementById('font-size-label');
   if(lbl)lbl.textContent=label;
 }
@@ -1125,8 +1129,7 @@ function onCC(){
   document.getElementById('sbtns').style.display='flex';
   if(st)st.style.display='flex';
   renderItems();
-  applyFontSize();
-  setTimeout(fitIareaBody,100);
+  setTimeout(()=>{applyFontSize();fitIareaBody();},100);
 }
 function updateChips(){
   if(!curC)return;
