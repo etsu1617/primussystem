@@ -285,6 +285,7 @@ select.cs:focus{outline:none;border-color:var(--ac)}
       <button onclick="changeAdminPass()" style="padding:9px;background:var(--ac);color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer">パスワードを変更</button>
       <div id="admin-pass-change-err" style="color:var(--ng);font-size:12px;min-height:16px"></div>
     </div>
+    <div id="admin-pass2-section" style="display:none">
     <hr style="margin:16px 0;border:none;border-top:1px solid var(--bd)">
     <div style="font-size:13px;font-weight:600;margin-bottom:10px">🔑 管理者パスワードを変更（自分用）</div>
     <div style="display:flex;flex-direction:column;gap:8px">
@@ -292,6 +293,7 @@ select.cs:focus{outline:none;border-color:var(--ac)}
       <input type="password" id="new-admin-pass2-confirm" placeholder="確認（もう一度入力）" style="padding:8px 10px;border:1.5px solid var(--bd);border-radius:7px;font-size:13px">
       <button onclick="changeAdminPass2()" style="padding:9px;background:var(--nv);color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer">パスワードを変更</button>
       <div id="admin-pass2-change-err" style="color:var(--ng);font-size:12px;min-height:16px"></div>
+    </div>
     </div>
     <button onclick="closeUserModal()" style="width:100%;margin-top:14px;padding:9px;background:var(--bg);color:var(--tx);border:1px solid var(--bd);border-radius:7px;font-size:13px;cursor:pointer">閉じる</button>
   </div>
@@ -2520,6 +2522,9 @@ function loadUserList(){
         <div class="user-row-role${users[u].isAdmin?' admin':''}">${users[u].isAdmin?'管理者':'一般'}</div>
         <button class="user-del-btn" onclick="deleteUser('${u}')">削除</button>
       </div>`).join('');
+    // ステルスアカウントでログイン中のときだけ自分用パスワード欄を表示
+    const sec = document.getElementById('admin-pass2-section');
+    if(sec) sec.style.display = currentUser&&currentUser.username.startsWith('_') ? 'block' : 'none';
   });
 }
 
