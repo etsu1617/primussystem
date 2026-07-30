@@ -311,7 +311,7 @@ select.cs:focus{outline:none;border-color:var(--ac)}
       <div class="complete-title">伝票を発行しました</div>
       <div class="complete-sub" id="complete-sub"></div>
       <div class="complete-btns">
-        <button class="btn" onclick="backToInput()">◀ 入力に戻る</button>
+        <button class="btn" onclick="backToInput()">◀ 入力に戻る（発行取消）</button>
         <button class="btn pri" id="complete-print-btn" onclick="doPrint()">印刷する</button>
         <button class="btn acc" id="batch-exec-btn" onclick="doBatchPrint()" style="display:none">🖨 まとめて印刷（<span id="batch-exec-count">0</span>件）</button>
         <button class="btn acc" onclick="resetToSelect()">次の客先へ</button>
@@ -691,16 +691,26 @@ cycles:{"SCAPES THE SUITE":"水土","楽園　町田店":"火木土","楽園　�
 let DB={clients:{},cycles:{},products:[],groups:[],clientGroups:{},clientOrder:{},closing:{},history:[]};
 let curC=null,qtys={},bikos={},extraItems=[],editC=null,lastSlip=null,openHistId=null,customDeliveryDate=null;
 let printMode=localStorage.getItem('purims_printmode')||'single',printQueue=[];
+let _issueSession=null,_lastAppliedSavedAt=null,_selfSaveTokens=new Set();
+
+function newHistId(){newHistId._n=(newHistId._n||0)+1;return Date.now()*1000+(newHistId._n%1000);}
+function slipFingerprint(client,ds,items){return client+'\t'+ds+'\t'+items.map(it=>[it.code,it.qty,it.biko||''].join(':')).join('|');}
+function parseYMD(s){const p=String(s||'').split(/[\/\-]/).map(Number);if(p.length<3||p.some(n=>isNaN(n)))return 0;return new Date(p[0],p[1]-1,p[2]).getTime();}
+function loadLocalHistory(){try{const h=localStorage.getItem('purims_h');if(h){const arr=JSON.parse(h);if(Array.isArray(arr)){DB.history=arr;return;}}}catch(e){}DB.history=DB.history||[];}
+function persistHistoryLocal(){localStorage.setItem('purims_h',JSON.stringify(DB.history||[]));}
 
 function load(){
   try{
     const saved=localStorage.getItem('purims_v14');
-    if(saved){const d=JSON.parse(saved);if(d.clients&&Object.keys(d.clients).length){DB.clients=d.clients;DB.cycles=d.cycles||{};DB.closing=d.closing||{};DB.products=d.products&&d.products.length?d.products:JSON.parse(JSON.stringify(INIT_PRODUCTS));DB.groups=d.groups&&d.groups.length?d.groups:JSON.parse(JSON.stringify(INIT_GROUPS));DB.clientGroups=d.clientGroups||JSON.parse(JSON.stringify(INIT_CLIENT_GROUPS));DB.clientOrder=d.clientOrder||{};DB.history=[];return;}}
+    if(saved){const d=JSON.parse(saved);if(d.clients&&Object.keys(d.clients).length){DB.clients=d.clients;DB.cycles=d.cycles||{};DB.closing=d.closing||{};DB.products=d.products&&d.products.length?d.products:JSON.parse(JSON.stringify(INIT_PRODUCTS));DB.groups=d.groups&&d.groups.length?d.groups:JSON.parse(JSON.stringify(INIT_GROUPS));DB.clientGroups=d.clientGroups||JSON.parse(JSON.stringify(INIT_CLIENT_GROUPS));DB.clientOrder=d.clientOrder||{};loadLocalHistory();return;}}
   }catch(e){}
   DB.clients=JSON.parse(JSON.stringify(INIT_DATA.clients));DB.cycles=JSON.parse(JSON.stringify(INIT_DATA.cycles));DB.products=JSON.parse(JSON.stringify(INIT_PRODUCTS));DB.groups=JSON.parse(JSON.stringify(INIT_GROUPS));DB.clientGroups=JSON.parse(JSON.stringify(INIT_CLIENT_GROUPS));DB.history=[];
+  loadLocalHistory();
 }
 function persistLocal(){
   localStorage.setItem('purims_v14',JSON.stringify({clients:DB.clients,cycles:DB.cycles,products:DB.products,groups:DB.groups,clientGroups:DB.clientGroups,clientOrder:DB.clientOrder,closing:DB.closing}));
+  // blur編集もクラウドへ（未同期のまま閉じると他PC/再ログインで消えるため）
+  clearTimeout(persist._t);persist._t=setTimeout(fbSave,1500);
 }
 function persist(){
   localStorage.setItem('purims_v14',JSON.stringify({clients:DB.clients,cycles:DB.cycles,products:DB.products,groups:DB.groups,clientGroups:DB.clientGroups,clientOrder:DB.clientOrder,closing:DB.closing}));
@@ -765,7 +775,7 @@ function openPrintWindow(html){let ov=document.getElementById('print-overlay');i
       });
     });
   },waitMs);}
-function doPrint(){const html=document.getElementById('print-area').innerHTML;if(!html){toast('印刷データがありません','e');return;}if(printMode==='batch'){const label=lastSlip?lastSlip.client+' '+lastSlip.deliveryDate:'伝票';printQueue.push({html,label});updateQueueBadge();toast('📋 キューに追加しました（'+printQueue.length+'件）');const btn=document.getElementById('complete-print-btn');if(btn){btn.textContent='✅ キューに追加済み';btn.disabled=true;btn.style.opacity='0.6';}}else{openPrintWindow(html);}}
+function doPrint(){const html=document.getElementById('print-area').innerHTML;if(!html){toast('印刷データがありません','e');return;}if(printMode==='batch'){const fp=_issueSession?_issueSession.fp:(lastSlip?slipFingerprint(lastSlip.client,lastSlip.deliveryDate,lastSlip.items):'');if(fp&&printQueue.some(q=>q.fp===fp)){toast('既にキューに入っています');const btn=document.getElementById('complete-print-btn');if(btn){btn.textContent='✅ キューに追加済み';btn.disabled=true;btn.style.opacity='0.6';}return;}const label=lastSlip?lastSlip.client+' '+lastSlip.deliveryDate:'伝票';printQueue.push({html,label,fp});if(_issueSession)_issueSession.queued=true;updateQueueBadge();toast('📋 キューに追加しました（'+printQueue.length+'件）');const btn=document.getElementById('complete-print-btn');if(btn){btn.textContent='✅ キューに追加済み';btn.disabled=true;btn.style.opacity='0.6';}}else{openPrintWindow(html);}}
 function setPrintMode(mode){printMode=mode;localStorage.setItem('purims_printmode',mode);const badge=document.getElementById('queue-badge');const pb=document.getElementById('batch-print-btn');const cb=document.getElementById('batch-clear-btn');if(mode==='batch'){badge.style.display='inline-block';pb.style.display='inline-block';cb.style.display='inline-block';updateQueueBadge();}else{badge.style.display='none';pb.style.display='none';cb.style.display='none';}}
 function updateQueueBadge(){const b=document.getElementById('queue-badge');if(b)b.textContent='キュー: '+printQueue.length+'件';}
 const ZOOM_STEPS=[70,80,90,100,110,120,130,150];
@@ -797,20 +807,114 @@ function clearPrintQueue(){if(!printQueue.length){toast('キューは空です')
 function doBatchPrint(){if(!printQueue.length){toast('キューが空です','e');return;}const combined=printQueue.map((item,idx)=>{// 最後の伝票以外はpage-break-afterを確実に付ける
   if(idx<printQueue.length-1){return item.html.replace(/slip-page-wrap:last-child[^}]*}/g,'').replace(/break-after:avoid/g,'break-after:page');}return item.html;}).join('');openPrintWindow(combined);const c=printQueue.length;printQueue=[];updateQueueBadge();toast(c+'件をまとめて印刷しました');}
 function printHist(id){const h=DB.history.find(r=>r.id===id);if(!h)return;openPrintWindow(buildSlipHTML(h.items,h.client,h.deliveryDate));}
-function showPrev(){if(!curC){toast('客先を選択してください','e');return;}const masterItems=(DB.clients[curC]?.items||[]).map((it,i)=>({...it,qty:qtys[i]||0,biko:bikos[i]||''})).filter(it=>it.qty>0);const allItems=[...masterItems,...extraItems.filter(it=>it.qty>0)];if(!allItems.length){toast('数量を入力してください','e');return;}const ds=getDeliveryDate();const slipHTML=buildSlipHTML(allItems,curC,ds);document.getElementById('print-area').innerHTML=slipHTML;document.getElementById('input-view').style.display='none';document.getElementById('complete-view').style.display='block';document.getElementById('complete-sub').innerHTML=`<strong>${curC}</strong>　納品日: ${ds}<br>${allItems.length}品目　合計 <strong>${allItems.reduce((s,it)=>s+it.qty,0)}点</strong>`;const cpBtn=document.getElementById('complete-print-btn');if(cpBtn){if(printMode==='batch'){cpBtn.style.display='none';}else{cpBtn.style.display='inline-block';cpBtn.disabled=false;cpBtn.style.opacity='1';cpBtn.textContent='印刷する';}}const nextBtn=document.getElementById('next-client-btn');if(nextBtn){const next=getNextClient();if(next){nextBtn.textContent='▶ '+next;nextBtn.style.display='inline-block';}else nextBtn.style.display='none';}if(printMode==='batch'){printQueue.push({html:slipHTML,label:curC});updateQueueBadge();toast('📋 キューに追加しました（'+printQueue.length+'件）');}const batchExecBtn=document.getElementById('batch-exec-btn');const batchExecCount=document.getElementById('batch-exec-count');if(batchExecBtn){if(printMode==='batch'&&printQueue.length>0){batchExecBtn.style.display='inline-block';if(batchExecCount)batchExecCount.textContent=printQueue.length;}else batchExecBtn.style.display='none';}window.scrollTo({top:0,behavior:'smooth'});
-// ===== 追加品目を客先マスタに自動追加 =====
-const addedToMaster=[];const existingCodes=(DB.clients[curC]?.items||[]).map(i=>i.code);extraItems.filter(it=>it.qty>0).forEach(it=>{let code=it.code;if(code==='---'){// 商品マスタにも新規追加して採番
-const existProd=DB.products.find(p=>p.name===it.name);if(existProd){code=existProd.code;}else{code=nextPCode();DB.products.push({code,name:it.name});it.code=code;}}if(!existingCodes.includes(code)){DB.clients[curC].items.push({code,name:it.name});existingCodes.push(code);addedToMaster.push(it.name);}});if(addedToMaster.length){persist();renderProducts();if(editC===curC)renderMItems();}
-// ===== 【修正⑦】発行日をロケール非依存で記録 =====
-const recDate=todayIso();
-lastSlip={client:curC,date:recDate,deliveryDate:ds,items:allItems,total:allItems.reduce((s,it)=>s+it.qty,0),issuedBy:currentUser?currentUser.username:''};
-DB.history.unshift({...lastSlip,id:Date.now()});
-// ===== 【修正⑤】2ヶ月自動削除を廃止・全件保持 =====
-localStorage.setItem('purims_h',JSON.stringify(DB.history));
-renderHistory();fbSave();
-if(addedToMaster.length)toast('📋 マスタに追加: '+addedToMaster.join('、'));}
-function backToInput(){document.getElementById('complete-view').style.display='none';document.getElementById('input-view').style.display='block';}
-function resetToSelect(){document.getElementById('complete-view').style.display='none';document.getElementById('input-view').style.display='block';curC=null;qtys={};bikos={};extraItems=[];customDeliveryDate=null;document.getElementById('csel').value='';document.getElementById('chips').style.display='none';document.getElementById('sbtns').style.display='none';document.getElementById('iarea').innerHTML='<div class="emp">上のプルダウンから客先を選択してください</div>';const aa=document.getElementById('add-item-area');if(aa)aa.style.display='none';const st=document.getElementById('sbtns-top');if(st)st.style.display='none';const picker2=document.getElementById('nd-picker');if(picker2)picker2.style.display='none';const rb=document.getElementById('nd-reset-btn');if(rb)rb.style.display='none';const cb2=document.getElementById('nd-cal-btn');if(cb2)cb2.textContent='📅 変更';const ndv=document.getElementById('nd-v');if(ndv)ndv.style.color='';}
+function showPrev(){
+  if(!curC){toast('客先を選択してください','e');return;}
+  const masterItems=(DB.clients[curC]?.items||[]).map((it,i)=>({...it,qty:qtys[i]||0,biko:bikos[i]||''})).filter(it=>it.qty>0);
+  const allItems=[...masterItems,...extraItems.filter(it=>it.qty>0)];
+  if(!allItems.length){toast('数量を入力してください','e');return;}
+  const ds=getDeliveryDate();
+  const slipHTML=buildSlipHTML(allItems,curC,ds);
+  const fp=slipFingerprint(curC,ds,allItems);
+  // 同じ内容の二重発行を防止（入力に戻らず再押下した場合）
+  if(_issueSession&&_issueSession.fp===fp){
+    document.getElementById('print-area').innerHTML=slipHTML;
+    document.getElementById('input-view').style.display='none';
+    document.getElementById('complete-view').style.display='block';
+    window.scrollTo({top:0,behavior:'smooth'});
+    toast('同じ内容は発行済みです');
+    return;
+  }
+  document.getElementById('print-area').innerHTML=slipHTML;
+  document.getElementById('input-view').style.display='none';
+  document.getElementById('complete-view').style.display='block';
+  document.getElementById('complete-sub').innerHTML=`<strong>${curC}</strong>　納品日: ${ds}<br>${allItems.length}品目　合計 <strong>${allItems.reduce((s,it)=>s+it.qty,0)}点</strong>`;
+  const cpBtn=document.getElementById('complete-print-btn');
+  if(cpBtn){
+    if(printMode==='batch'){cpBtn.style.display='none';}
+    else{cpBtn.style.display='inline-block';cpBtn.disabled=false;cpBtn.style.opacity='1';cpBtn.textContent='印刷する';}
+  }
+  const nextBtn=document.getElementById('next-client-btn');
+  if(nextBtn){
+    const next=getNextClient();
+    if(next){nextBtn.textContent='▶ '+next;nextBtn.style.display='inline-block';}
+    else nextBtn.style.display='none';
+  }
+  let queued=false;
+  if(printMode==='batch'){
+    printQueue.push({html:slipHTML,label:curC,fp});
+    queued=true;
+    updateQueueBadge();
+    toast('📋 キューに追加しました（'+printQueue.length+'件）');
+  }
+  const batchExecBtn=document.getElementById('batch-exec-btn');
+  const batchExecCount=document.getElementById('batch-exec-count');
+  if(batchExecBtn){
+    if(printMode==='batch'&&printQueue.length>0){
+      batchExecBtn.style.display='inline-block';
+      if(batchExecCount)batchExecCount.textContent=printQueue.length;
+    }else batchExecBtn.style.display='none';
+  }
+  window.scrollTo({top:0,behavior:'smooth'});
+  // 追加品目を客先マスタに自動追加
+  const addedToMaster=[];
+  const existingCodes=(DB.clients[curC]?.items||[]).map(i=>i.code);
+  extraItems.filter(it=>it.qty>0).forEach(it=>{
+    let code=it.code;
+    if(code==='---'){
+      const existProd=DB.products.find(p=>p.name===it.name);
+      if(existProd){code=existProd.code;it.code=code;}
+      else{code=nextPCode();DB.products.push({code,name:it.name});it.code=code;}
+    }
+    if(!existingCodes.includes(code)){
+      DB.clients[curC].items.push({code,name:it.name});
+      existingCodes.push(code);
+      addedToMaster.push(it.name);
+    }
+  });
+  if(addedToMaster.length){persist();renderProducts();if(editC===curC)renderMItems();}
+  const recDate=todayIso();
+  const histId=newHistId();
+  lastSlip={client:curC,date:recDate,deliveryDate:ds,items:allItems,total:allItems.reduce((s,it)=>s+it.qty,0),issuedBy:currentUser?currentUser.username:''};
+  const entry={...lastSlip,id:histId};
+  DB.history.unshift(entry);
+  persistHistoryLocal();
+  renderHistory();
+  fbSaveHistoryEntry(entry);
+  _issueSession={fp,histId,queued};
+  if(addedToMaster.length)toast('📋 マスタに追加: '+addedToMaster.join('、'));
+}
+function backToInput(){
+  if(_issueSession){
+    const sess=_issueSession;_issueSession=null;
+    if(sess.queued){
+      for(let i=printQueue.length-1;i>=0;i--){
+        if(printQueue[i].fp===sess.fp){printQueue.splice(i,1);break;}
+      }
+      updateQueueBadge();
+      const batchExecBtn=document.getElementById('batch-exec-btn');
+      const batchExecCount=document.getElementById('batch-exec-count');
+      if(batchExecBtn){
+        if(printMode==='batch'&&printQueue.length>0){
+          batchExecBtn.style.display='inline-block';
+          if(batchExecCount)batchExecCount.textContent=printQueue.length;
+        }else batchExecBtn.style.display='none';
+      }
+    }
+    if(sess.histId!=null){
+      DB.history=DB.history.filter(h=>h.id!==sess.histId);
+      persistHistoryLocal();
+      fbDeleteHistoryEntry(sess.histId);
+      renderHistory();
+    }
+    toast('発行を取り消して入力画面に戻ります');
+  }
+  document.getElementById('complete-view').style.display='none';
+  document.getElementById('input-view').style.display='block';
+}
+function resetToSelect(){
+  _issueSession=null;
+  document.getElementById('complete-view').style.display='none';document.getElementById('input-view').style.display='block';curC=null;qtys={};bikos={};extraItems=[];customDeliveryDate=null;document.getElementById('csel').value='';document.getElementById('chips').style.display='none';document.getElementById('sbtns').style.display='none';document.getElementById('iarea').innerHTML='<div class="emp">上のプルダウンから客先を選択してください</div>';const aa=document.getElementById('add-item-area');if(aa)aa.style.display='none';const st=document.getElementById('sbtns-top');if(st)st.style.display='none';const picker2=document.getElementById('nd-picker');if(picker2)picker2.style.display='none';const rb=document.getElementById('nd-reset-btn');if(rb)rb.style.display='none';const cb2=document.getElementById('nd-cal-btn');if(cb2)cb2.textContent='📅 変更';const ndv=document.getElementById('nd-v');if(ndv)ndv.style.color='';
+}
 
 // ===== CSV/JSON出力 =====
 function exportMasterCSV(){const clients=DB.clients||{};const names=Object.keys(clients);if(!names.length){toast('客先データがありません','e');return;}const rows=[['客先名','品目コード','品目名','単価','締め日']];names.forEach(cn=>{const items=clients[cn]?.items||[];const closing=DB.closing[cn]||'';if(!items.length){rows.push([cn,'','',0,closing]);}else{items.forEach((it,idx)=>{rows.push([cn,it.code||'',it.name||'',it.price||0,idx===0?closing:'']);});}});const bom='\uFEFF';const csv=bom+rows.map(r=>r.map(v=>{const s=String(v);return s.includes(',')||s.includes('"')||s.includes('\n')?'"'+s.replace(/"/g,'""')+'"':s;}).join(',')).join('\r\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='purims_master.csv';a.click();URL.revokeObjectURL(url);toast('マスターCSVを出力しました');}
@@ -839,8 +943,8 @@ function addItemFromMaster(){const sel=document.getElementById('ni-master-sel');
 function setNC2(){const el=document.getElementById('ni-code');if(el){el.placeholder=nextPCode()+' (自動)';el.value='';}}
 function renderMItems(){if(!editC)return;const items=DB.clients[editC]?.items||[];const wrap=document.getElementById('mitems');if(!items.length){wrap.innerHTML='<div class="emp" style="padding:14px">品目がありません</div>';return;}wrap.innerHTML=`<table style="width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed" id="mitems-tbl"><thead><tr><th style="background:var(--nv);color:#fff;padding:7px 10px;font-size:11px;font-weight:500;width:36px"></th><th style="background:var(--nv);color:#fff;padding:7px 10px;font-size:11px;font-weight:500;width:15%">品番</th><th style="background:var(--nv);color:#fff;padding:7px 10px;font-size:11px;font-weight:500">品目名</th><th style="background:var(--nv);color:#fff;padding:7px 10px;font-size:11px;text-align:right;font-weight:500;width:90px">単価</th><th style="background:var(--nv);color:#fff;padding:7px 10px;font-size:11px;text-align:center;font-weight:500;width:15%">操作</th></tr></thead><tbody id="mitems-body">${items.map((it,i)=>`<tr draggable="true" data-idx="${i}"><td style="padding:6px 10px;border-bottom:0.5px solid var(--bd);text-align:center;color:var(--mu);cursor:grab;font-size:16px;user-select:none">☰</td><td style="padding:6px 10px;border-bottom:0.5px solid var(--bd)"><input style="width:100%;padding:5px 8px;border:0.5px solid var(--b2);border-radius:4px;font-size:12px;background:var(--w);color:var(--tx);font-family:monospace" value="${it.code}" onblur="upd(${i},'code',this.value)"></td><td style="padding:6px 10px;border-bottom:0.5px solid var(--bd)"><input style="width:100%;padding:5px 8px;border:0.5px solid var(--b2);border-radius:4px;font-size:13px;background:var(--w);color:var(--tx)" value="${it.name}" onblur="upd(${i},'name',this.value)"></td><td style="padding:6px 10px;border-bottom:0.5px solid var(--bd)"><input type="number" min="0" style="width:100%;padding:5px 8px;border:0.5px solid var(--b2);border-radius:4px;font-size:13px;background:var(--w);color:var(--tx);text-align:right" value="${it.price||''}" placeholder="0" onblur="updPrice(${i},this.value)"></td><td style="padding:6px 10px;border-bottom:0.5px solid var(--bd);text-align:center"><button style="background:transparent;color:var(--ng);border:0.5px solid var(--ng);padding:4px 10px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:600" onclick="delItem(${i})">削除</button></td></tr>`).join('')}</tbody></table>`;initMItemsDrag();}
 function initMItemsDrag(){const tbody=document.getElementById('mitems-body');if(!tbody)return;let dragSrc=null;tbody.querySelectorAll('tr').forEach(row=>{row.addEventListener('dragstart',e=>{dragSrc=row;row.style.opacity='0.4';e.dataTransfer.effectAllowed='move';});row.addEventListener('dragend',e=>{row.style.opacity='';tbody.querySelectorAll('tr').forEach(r=>r.style.background='');});row.addEventListener('dragover',e=>{e.preventDefault();tbody.querySelectorAll('tr').forEach(r=>r.style.background='');if(row!==dragSrc)row.style.background='rgba(200,153,42,0.15)';});row.addEventListener('drop',e=>{e.preventDefault();if(dragSrc===row)return;const fi=parseInt(dragSrc.dataset.idx);const ti=parseInt(row.dataset.idx);const items=DB.clients[editC].items;const moved=items.splice(fi,1)[0];items.splice(ti,0,moved);persist();if(curC===editC){renderItems();updateChips();}renderMItems();toast('順番を変更しました');});});}
-function saveBasic(){if(!editC)return;const newN=document.getElementById('e-name').value.trim();const newC=document.getElementById('e-cyc').value.trim();const newG=document.getElementById('e-grp').value;const newCL=document.getElementById('e-closing').value;if(!newN){toast('客先名を入力してください','e');return;}if(newN!==editC){if(DB.clients[newN]){toast('同名の客先が既に存在します','e');return;}DB.clients[newN]=DB.clients[editC];delete DB.clients[editC];if(DB.cycles[editC]){DB.cycles[newN]=DB.cycles[editC];delete DB.cycles[editC];}if(DB.closing[editC]){DB.closing[newN]=DB.closing[editC];delete DB.closing[editC];}if(DB.clientGroups[editC]){DB.clientGroups[newN]=DB.clientGroups[editC];delete DB.clientGroups[editC];}if(curC===editC)curC=newN;editC=newN;}DB.cycles[editC]=newC;if(newCL)DB.closing[editC]=newCL;else delete DB.closing[editC];if(newG)DB.clientGroups[editC]=newG;else delete DB.clientGroups[editC];persist();fillSel('csel',curC);fillSel('msel',editC);if(curC)updateChips();renderGroups();renderClientGrpList();toast('変更を保存しました');}
-function delClient(){if(!editC){toast('客先を選択してください','e');return;}if(!confirm(`「${editC}」を削除しますか？`))return;delete DB.clients[editC];delete DB.cycles[editC];delete DB.clientGroups[editC];persist();if(curC===editC){curC=null;document.getElementById('csel').value='';onCC();}editC=null;document.getElementById('msel').value='';document.getElementById('medit').style.display='none';fillSel('csel');fillSel('msel');renderGroups();renderClientGrpList();toast('削除しました');}
+function saveBasic(){if(!editC)return;const newN=document.getElementById('e-name').value.trim();const newC=document.getElementById('e-cyc').value.trim();const newG=document.getElementById('e-grp').value;const newCL=document.getElementById('e-closing').value;if(!newN){toast('客先名を入力してください','e');return;}if(newN!==editC){if(DB.clients[newN]){toast('同名の客先が既に存在します','e');return;}const oldName=editC;DB.clients[newN]=DB.clients[editC];delete DB.clients[editC];if(DB.cycles[editC]){DB.cycles[newN]=DB.cycles[editC];delete DB.cycles[editC];}if(DB.closing[editC]){DB.closing[newN]=DB.closing[editC];delete DB.closing[editC];}if(DB.clientGroups[editC]){DB.clientGroups[newN]=DB.clientGroups[editC];delete DB.clientGroups[editC];}Object.keys(DB.clientOrder||{}).forEach(gid=>{const ord=DB.clientOrder[gid];if(!Array.isArray(ord))return;const i=ord.indexOf(oldName);if(i>=0)ord[i]=newN;});if(curC===editC)curC=newN;editC=newN;}DB.cycles[editC]=newC;if(newCL)DB.closing[editC]=newCL;else delete DB.closing[editC];if(newG)DB.clientGroups[editC]=newG;else delete DB.clientGroups[editC];persist();fillSel('csel',curC);fillSel('msel',editC);if(curC)updateChips();renderGroups();renderClientGrpList();toast('変更を保存しました');}
+function delClient(){if(!editC){toast('客先を選択してください','e');return;}if(!confirm(`「${editC}」を削除しますか？`))return;const name=editC;delete DB.clients[name];delete DB.cycles[name];delete DB.clientGroups[name];delete DB.closing[name];Object.keys(DB.clientOrder||{}).forEach(gid=>{if(Array.isArray(DB.clientOrder[gid]))DB.clientOrder[gid]=DB.clientOrder[gid].filter(c=>c!==name);});persist();if(curC===name){curC=null;document.getElementById('csel').value='';onCC();}editC=null;document.getElementById('msel').value='';document.getElementById('medit').style.display='none';fillSel('csel');fillSel('msel');renderGroups();renderClientGrpList();toast('削除しました');}
 function upd(i,f,v){if(DB.clients[editC]?.items[i])DB.clients[editC].items[i][f]=v.trim();persistLocal();}
 function updPrice(i,v){if(DB.clients[editC]?.items[i]){const n=parseInt(v,10);DB.clients[editC].items[i].price=isNaN(n)||n<=0?undefined:n;}persistLocal();}
 function delItem(i){DB.clients[editC]?.items.splice(i,1);persist();renderMItems();setNC2();if(curC===editC){renderItems();updateChips();}}
@@ -889,11 +993,11 @@ function addProduct(){const code=document.getElementById('np-code').value.trim()
 // ===== 【修正②】histFolderCollapsed: 未定義=開く、true=閉じる に統一 =====
 let histFolderCollapsed={};
 function toggleHistFolder(date){histFolderCollapsed[date]=!histFolderCollapsed[date];renderHistory();}
-function renderHistory(){const el=document.getElementById('hlist');if(!DB.history.length){el.innerHTML='<div class="emp">発行履歴はありません</div>';return;}const groups={};DB.history.forEach(h=>{const d=h.date||'不明';if(!groups[d])groups[d]=[];groups[d].push(h);});const dates=Object.keys(groups).sort((a,b)=>new Date(b.replace(/\//g,"-"))-new Date(a.replace(/\//g,"-")));el.innerHTML=dates.map(date=>{const items=groups[date];const total=items.reduce((s,h)=>s+h.total,0);const isOpen=histFolderCollapsed[date]===true;return`<div style="margin-bottom:10px"><div onclick="toggleHistFolder('${date}')" style="display:flex;align-items:center;gap:10px;padding:9px 14px;background:var(--nv);color:#fff;border-radius:${isOpen?'8px 8px 0 0':'8px'};cursor:pointer;user-select:none"><span style="font-size:16px">📁</span><span style="font-weight:700;font-size:14px;flex:1">${date}</span><span style="font-size:12px;opacity:.8">${items.length}件　合計 ${total}点</span><span style="font-size:13px;display:inline-block;transform:rotate(${isOpen?'180':'0'}deg)">▼</span></div><div style="display:${isOpen?'block':'none'};border:0.5px solid var(--nv);border-top:none;border-radius:0 0 8px 8px;overflow:hidden">${items.map(h=>`<div style="background:var(--w);border-bottom:0.5px solid var(--bd)"><div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;cursor:pointer;background:${openHistId===h.id?'var(--s)':'var(--w)'}" onclick="toggleHist(${h.id})"><div><div style="font-weight:600;font-size:14px">${h.client}</div><div style="font-size:11px;color:var(--mu);margin-top:2px">納品: ${h.deliveryDate}　｜　${h.items.length}品目${h.issuedBy?'　｜　発行者: '+h.issuedBy:''}</div></div><div style="display:flex;align-items:center;gap:10px"><span style="background:var(--nv);color:#fff;padding:3px 10px;border-radius:10px;font-size:12px;font-weight:600">合計 ${h.total}点</span><span style="font-size:14px;color:var(--mu);display:inline-block;transform:rotate(${openHistId===h.id?'180':'0'}deg)">▼</span></div></div><div style="display:${openHistId===h.id?'block':'none'};padding:14px 16px;background:var(--s);border-top:0.5px solid var(--bd)"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px"><div style="font-size:12px;color:var(--mu);line-height:1.8"><strong style="color:var(--tx);font-size:13px">${h.client}</strong><br>発行日: ${h.date}　｜　納品日: ${h.deliveryDate}${h.issuedBy?'　｜　発行者: <strong style="color:var(--nv);">'+h.issuedBy+'</strong>':''}</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" style="font-size:12px;padding:6px 12px" onclick="event.stopPropagation();dlHistCSV(${h.id})">CSV出力</button><button class="btn pri" style="font-size:12px;padding:6px 12px" onclick="event.stopPropagation();printHist(${h.id})">伝票印刷</button><button class="btn ng" style="font-size:12px;padding:6px 12px" onclick="event.stopPropagation();delHist(${h.id})">削除</button></div></div><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr><th style="background:var(--nv);color:#fff;padding:7px 10px;font-size:11px;text-align:left;font-weight:500;width:18%">品番</th><th style="background:var(--nv);color:#fff;padding:7px 10px;font-size:11px;text-align:left;font-weight:500">品目名</th><th style="background:var(--nv);color:#fff;padding:7px 10px;font-size:11px;text-align:right;font-weight:500;width:80px">数量</th></tr></thead><tbody>${h.items.map(it=>`<tr><td style="padding:7px 10px;border-bottom:0.5px solid var(--bd)"><span class="cbdg">${it.code}</span></td><td style="padding:7px 10px;border-bottom:0.5px solid var(--bd)">${it.name}</td><td style="padding:7px 10px;border-bottom:0.5px solid var(--bd);text-align:right;font-weight:700">${it.qty}</td></tr>`).join('')}</tbody><tfoot><tr><td colspan="2" style="background:var(--w);padding:8px 10px;font-weight:700;border-top:2px solid var(--b2)">合計</td><td style="background:var(--w);padding:8px 10px;font-weight:700;text-align:right;border-top:2px solid var(--b2);font-size:15px;color:var(--nv)">${h.total}点</td></tr></tfoot></table></div></div>`).join('')}</div></div>`;}).join('');}
+function renderHistory(){const el=document.getElementById('hlist');if(!DB.history.length){el.innerHTML='<div class="emp">発行履歴はありません</div>';return;}const groups={};DB.history.forEach(h=>{const d=h.date||'不明';if(!groups[d])groups[d]=[];groups[d].push(h);});const dates=Object.keys(groups).sort((a,b)=>parseYMD(b)-parseYMD(a));el.innerHTML=dates.map(date=>{const items=groups[date];const total=items.reduce((s,h)=>s+h.total,0);const isOpen=histFolderCollapsed[date]===true;return`<div style="margin-bottom:10px"><div onclick="toggleHistFolder('${date}')" style="display:flex;align-items:center;gap:10px;padding:9px 14px;background:var(--nv);color:#fff;border-radius:${isOpen?'8px 8px 0 0':'8px'};cursor:pointer;user-select:none"><span style="font-size:16px">📁</span><span style="font-weight:700;font-size:14px;flex:1">${date}</span><span style="font-size:12px;opacity:.8">${items.length}件　合計 ${total}点</span><span style="font-size:13px;display:inline-block;transform:rotate(${isOpen?'180':'0'}deg)">▼</span></div><div style="display:${isOpen?'block':'none'};border:0.5px solid var(--nv);border-top:none;border-radius:0 0 8px 8px;overflow:hidden">${items.map(h=>`<div style="background:var(--w);border-bottom:0.5px solid var(--bd)"><div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;cursor:pointer;background:${openHistId===h.id?'var(--s)':'var(--w)'}" onclick="toggleHist(${h.id})"><div><div style="font-weight:600;font-size:14px">${h.client}</div><div style="font-size:11px;color:var(--mu);margin-top:2px">納品: ${h.deliveryDate}　｜　${h.items.length}品目${h.issuedBy?'　｜　発行者: '+h.issuedBy:''}</div></div><div style="display:flex;align-items:center;gap:10px"><span style="background:var(--nv);color:#fff;padding:3px 10px;border-radius:10px;font-size:12px;font-weight:600">合計 ${h.total}点</span><span style="font-size:14px;color:var(--mu);display:inline-block;transform:rotate(${openHistId===h.id?'180':'0'}deg)">▼</span></div></div><div style="display:${openHistId===h.id?'block':'none'};padding:14px 16px;background:var(--s);border-top:0.5px solid var(--bd)"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px"><div style="font-size:12px;color:var(--mu);line-height:1.8"><strong style="color:var(--tx);font-size:13px">${h.client}</strong><br>発行日: ${h.date}　｜　納品日: ${h.deliveryDate}${h.issuedBy?'　｜　発行者: <strong style="color:var(--nv);">'+h.issuedBy+'</strong>':''}</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" style="font-size:12px;padding:6px 12px" onclick="event.stopPropagation();dlHistCSV(${h.id})">CSV出力</button><button class="btn pri" style="font-size:12px;padding:6px 12px" onclick="event.stopPropagation();printHist(${h.id})">伝票印刷</button><button class="btn ng" style="font-size:12px;padding:6px 12px" onclick="event.stopPropagation();delHist(${h.id})">削除</button></div></div><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr><th style="background:var(--nv);color:#fff;padding:7px 10px;font-size:11px;text-align:left;font-weight:500;width:18%">品番</th><th style="background:var(--nv);color:#fff;padding:7px 10px;font-size:11px;text-align:left;font-weight:500">品目名</th><th style="background:var(--nv);color:#fff;padding:7px 10px;font-size:11px;text-align:right;font-weight:500;width:80px">数量</th></tr></thead><tbody>${h.items.map(it=>`<tr><td style="padding:7px 10px;border-bottom:0.5px solid var(--bd)"><span class="cbdg">${it.code}</span></td><td style="padding:7px 10px;border-bottom:0.5px solid var(--bd)">${it.name}</td><td style="padding:7px 10px;border-bottom:0.5px solid var(--bd);text-align:right;font-weight:700">${it.qty}</td></tr>`).join('')}</tbody><tfoot><tr><td colspan="2" style="background:var(--w);padding:8px 10px;font-weight:700;border-top:2px solid var(--b2)">合計</td><td style="background:var(--w);padding:8px 10px;font-weight:700;text-align:right;border-top:2px solid var(--b2);font-size:15px;color:var(--nv)">${h.total}点</td></tr></tfoot></table></div></div>`).join('')}</div></div>`;}).join('');}
 function toggleHist(id){openHistId=openHistId===id?null:id;renderHistory();}
-function delHist(id){if(!confirm('この履歴を削除しますか？'))return;DB.history=DB.history.filter(h=>h.id!==id);localStorage.setItem('purims_h',JSON.stringify(DB.history));if(openHistId===id)openHistId=null;renderHistory();fbSave();toast('削除しました');}
+function delHist(id){if(!confirm('この履歴を削除しますか？'))return;DB.history=DB.history.filter(h=>h.id!==id);persistHistoryLocal();if(openHistId===id)openHistId=null;renderHistory();fbDeleteHistoryEntry(id);toast('削除しました');}
 function dlHistCSV(id){const h=DB.history.find(r=>r.id===id);if(!h)return;let rows=[['客先名','納品日','品番','品目名','数量']];h.items.forEach(it=>rows.push([h.client,h.deliveryDate,it.code,it.name,it.qty]));dlFile(rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n'),`purims_${h.client}_${h.date.replace(/\//g,'-')}.csv`,'text/csv');toast('CSVをダウンロードしました');}
-function clearHist(){if(!confirm('全履歴を削除しますか？'))return;DB.history=[];openHistId=null;localStorage.setItem('purims_h','[]');renderHistory();fbSave();toast('履歴を削除しました');}
+function clearHist(){if(!confirm('全履歴を削除しますか？'))return;DB.history=[];openHistId=null;persistHistoryLocal();renderHistory();fbClearHistory();toast('履歴を削除しました');}
 
 // ===== ヘルプ =====
 function toggleHelp(id){const sec=document.getElementById('help-'+id);const tog=document.getElementById('help-toggle-'+id);if(!sec)return;const collapsed=sec.classList.toggle('help-collapsed');if(tog)tog.textContent=collapsed?'▶':'▼';}
@@ -902,20 +1006,84 @@ function helpExpandAll(){['basic','print','data'].forEach(id=>{const sec=documen
 // ===== Firebase連携 =====
 const db=firebase.database();
 let _isSelfSaving=false;
+function markSelfSaving(){
+  const tok='t'+(Date.now())+'_'+Math.random().toString(36).slice(2,7);
+  _selfSaveTokens.add(tok);
+  _isSelfSaving=true;
+  return tok;
+}
+function clearSelfSaving(tok){
+  if(tok)_selfSaveTokens.delete(tok);
+  if(!_selfSaveTokens.size)_isSelfSaving=false;
+}
+function histPath(id){return 'purims/history/'+String(id);}
+
+/** マスタのみ保存（履歴はID単位で別保存。全文.setはしない） */
 function fbSave(){
   if(!currentUser)return;
-  _isSelfSaving=true;
-  setTimeout(()=>{_isSelfSaving=false;},3000);
-  const master={clients:DB.clients,cycles:DB.cycles,products:DB.products,groups:DB.groups,clientGroups:DB.clientGroups,clientOrder:DB.clientOrder||{},closing:DB.closing||{},savedAt:new Date().toISOString()};
-  db.ref("purims/data").set(master).catch(e=>toast("マスタ保存失敗: "+e.message,"e"));
-  db.ref("purims/history").set(DB.history||[]).then(()=>toast("クラウドに保存しました")).catch(e=>toast("履歴保存失敗: "+e.message,"e"));
+  const tok=markSelfSaving();
+  const master={clients:DB.clients,cycles:DB.cycles,products:DB.products,groups:DB.groups,clientGroups:DB.clientGroups,clientOrder:DB.clientOrder||{},closing:DB.closing||{},savedAt:new Date().toISOString(),saveId:tok};
+  db.ref('purims/data').transaction(current=>{
+    if(current&&current.savedAt&&_lastAppliedSavedAt&&current.savedAt!==_lastAppliedSavedAt){
+      return; // 他PCが先に更新 → abort
+    }
+    return master;
+  }).then(result=>{
+    if(!result.committed){
+      toast('他のPCとマスタが競合しました。クラウドを再読み込みします','e');
+      fbLoad();
+      return;
+    }
+    _lastAppliedSavedAt=master.savedAt;
+    toast('クラウドに保存しました');
+  }).catch(e=>toast('マスタ保存失敗: '+e.message,'e'))
+  .finally(()=>setTimeout(()=>clearSelfSaving(tok),800));
 }
+
+function fbSaveHistoryEntry(entry){
+  if(!currentUser||!entry||entry.id==null)return;
+  const tok=markSelfSaving();
+  db.ref(histPath(entry.id)).set(entry)
+    .catch(e=>toast('履歴保存失敗: '+e.message,'e'))
+    .finally(()=>setTimeout(()=>clearSelfSaving(tok),800));
+}
+function fbDeleteHistoryEntry(id){
+  if(!currentUser||id==null)return;
+  const tok=markSelfSaving();
+  db.ref(histPath(id)).remove()
+    .catch(e=>toast('履歴削除失敗: '+e.message,'e'))
+    .finally(()=>setTimeout(()=>clearSelfSaving(tok),800));
+}
+function fbClearHistory(){
+  if(!currentUser)return;
+  const tok=markSelfSaving();
+  db.ref('purims/history').remove()
+    .catch(e=>toast('履歴クリア失敗: '+e.message,'e'))
+    .finally(()=>setTimeout(()=>clearSelfSaving(tok),800));
+}
+
 let _fbListeners=[];
 
 function parseHistory(raw){
   if(!raw)return[];
   const arr=Array.isArray(raw)?raw:Object.values(raw);
-  return arr.filter(Boolean).sort((a,b)=>(b.id||0)-(a.id||0));
+  return arr.filter(Boolean).sort((a,b)=>(Number(b.id)||0)-(Number(a.id)||0));
+}
+
+/** 旧形式（配列）をIDキーのオブジェクトへ一度だけ移行 */
+function migrateHistoryIfNeeded(raw){
+  if(!raw||!Array.isArray(raw))return Promise.resolve(raw);
+  const obj={};
+  raw.filter(Boolean).forEach(h=>{
+    if(!h)return;
+    if(h.id==null)h.id=newHistId();
+    obj[String(h.id)]=h;
+  });
+  const tok=markSelfSaving();
+  return db.ref('purims/history').set(obj)
+    .then(()=>obj)
+    .catch(()=>raw)
+    .finally(()=>setTimeout(()=>clearSelfSaving(tok),800));
 }
 
 function fbApplyData(d,history){
@@ -925,7 +1093,9 @@ function fbApplyData(d,history){
   DB.groups=d.groups&&d.groups.length?d.groups:DB.groups;
   DB.clientGroups=d.clientGroups||{};
   DB.clientOrder=d.clientOrder||{};DB.closing=d.closing||{};
+  _lastAppliedSavedAt=d.savedAt||null;
   DB.history=parseHistory(history);
+  persistHistoryLocal();
   localStorage.setItem('purims_v14',JSON.stringify({clients:DB.clients,cycles:DB.cycles,products:DB.products,groups:DB.groups,clientGroups:DB.clientGroups,clientOrder:DB.clientOrder,closing:DB.closing}));
   fillSel("csel",curC);fillSel("msel",editC);fillGrpSel("e-grp");fillGrpSel("nc-grp");
   renderProducts();renderHistory();renderGroups();renderClientGrpList();
@@ -937,12 +1107,12 @@ function fbLoad(){
   Promise.all([
     db.ref("purims/data").once("value"),
     db.ref("purims/history").once("value")
-  ]).then(([snapD,snapH])=>{
+  ]).then(async ([snapD,snapH])=>{
     const d=snapD.val();
     if(!d||!d.clients){toast("クラウドにデータがありません","e");return;}
-    fbApplyData(d,snapH.val());
+    const histRaw=await migrateHistoryIfNeeded(snapH.val());
+    fbApplyData(d,histRaw);
     toast("クラウドから読み込みました");
-    // 読み込み完了後にリアルタイムリスナーを登録
     fbStartListeners();
   }).catch(e=>toast("読み込み失敗: "+e.message,"e"));
 }
@@ -952,7 +1122,6 @@ function fbStartListeners(){
   fbStopListeners();
   const refData=db.ref("purims/data");
   const refHist=db.ref("purims/history");
-  // 初回発火（onceで読んだ直後）は無視するためのフラグ
   let skipData=true,skipHist=true;
   setTimeout(()=>{skipData=false;},2000);
   setTimeout(()=>{skipHist=false;},2000);
@@ -963,6 +1132,7 @@ function fbStartListeners(){
     DB.products=d.products&&d.products.length?d.products:DB.products;
     DB.groups=d.groups&&d.groups.length?d.groups:DB.groups;
     DB.clientGroups=d.clientGroups||{};DB.clientOrder=d.clientOrder||{};DB.closing=d.closing||{};
+    _lastAppliedSavedAt=d.savedAt||_lastAppliedSavedAt;
     localStorage.setItem('purims_v14',JSON.stringify({clients:DB.clients,cycles:DB.cycles,products:DB.products,groups:DB.groups,clientGroups:DB.clientGroups,clientOrder:DB.clientOrder,closing:DB.closing}));
     fillSel("csel",curC);fillSel("msel",editC);fillGrpSel("e-grp");fillGrpSel("nc-grp");
     renderProducts();renderGroups();renderClientGrpList();
@@ -971,9 +1141,10 @@ function fbStartListeners(){
   const onHist=refHist.on("value",snap=>{
     if(skipHist)return;
     const hist=parseHistory(snap.val());
-    if(_isSelfSaving){DB.history=hist;renderHistory();return;}
-    DB.history=hist;renderHistory();
-    toast("☁️ 他のPCで履歴が更新されました");
+    DB.history=hist;
+    persistHistoryLocal();
+    renderHistory();
+    if(!_isSelfSaving)toast("☁️ 他のPCで履歴が更新されました");
   });
   _fbListeners=[{ref:refData,fn:onData},{ref:refHist,fn:onHist}];
 }
