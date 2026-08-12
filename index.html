@@ -316,6 +316,7 @@ select.cs:focus{outline:none;border-color:var(--ac)}
         <button class="btn acc" id="batch-exec-btn" onclick="doBatchPrint()" style="display:none">🖨 まとめて印刷（<span id="batch-exec-count">0</span>件）</button>
         <button class="btn acc" onclick="resetToSelect()">次の客先へ</button>
         <button class="btn acc" id="next-client-btn" onclick="goNextClient()" style="display:none"></button>
+        <button class="btn" id="skip-ahead-btn" onclick="skipAheadClient()" style="display:none"></button>
       </div>
     </div>
   </div>
@@ -345,6 +346,7 @@ select.cs:focus{outline:none;border-color:var(--ac)}
           <button class="btn" style="padding:5px 12px;font-size:12px" onclick="resetToSelect()">◀ 客先選択に戻る</button>
           <button class="btn" style="padding:5px 12px;font-size:12px" onclick="resetQ()">数量クリア</button>
           <button class="btn acc" style="padding:5px 12px;font-size:12px" onclick="toggleAddArea()">＋ 品目を追加</button>
+          <button class="btn" id="skip-client-btn-top" style="display:none;padding:5px 12px;font-size:12px" onclick="skipCurrentClient()"></button>
           <button class="btn pri" style="padding:5px 12px;font-size:12px" onclick="showPrev()">伝票発行</button>
         </div>
       </div>
@@ -404,6 +406,7 @@ select.cs:focus{outline:none;border-color:var(--ac)}
       <div class="brow" id="sbtns" style="display:none">
         <button class="btn" onclick="resetQ()">数量クリア</button>
         <button class="btn acc" onclick="toggleAddArea()">＋ 品目を追加</button>
+        <button class="btn" id="skip-client-btn-bottom" style="display:none" onclick="skipCurrentClient()"></button>
         <button class="btn pri" onclick="showPrev()">伝票発行</button>
       </div>
     </div>
@@ -603,7 +606,7 @@ select.cs:focus{outline:none;border-color:var(--ac)}
     <div class="help-section-body">
       <div class="help-step"><div class="help-step-num">1</div><div class="help-step-body"><div class="help-step-title">印刷モードを選ぶ</div>画面上部の「🖨 印刷モード」バーで <span class="help-tag">1件ずつ印刷</span> か <span class="help-tag">一括印刷</span> を選びます。</div></div>
       <div class="help-step"><div class="help-step-num">2</div><div class="help-step-body"><div class="help-step-title">客先をプルダウンで選ぶ</div>「客先を選択してください」から届け先を選びます。</div></div>
-      <div class="help-step"><div class="help-step-num">3</div><div class="help-step-body"><div class="help-step-title">数量を入力して伝票発行</div>品目一覧に数量を入力し、<span class="help-tag">伝票発行</span>ボタンを押します。</div></div>
+      <div class="help-step"><div class="help-step-num">3</div><div class="help-step-body"><div class="help-step-title">数量を入力して伝票発行</div>品目一覧に数量を入力し、<span class="help-tag">伝票発行</span>ボタンを押します。発行しない客先は <span class="help-tag">⏭ 飛ばす</span> で次の客先へ進めます（リストから選び直す必要はありません）。</div></div>
       <div class="help-note">💡 データはクラウド（Firebase）に自動保存されます。別のPCで開いても同じデータが表示されます。</div>
     </div>
   </div>
@@ -739,7 +742,7 @@ function openNdPicker(){const picker=document.getElementById('nd-picker');if(!pi
 function onNdPick(el){if(!el.value){el.style.display='none';return;}const parts=el.value.split('-');customDeliveryDate=new Date(parseInt(parts[0]),parseInt(parts[1])-1,parseInt(parts[2]));el.style.display='none';document.getElementById('nd-v').textContent=fmtD(customDeliveryDate);document.getElementById('nd-v').style.color='#e67e22';document.getElementById('nd-reset-btn').style.display='inline-block';document.getElementById('nd-cal-btn').textContent='📅 再変更';toast('納品日を '+fmtD(customDeliveryDate)+' に変更しました');}
 function resetNdPicker(){customDeliveryDate=null;document.getElementById('nd-picker').style.display='none';document.getElementById('nd-reset-btn').style.display='none';document.getElementById('nd-cal-btn').textContent='📅 変更';const auto=nxtDel(DB.cycles[curC]||'');document.getElementById('nd-v').textContent=fmtD(auto);document.getElementById('nd-v').style.color='';toast('納品日を自動計算に戻しました');}
 function getDeliveryDate(){if(customDeliveryDate)return fmtD(customDeliveryDate);return fmtD(nxtDel(DB.cycles[curC]||''));}
-function onCC(){curC=document.getElementById('csel').value||null;qtys={};bikos={};extraItems=[];customDeliveryDate=null;const picker=document.getElementById('nd-picker');if(picker)picker.style.display='none';const resetBtn=document.getElementById('nd-reset-btn');if(resetBtn)resetBtn.style.display='none';const calBtn=document.getElementById('nd-cal-btn');if(calBtn)calBtn.textContent='📅 変更';const ndv=document.getElementById('nd-v');if(ndv)ndv.style.color='';const aa=document.getElementById('add-item-area');if(aa)aa.style.display='none';const st=document.getElementById('sbtns-top');if(!curC){document.getElementById('chips').style.display='none';document.getElementById('sbtns').style.display='none';if(st)st.style.display='none';document.getElementById('iarea').innerHTML='<div class="emp">上のプルダウンから客先を選択してください</div>';return;}updateChips();document.getElementById('sbtns').style.display='flex';if(st)st.style.display='flex';renderItems();setTimeout(fitIareaBody,80);}
+function onCC(){curC=document.getElementById('csel').value||null;qtys={};bikos={};extraItems=[];customDeliveryDate=null;const picker=document.getElementById('nd-picker');if(picker)picker.style.display='none';const resetBtn=document.getElementById('nd-reset-btn');if(resetBtn)resetBtn.style.display='none';const calBtn=document.getElementById('nd-cal-btn');if(calBtn)calBtn.textContent='📅 変更';const ndv=document.getElementById('nd-v');if(ndv)ndv.style.color='';const aa=document.getElementById('add-item-area');if(aa)aa.style.display='none';const st=document.getElementById('sbtns-top');if(!curC){document.getElementById('chips').style.display='none';document.getElementById('sbtns').style.display='none';if(st)st.style.display='none';document.getElementById('iarea').innerHTML='<div class="emp">上のプルダウンから客先を選択してください</div>';updateSkipButtons();return;}updateChips();document.getElementById('sbtns').style.display='flex';if(st)st.style.display='flex';renderItems();updateSkipButtons();setTimeout(fitIareaBody,80);}
 function updateChips(){if(!curC)return;const cyc=DB.cycles[curC]||'';document.getElementById('chips').style.display='flex';if(!customDeliveryDate){document.getElementById('nd-v').textContent=fmtD(nxtDel(cyc));document.getElementById('nd-v').style.color='';}const cv=document.getElementById('cyc-v');cv.textContent=cyc?cyc+'曜日':'（未設定）';cv.style.display='';document.getElementById('cyc-edit-hint').style.display='';document.getElementById('cyc-btn-area').style.display='none';document.getElementById('icnt').textContent=(DB.clients[curC]?.items||[]).length+' 品目';}
 function startCyc(){if(!curC)return;document.getElementById('cyc-v').style.display='none';document.getElementById('cyc-edit-hint').style.display='none';renderCycBtns('slip-cyc-btns','slip-cyc',DB.cycles[curC]||'');document.getElementById('cyc-btn-area').style.display='flex';}
 function saveCycBtns(){if(!curC)return;const val=document.getElementById('slip-cyc').value.trim();DB.cycles[curC]=val;persist();if(!customDeliveryDate){document.getElementById('nd-v').textContent=fmtD(nxtDel(val));}updateChips();if(editC===curC)renderCycBtns('e-cyc-btns','e-cyc',val);toast('サイクルを更新しました');}
@@ -839,6 +842,7 @@ function showPrev(){
     if(next){nextBtn.textContent='▶ '+next;nextBtn.style.display='inline-block';}
     else nextBtn.style.display='none';
   }
+  updateSkipButtons();
   let queued=false;
   if(printMode==='batch'){
     printQueue.push({html:slipHTML,label:curC,fp});
@@ -968,7 +972,25 @@ function addGroup(){const name=document.getElementById('ng-name').value.trim();c
 let cgCollapsed={},cgSortMode={},cgDragSrc=null;
 function getClientList(){const grouped={};const ungrouped=[];Object.keys(DB.clients).sort((a,b)=>a.localeCompare(b,'ja')).forEach(c=>{const gid=DB.clientGroups[c];const g=getGroup(gid);if(g){if(!grouped[gid])grouped[gid]=[];grouped[gid].push(c);}else ungrouped.push(c);});const list=[];DB.groups.forEach(g=>{if(!grouped[g.id]||!grouped[g.id].length)return;getOrderedMembers(g.id,grouped[g.id]).forEach(c=>list.push(c));});ungrouped.forEach(c=>list.push(c));return list;}
 function getNextClient(){const list=getClientList();const idx=list.indexOf(curC);return(idx>=0&&idx<list.length-1)?list[idx+1]:null;}
-function goNextClient(){const next=getNextClient();if(!next)return;resetToSelect();document.getElementById('csel').value=next;onCC();}
+function getClientAfter(offset){const list=getClientList();const idx=list.indexOf(curC);if(idx<0)return null;return list[idx+offset]||null;}
+function goToClient(name){if(!name){toast('次の客先はありません');return false;}resetToSelect();document.getElementById('csel').value=name;onCC();return true;}
+function goNextClient(){goToClient(getNextClient());}
+function skipCurrentClient(){const skipped=curC;const next=getNextClient();if(!next){toast('次の客先はありません');return;}goToClient(next);toast((skipped||'')+' を飛ばしました');}
+function skipAheadClient(){const skipped=getClientAfter(1);const dest=getClientAfter(2);if(!dest){toast('1件飛ばせる客先がありません');return;}goToClient(dest);toast((skipped||'')+' を飛ばしました');}
+function updateSkipButtons(){
+  const next=getNextClient();
+  ['skip-client-btn-top','skip-client-btn-bottom'].forEach(id=>{
+    const el=document.getElementById(id);if(!el)return;
+    if(next){el.style.display='inline-block';el.textContent='⏭ '+next;}
+    else el.style.display='none';
+  });
+  const skipAhead=document.getElementById('skip-ahead-btn');
+  if(skipAhead){
+    const dest=getClientAfter(2);
+    if(dest){skipAhead.style.display='inline-block';skipAhead.textContent='1件飛ばす ▶ '+dest;}
+    else skipAhead.style.display='none';
+  }
+}
 function getOrderedMembers(gid,members){const order=DB.clientOrder[gid];if(!order||!order.length)return members;const inOrder=order.filter(c=>members.includes(c));const rest=members.filter(c=>!order.includes(c));return[...inOrder,...rest];}
 function renderClientGrpList(){const el=document.getElementById('client-grp-list');const q=(document.getElementById('cg-search')?.value||'').toLowerCase();const allClients=Object.keys(DB.clients).sort((a,b)=>a.localeCompare(b,'ja'));const filtered=q?allClients.filter(c=>c.toLowerCase().includes(q)):allClients;const grouped={};const ungrouped=[];filtered.forEach(c=>{const gid=DB.clientGroups[c];const g=getGroup(gid);if(g){if(!grouped[gid])grouped[gid]=[];grouped[gid].push(c);}else ungrouped.push(c);});let html='';DB.groups.forEach(g=>{const rawMembers=grouped[g.id]||[];const members=getOrderedMembers(g.id,rawMembers);const isOpen=!cgCollapsed[g.id];const isSorting=!!cgSortMode[g.id];const sortBtnStyle=isSorting?`background:var(--ok);color:#fff;border-color:var(--ok)`:`background:var(--w);color:var(--nv);border-color:${g.color}`;html+=`<div class="cg-group-block" style="border-color:${g.color}44;margin-bottom:8px"><div class="cg-group-header" style="background:${g.color}18" onclick="toggleCgGroup('${g.id}')"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${g.color};flex-shrink:0"></span><span class="cg-group-title" style="color:${g.color}">${g.name}</span><span style="font-size:11px;color:${g.color};opacity:.7">${members.length}件</span>${members.length>1?`<button type="button" onclick="event.stopPropagation();toggleCgSort('${g.id}')" style="padding:3px 10px;border-radius:5px;border:1.5px solid;font-size:11px;font-weight:700;cursor:pointer;${sortBtnStyle}">${isSorting?'✅ 完了':'↕ 並び替え'}</button>`:''}<span class="cg-toggle" style="color:${g.color};transform:rotate(${isOpen?'0':'180'}deg)">&#9650;</span></div>`;if(isOpen){if(!members.length){html+=`<div class="cg-group-body"><div style="padding:10px 14px;font-size:12px;color:var(--mu)">このグループに客先がいません</div></div>`;}else if(isSorting){html+=`<div class="cg-group-body" id="cgbody-${g.id}">`+members.map((c,i)=>clientGrpRowSortable(c,g.id,i)).join('')+`</div>`;}else{html+=`<div class="cg-group-body">`+members.map(c=>clientGrpRow(c)).join('')+`</div>`;}}html+=`</div>`;});if(ungrouped.length){const isOpen=!cgCollapsed['__none__'];html+=`<div class="cg-group-block" style="border-color:var(--bd);margin-bottom:8px"><div class="cg-group-header" style="background:var(--s)" onclick="toggleCgGroup('__none__')"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--mu);flex-shrink:0"></span><span class="cg-group-title" style="color:var(--mu)">グループ未設定</span><span style="font-size:11px;color:var(--mu)">${ungrouped.length}件</span><span class="cg-toggle" style="color:var(--mu);transform:rotate(${isOpen?'0':'180'}deg)">&#9650;</span></div>`;if(isOpen){html+=`<div class="cg-group-body">`+ungrouped.map(c=>clientGrpRow(c)).join('')+`</div>`;}html+=`</div>`;}if(!html)html='<div class="emp">該当する客先がありません</div>';el.innerHTML=html;}
 function clientGrpRow(c){const opts=`<option value="">グループなし</option>`+DB.groups.map(g2=>`<option value="${g2.id}"${DB.clientGroups[c]===g2.id?' selected':''}>${g2.name}</option>`).join('');const esc=c.replace(/\\/g,'\\\\').replace(/'/g,"\\'");return`<div class="client-grp-row"><span class="client-grp-name">${c}</span><select class="grp-sel" onchange="setClientGrp('${esc}',this.value)">${opts}</select></div>`;}
