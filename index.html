@@ -1180,24 +1180,33 @@ function fbStopListeners(){
 // ===== 認証・ユーザー管理 =====
 let currentUser=null;
 const ADMIN_HASH_KEY='purims_admin_hash';
-const DEFAULT_ADMIN_HASH='8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92';
 
 async function sha256(str){
   const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(str));
   return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
 }
 
+async function getAdminHash(){
+  try{
+    if(!firebase.auth().currentUser){
+      try{await firebase.auth().signInAnonymously();}catch(e){console.warn('匿名認証失敗:',e);}
+    }
+    const snap=await db.ref('purims/adminHash').once('value');
+    const h=snap.val();
+    if(h){localStorage.setItem(ADMIN_HASH_KEY,h);return h;}
+  }catch(e){}
+  return localStorage.getItem(ADMIN_HASH_KEY);
+}
+
 async function doLogin(){
   const pass=document.getElementById('login-pass').value;
   if(!pass){document.getElementById('login-err').textContent='パスワードを入力してください';return;}
   const hash=await sha256(pass);
-  // 管理者確認（Firebaseアクセス不要）
-  const adminHash=localStorage.getItem(ADMIN_HASH_KEY)||DEFAULT_ADMIN_HASH;
-  if(hash===adminHash){
+  const adminHash=await getAdminHash();
+  if(adminHash&&hash===adminHash){
     currentUser={username:'管理者',role:'admin'};
     loginSuccess();return;
   }
-  // 一般ユーザー確認：先に匿名認証してからFirebaseアクセス
   if(!firebase.auth().currentUser){
     try{await firebase.auth().signInAnonymously();}catch(e){console.warn('匿名認証失敗:',e);}
   }
@@ -1218,13 +1227,13 @@ function loginSuccess(){
   }
   // Firebase匿名認証してからfbLoad
   if(firebase.auth().currentUser){
-    db.ref('purims/adminHash').once('value').then(snap=>{const h=snap.val();if(h)localStorage.setItem(ADMIN_HASH_KEY,h);warnIfDefaultAdminPass();});
+    db.ref('purims/adminHash').once('value').then(snap=>{const h=snap.val();if(h)localStorage.setItem(ADMIN_HASH_KEY,h);});
     fbLoad();
   } else {
     firebase.auth().signInAnonymously().then(()=>{
-      db.ref('purims/adminHash').once('value').then(snap=>{const h=snap.val();if(h)localStorage.setItem(ADMIN_HASH_KEY,h);warnIfDefaultAdminPass();});
+      db.ref('purims/adminHash').once('value').then(snap=>{const h=snap.val();if(h)localStorage.setItem(ADMIN_HASH_KEY,h);});
       fbLoad();
-    }).catch(()=>{fbLoad();warnIfDefaultAdminPass();});
+    }).catch(()=>fbLoad());
   }
   // ログイン履歴を記録（管理者は除外）
   if(currentUser.role!=='admin'){
@@ -1257,12 +1266,6 @@ function doLogout(){
   renderHistory();
 }
 
-function warnIfDefaultAdminPass(){
-  if(!currentUser||currentUser.role!=='admin')return;
-  const h=localStorage.getItem(ADMIN_HASH_KEY)||DEFAULT_ADMIN_HASH;
-  if(h===DEFAULT_ADMIN_HASH)toast('管理者パスワードが初期値です。ユーザー管理から変更してください','e');
-}
-
 function exitApp(){
   clearTimeout(persist._t);
   persistHistoryLocal();
@@ -1283,8 +1286,8 @@ function closeAdminPassModal(){document.getElementById('admin-pass-modal').style
 async function verifyAdminPass(){
   const pass=document.getElementById('admin-pass-input').value;
   const hash=await sha256(pass);
-  const adminHash=localStorage.getItem(ADMIN_HASH_KEY)||DEFAULT_ADMIN_HASH;
-  if(hash===adminHash){closeAdminPassModal();openUserModal();}
+  const adminHash=await getAdminHash();
+  if(adminHash&&hash===adminHash){closeAdminPassModal();openUserModal();}
   else document.getElementById('admin-pass-err').textContent='管理者パスワードが違います';
 }
 document.getElementById('admin-pass-input').addEventListener('keydown',e=>{if(e.key==='Enter')verifyAdminPass();});
