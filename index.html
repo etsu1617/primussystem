@@ -314,9 +314,9 @@ select.cs:focus{outline:none;border-color:var(--ac)}
         <button class="btn" onclick="backToInput()">◀ 入力に戻る（発行取消）</button>
         <button class="btn pri" id="complete-print-btn" onclick="doPrint()">印刷する</button>
         <button class="btn acc" id="batch-exec-btn" onclick="doBatchPrint()" style="display:none">🖨 まとめて印刷（<span id="batch-exec-count">0</span>件）</button>
-        <button class="btn acc" onclick="resetToSelect()">次の客先へ</button>
-        <button class="btn acc" id="next-client-btn" onclick="goNextClient()" style="display:none"></button>
+        <button class="btn acc" id="next-client-btn" onclick="goNextOrSelect()" style="display:none"></button>
         <button class="btn" id="skip-ahead-btn" onclick="skipAheadClient()" style="display:none"></button>
+        <button class="btn" onclick="resetToSelect()">客先選択に戻る</button>
       </div>
     </div>
   </div>
@@ -841,7 +841,7 @@ function showPrev(){
   if(nextBtn){
     const next=getNextClient();
     if(next){nextBtn.textContent='▶ '+next;nextBtn.style.display='inline-block';}
-    else nextBtn.style.display='none';
+    else{nextBtn.textContent='客先選択に戻る';nextBtn.style.display='inline-block';}
   }
   updateSkipButtons();
   let queued=false;
@@ -927,11 +927,10 @@ function exportMasterCSV(){const clients=DB.clients||{};const names=Object.keys(
 function exportCSV(){const hist=DB.history;if(!hist||!hist.length){toast('発行履歴がありません','e');return;}const tStr=todayIso();const todayRecs=hist.filter(r=>r.date===tStr);const useAll=!todayRecs.length;const recs=useAll?hist:todayRecs;const rows=[['客先名','納品日','品目コード','品目名','数量','備考']];recs.forEach(r=>{r.items.forEach(it=>{rows.push([r.client||'',r.deliveryDate||'',it.code||'',it.name||'',it.qty||0,it.biko||'']);});});const bom='\uFEFF';const csv=bom+rows.map(r=>r.map(v=>{const s=String(v);return s.includes(',')||s.includes('"')||s.includes('\n')?'"'+s.replace(/"/g,'""')+'"':s;}).join(',')).join('\r\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='purims_'+fileDate()+(useAll?'_全件':'_本日')+'.csv';a.click();URL.revokeObjectURL(url);toast((useAll?'全'+recs.length+'件':'本日'+recs.length+'件')+'のCSVを出力しました');}
 function dlFile(c,f,t){const b=new Blob([t==='text/csv'?'\uFEFF'+c:c],{type:t+';charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=f;a.click();URL.revokeObjectURL(a.href);}
 function dlCSV(type){const td=fileDate();if(type==='clients'){let rows=[['客先名','品番','品目名','納品サイクル','グループ']];Object.keys(DB.clients).sort((a,b)=>a.localeCompare(b,'ja')).forEach(c=>{const cyc=DB.cycles[c]||'';const g=getClientGroup(c);(DB.clients[c].items||[]).forEach(it=>rows.push([c,it.code,it.name,cyc,g?g.name:'']));});dlFile(rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n'),`purims_master_${td}.csv`,'text/csv');toast('マスタCSVをダウンロードしました');}else if(type==='history'){let rows=[['発行日','客先名','納品日','品番','品目名','数量','合計']];DB.history.forEach(h=>{h.items.forEach((it,i)=>rows.push([h.date,h.client,h.deliveryDate,it.code,it.name,it.qty,i===0?h.total:'']));});dlFile(rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n'),`purims_history_${td}.csv`,'text/csv');toast('履歴CSVをダウンロードしました');}}
-function dlJSON(){const td=fileDate();dlFile(JSON.stringify({clients:DB.clients,cycles:DB.cycles,products:DB.products,groups:DB.groups,clientGroups:DB.clientGroups,exportedAt:new Date().toISOString()},null,2),`purims_backup_${td}.json`,'application/json');
-// ===== 【修正④】localStorage に保存（翌日もタブ再起動後も警告が出ない） =====
+function dlJSON(){const td=fileDate();dlFile(JSON.stringify({clients:DB.clients,cycles:DB.cycles,products:DB.products,groups:DB.groups,clientGroups:DB.clientGroups,clientOrder:DB.clientOrder||{},closing:DB.closing||{},history:DB.history||[],exportedAt:new Date().toISOString()},null,2),`purims_backup_${td}.json`,'application/json');
 localStorage.setItem('purims_backed_up','1');toast('JSONバックアップをダウンロードしました');}
 function importCSV(e){const file=e.target.files[0];if(!file)return;const r=new FileReader();r.onload=ev=>{try{const lines=ev.target.result.replace(/\r/g,'').split('\n').filter(l=>l.trim());const nc={};const ncy={};lines.slice(1).forEach(line=>{const cols=line.split(',').map(c=>c.replace(/^"|"$/g,'').replace(/""/g,'"').trim());if(cols.length<3||!cols[0])return;const[client,code,name,cyc]=cols;if(!nc[client])nc[client]={items:[]};if(name)nc[client].items.push({code:code||'P000',name});if(cyc)ncy[client]=cyc;});if(!Object.keys(nc).length){toast('読み込めるデータがありませんでした','e');return;}if(!confirm(`${Object.keys(nc).length}件の客先データをインポートします。続けますか？`))return;Object.assign(DB.clients,nc);Object.assign(DB.cycles,ncy);persist();fillSel('csel');fillSel('msel');toast(`${Object.keys(nc).length}件をインポートしました`);}catch(err){toast('CSVの読み込みに失敗しました','e');}e.target.value='';};r.readAsText(file,'UTF-8');}
-function importJSON(e){const file=e.target.files[0];if(!file)return;const r=new FileReader();r.onload=ev=>{try{const d=JSON.parse(ev.target.result);if(!d.clients){toast('フォーマットが違います','e');return;}if(!confirm('バックアップから全データを復元します。続けますか？'))return;DB.clients=d.clients;DB.cycles=d.cycles||{};if(d.products&&d.products.length)DB.products=d.products;if(d.groups&&d.groups.length)DB.groups=d.groups;if(d.clientGroups)DB.clientGroups=d.clientGroups;persist();fillSel('csel');fillSel('msel');fillGrpSel('e-grp');fillGrpSel('nc-grp');renderProducts();renderGroups();renderClientGrpList();toast(`${Object.keys(DB.clients).length}件を復元しました`);}catch(err){toast('JSONの読み込みに失敗しました','e');}e.target.value='';};r.readAsText(file,'UTF-8');}
+function importJSON(e){const file=e.target.files[0];if(!file)return;const r=new FileReader();r.onload=ev=>{try{const d=JSON.parse(ev.target.result);if(!d.clients){toast('フォーマットが違います','e');return;}if(!confirm('バックアップから全データを復元します。続けますか？'))return;DB.clients=d.clients;DB.cycles=d.cycles||{};if(d.products&&d.products.length)DB.products=d.products;if(d.groups&&d.groups.length)DB.groups=d.groups;if(d.clientGroups)DB.clientGroups=d.clientGroups;if(d.clientOrder)DB.clientOrder=d.clientOrder;if(d.closing)DB.closing=d.closing;if(Array.isArray(d.history)){DB.history=d.history;persistHistoryLocal();if(currentUser){const obj={};DB.history.forEach(h=>{if(h&&h.id!=null)obj[String(h.id)]=h;});db.ref('purims/history').set(obj).catch(e=>toast('履歴の復元に失敗しました: '+e.message,'e'));}}persist();fillSel('csel');fillSel('msel');fillGrpSel('e-grp');fillGrpSel('nc-grp');renderProducts();renderHistory();renderGroups();renderClientGrpList();toast(`${Object.keys(DB.clients).length}件を復元しました`);}catch(err){toast('JSONの読み込みに失敗しました','e');}e.target.value='';};r.readAsText(file,'UTF-8');}
 
 // ===== マスタ管理 =====
 function showPanel(id,btn){document.querySelectorAll('.panel').forEach(p=>{p.classList.remove('on');p.style.height='';});document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));const panel=document.getElementById('panel-'+id);panel.classList.add('on');const scrollPanels=['master','history','data','help'];if(scrollPanels.includes(id)){const hdrH=document.querySelector('.hdr').offsetHeight;const tabH=document.querySelector('.tabs').offsetHeight;panel.style.height=(window.innerHeight-hdrH-tabH)+'px';}if(btn&&btn.classList)btn.classList.add('on');}
@@ -975,7 +974,8 @@ function getClientList(){const grouped={};const ungrouped=[];Object.keys(DB.clie
 function getNextClient(){const list=getClientList();const idx=list.indexOf(curC);return(idx>=0&&idx<list.length-1)?list[idx+1]:null;}
 function getClientAfter(offset){const list=getClientList();const idx=list.indexOf(curC);if(idx<0)return null;return list[idx+offset]||null;}
 function goToClient(name){if(!name){toast('次の客先はありません');return false;}resetToSelect();document.getElementById('csel').value=name;onCC();return true;}
-function goNextClient(){goToClient(getNextClient());}
+function goNextClient(){return goToClient(getNextClient());}
+function goNextOrSelect(){const next=getNextClient();if(next)goToClient(next);else resetToSelect();}
 function skipCurrentClient(){const skipped=curC;const next=getNextClient();if(!next){toast('次の客先はありません');return;}goToClient(next);toast((skipped||'')+' を飛ばしました');}
 function skipAheadClient(){const skipped=getClientAfter(1);const dest=getClientAfter(2);if(!dest){toast('1件飛ばせる客先がありません');return;}goToClient(dest);toast((skipped||'')+' を飛ばしました');}
 function updateSkipButtons(){
@@ -1043,10 +1043,10 @@ function histPath(id){return 'purims/history/'+String(id);}
 
 /** マスタのみ保存（履歴はID単位で別保存。全文.setはしない） */
 function fbSave(){
-  if(!currentUser)return;
+  if(!currentUser)return Promise.resolve();
   const tok=markSelfSaving();
   const master={clients:DB.clients,cycles:DB.cycles,products:DB.products,groups:DB.groups,clientGroups:DB.clientGroups,clientOrder:DB.clientOrder||{},closing:DB.closing||{},savedAt:new Date().toISOString(),saveId:tok};
-  db.ref('purims/data').transaction(current=>{
+  return db.ref('purims/data').transaction(current=>{
     if(current&&current.savedAt&&_lastAppliedSavedAt&&current.savedAt!==_lastAppliedSavedAt){
       return; // 他PCが先に更新 → abort
     }
@@ -1218,14 +1218,13 @@ function loginSuccess(){
   }
   // Firebase匿名認証してからfbLoad
   if(firebase.auth().currentUser){
-    // 管理者パスワードをFirebaseから同期
-    db.ref('purims/adminHash').once('value').then(snap=>{const h=snap.val();if(h)localStorage.setItem(ADMIN_HASH_KEY,h);});
+    db.ref('purims/adminHash').once('value').then(snap=>{const h=snap.val();if(h)localStorage.setItem(ADMIN_HASH_KEY,h);warnIfDefaultAdminPass();});
     fbLoad();
   } else {
     firebase.auth().signInAnonymously().then(()=>{
-      db.ref('purims/adminHash').once('value').then(snap=>{const h=snap.val();if(h)localStorage.setItem(ADMIN_HASH_KEY,h);});
+      db.ref('purims/adminHash').once('value').then(snap=>{const h=snap.val();if(h)localStorage.setItem(ADMIN_HASH_KEY,h);warnIfDefaultAdminPass();});
       fbLoad();
-    }).catch(()=>fbLoad());
+    }).catch(()=>{fbLoad();warnIfDefaultAdminPass();});
   }
   // ログイン履歴を記録（管理者は除外）
   if(currentUser.role!=='admin'){
@@ -1258,11 +1257,18 @@ function doLogout(){
   renderHistory();
 }
 
+function warnIfDefaultAdminPass(){
+  if(!currentUser||currentUser.role!=='admin')return;
+  const h=localStorage.getItem(ADMIN_HASH_KEY)||DEFAULT_ADMIN_HASH;
+  if(h===DEFAULT_ADMIN_HASH)toast('管理者パスワードが初期値です。ユーザー管理から変更してください','e');
+}
+
 function exitApp(){
   clearTimeout(persist._t);
-  fbSave();
+  persistHistoryLocal();
   localStorage.setItem('purims_v14',JSON.stringify({clients:DB.clients,cycles:DB.cycles,products:DB.products,groups:DB.groups,clientGroups:DB.clientGroups,clientOrder:DB.clientOrder,closing:DB.closing}));
-  toast('保存しました');
+  toast('保存しています…');
+  Promise.resolve(fbSave()).then(()=>toast('保存しました'));
 }
 
 // ===== ユーザー管理モーダル =====
