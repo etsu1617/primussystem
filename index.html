@@ -337,6 +337,8 @@ select.cs:focus{outline:none;border-color:var(--ac)}
         </div>
         <button onclick="exportMasterCSV()" style="background:#185fa5;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;cursor:pointer;font-weight:bold;white-space:nowrap">📋 Excelマスター出力</button>
         <button onclick="exportCSV()" style="background:#1a6e3c;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;cursor:pointer;font-weight:bold;white-space:nowrap">📥 Excel用CSV出力</button>
+        <button onclick="exportTodayBilling()" id="billing-today-btn" style="background:#854f0b;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;cursor:pointer;font-weight:bold;white-space:nowrap">📄 本日分→請求明細Excel</button>
+        <span id="billing-pending-badge" style="display:none;background:#854f0b;color:#fff;border-radius:12px;padding:2px 10px;font-size:12px;font-weight:bold"></span>
       </div>
     </div>
     <div class="card" style="display:flex;flex-direction:column;flex:1;overflow:hidden;margin-bottom:0">
@@ -562,18 +564,19 @@ select.cs:focus{outline:none;border-color:var(--ac)}
   <div style="background:var(--w);border:0.5px solid var(--b2);border-radius:10px;overflow:hidden;margin-bottom:14px">
     <div class="ch" style="background:#5c3d1e">📄 ネクサス請求明細書</div>
     <div style="padding:14px 16px;font-size:13px;color:var(--mu);line-height:1.8">
-      伝票（プリームス）の発行履歴から、<strong style="color:var(--tx)">ネクサス明細書.xlsm</strong> 用 JSON を出力します。<br>
-      単価はマスタの「請求単価」列を使います（伝票には出しません）。
+      伝票（プリームス）の発行履歴から、<strong style="color:var(--tx)">ネクサス請求明細 .xlsx</strong> を出力します（Excel を開いて取り込む必要はありません）。<br>
+      単価はマスタの「請求単価」列を使います（伝票には出しません）。客先ごとにシートが自動作成されます。
       <div style="display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap">
-        <label style="font-size:12px;color:var(--tx);font-weight:600">請求月</label>
+        <button onclick="exportTodayBilling()" style="padding:8px 16px;background:#854f0b;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">📄 本日分を請求明細Excel出力</button>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap">
+        <label style="font-size:12px;color:var(--tx);font-weight:600">請求月指定</label>
         <input type="number" id="meisai-year" min="2020" max="2099" style="width:88px;padding:7px 10px;border:1.5px solid var(--b2);border-radius:6px;font-size:14px" placeholder="年">
         <span>年</span>
         <input type="number" id="meisai-month" min="1" max="12" style="width:60px;padding:7px 10px;border:1.5px solid var(--b2);border-radius:6px;font-size:14px" placeholder="月">
         <span>月</span>
-        <button onclick="exportMeisaiJSON()" style="padding:8px 16px;background:#854f0b;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">📥 請求明細JSON出力</button>
-      </div>
-      <div style="margin-top:10px;font-size:12px;color:var(--mu)">
-        ① JSON を保存 → ② <code style="background:var(--s);padding:2px 6px;border-radius:4px">templates/ネクサス明細書.xlsm</code> を開く → ③「データ取り込み」
+        <button onclick="exportMeisaiMonthXlsx()" style="padding:8px 16px;background:#5c3d1e;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">📥 請求月Excel出力</button>
+        <button onclick="exportMeisaiJSON()" style="padding:8px 14px;background:var(--s);color:var(--mu);border:1px solid var(--b2);border-radius:6px;font-size:12px;cursor:pointer">JSON（旧xlsm用）</button>
       </div>
     </div>
   </div>
@@ -641,8 +644,8 @@ select.cs:focus{outline:none;border-color:var(--ac)}
     <div class="help-section-body">
       <p>伝票は<strong>プリームス</strong>名義のまま発行し、請求書だけ<strong>ネクサス</strong>明細書で作成します。</p>
       <div class="help-step"><div class="help-step-num">1</div><div class="help-step-body"><div class="help-step-title">請求単価をマスタに登録</div><span class="help-tag">マスタ管理</span> → 各客先の品目に「請求単価」を入力（伝票には表示されません）。</div></div>
-      <div class="help-step"><div class="help-step-num">2</div><div class="help-step-body"><div class="help-step-title">請求月を選んで JSON 出力</div><span class="help-tag">データ</span> タブ →「ネクサス請求明細書」で請求月を指定 → <span class="help-tag">請求明細JSON出力</span>。</div></div>
-      <div class="help-step"><div class="help-step-num">3</div><div class="help-step-body"><div class="help-step-title">Excel に取り込む</div>リポジトリの <code>templates/ネクサス明細書.xlsm</code>（またはデスクトップの同名ファイル）を開き、「データ取り込み」ボタンで JSON を選択。</div></div>
+      <div class="help-step"><div class="help-step-num">2</div><div class="help-step-body"><div class="help-step-title">1日の発行が終わったら</div>伝票発行画面の <span class="help-tag">本日分→請求明細Excel</span> を押す（または <span class="help-tag">データ</span> タブから）。請求明細 .xlsx がダウンロードされます。</div></div>
+      <div class="help-step"><div class="help-step-num">3</div><div class="help-step-body"><div class="help-step-title">Excel ファイルを確認・印刷</div>ダウンロードされた .xlsx を開いて内容確認・印刷（取り込み操作は不要）。客先ごとにシートが作成されています。</div></div>
       <div class="help-note">💡 週2回程度の発行なら1店舗14伝票以内で収まります。締め日（20日・25日・末日）は客先マスタの設定を Excel に反映します。</div>
     </div>
   </div>
@@ -660,6 +663,7 @@ select.cs:focus{outline:none;border-color:var(--ac)}
 <div id="print-area"></div>
 <div class="toast" id="toast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
@@ -762,7 +766,7 @@ function fillGrpSel(id,cur){const s=document.getElementById(id);if(!s)return;con
 function nxtDel(cyc){if(!cyc)return null;const m={月:1,火:2,水:3,木:4,金:5,土:6,日:0};const tw=new Date().getDay();let min=99;for(const c of cyc){if(m[c]!==undefined){const d=(m[c]-tw+7)%7;if(d<min)min=d;}}if(min===99)return null;const r=new Date();r.setDate(r.getDate()+min);return r;}
 function fmtD(d){if(!d)return'—';return fmtDateStr(d);}
 function nextPCode(){let max=0;DB.products.forEach(p=>{const m=p.code.match(/P(\d+)/i);if(m)max=Math.max(max,parseInt(m[1]));});Object.values(DB.clients).forEach(cl=>{(cl.items||[]).forEach(it=>{const m=it.code.match(/P(\d+)/i);if(m)max=Math.max(max,parseInt(m[1]));});});return 'P'+String(max+1).padStart(3,'0');}
-function init(){load();const now=new Date();document.getElementById('hdr-d').innerHTML=`${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日<br>${WD[now.getDay()]}曜日`;fillSel('csel');fillSel('msel');fillGrpSel('e-grp');fillGrpSel('nc-grp');renderProducts();renderHistory();renderGroups();renderClientGrpList();setNPCode();setNC2();initMeisaiMonth();}
+function init(){load();const now=new Date();document.getElementById('hdr-d').innerHTML=`${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日<br>${WD[now.getDay()]}曜日`;fillSel('csel');fillSel('msel');fillGrpSel('e-grp');fillGrpSel('nc-grp');renderProducts();renderHistory();renderGroups();renderClientGrpList();setNPCode();setNC2();initMeisaiMonth();updateBillingPendingBadge();}
 function toast(msg,type){const t=document.getElementById('toast');t.textContent=msg;t.style.borderLeftColor=type==='e'?'#c0392b':'var(--ac)';t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2400);}
 
 // ===== 伝票発行 =====
@@ -914,6 +918,7 @@ function showPrev(){
   renderHistory();
   fbSaveHistoryEntry(entry);
   _issueSession={fp,histId,queued};
+  updateBillingPendingBadge();
   if(addedToMaster.length)toast('📋 マスタに追加: '+addedToMaster.join('、'));
 }
 function backToInput(){
@@ -938,6 +943,7 @@ function backToInput(){
       persistHistoryLocal();
       fbDeleteHistoryEntry(sess.histId);
       renderHistory();
+      updateBillingPendingBadge();
     }
     toast('発行を取り消して入力画面に戻ります');
   }
@@ -960,11 +966,24 @@ localStorage.setItem('purims_backed_up','1');toast('JSONバックアップをダ
 
 function parseClosingDay(s){if(!s)return 0;if(String(s).includes('20'))return 20;if(String(s).includes('25'))return 25;if(String(s).includes('末'))return 99;return 0;}
 function parseDeliveryDate(str){if(!str||str==='—')return null;const m=String(str).match(/(\d+)年(\d+)月(\d+)日/);if(m)return{y:+m[1],m:+m[2],d:+m[3]};const p=String(str).split(/[\/\-]/).map(Number);if(p.length>=3&&!isNaN(p[0]))return{y:p[0],m:p[1],d:p[2]};return null;}
+function getBillingMonth(d,closingDay){if(!d)return null;if(!closingDay||closingDay===99)return{y:d.y,m:d.m};if(d.d>closingDay){let m=d.m+1,y=d.y;if(m>12){m=1;y++;}return{y,m};}return{y:d.y,m:d.m};}
 function belongsToBillingMonth(d,year,month,closingDay){if(!d)return false;if(!closingDay||closingDay===99)return d.y===year&&d.m===month;let sy=year,sm=month-1,sd=closingDay+1;if(sm<1){sm=12;sy--;}const start=new Date(sy,sm-1,sd);const end=new Date(year,month-1,closingDay,23,59,59);const dt=new Date(d.y,d.m-1,d.d);return dt>=start&&dt<=end;}
 function formatDeliveryDateForMeisai(ds){const d=parseDeliveryDate(ds);return d?`${d.y}/${d.m}/${d.d}`:(ds||'');}
+function formatDeliveryDateMD(ds){const d=parseDeliveryDate(ds);return d?`${d.m}/${d.d}`:(ds||'');}
 function getBillingPrice(client,code,name){const items=DB.clients[client]?.items||[];const it=items.find(i=>i.code===code)||items.find(i=>i.name===name);return(it&&it.price)?Number(it.price):0;}
+function sortHistoryRecs(a,b){const da=parseDeliveryDate(a.deliveryDate),db=parseDeliveryDate(b.deliveryDate);if(!da||!db)return(a.id||0)-(b.id||0);return new Date(da.y,da.m-1,da.d)-new Date(db.y,db.m-1,db.d)||(a.id||0)-(b.id||0);}
+function sanitizeSheetName(n){return String(n).replace(/[\\/*?:\[\]]/g,'_').slice(0,31);}
+function xlCol(n){let s='';while(n>0){const r=(n-1)%26;s=String.fromCharCode(65+r)+s;n=Math.floor((n-1)/26);}return s;}
 function initMeisaiMonth(){const y=document.getElementById('meisai-year'),m=document.getElementById('meisai-month');if(!y||!m)return;const now=new Date();y.value=now.getFullYear();m.value=now.getMonth()+1;}
-function exportMeisaiJSON(){const year=parseInt(document.getElementById('meisai-year')?.value,10);const month=parseInt(document.getElementById('meisai-month')?.value,10);if(!year||!month||month<1||month>12){toast('請求月（年月）を指定してください','e');return;}const clients=Object.keys(DB.clients||{}).sort((a,b)=>a.localeCompare(b,'ja'));const meisaiData=[];const over14=[];let zeroPrice=0;clients.forEach(customer=>{const closingDay=parseClosingDay(DB.closing[customer]||'');const recs=(DB.history||[]).filter(h=>{if(h.client!==customer)return false;return belongsToBillingMonth(parseDeliveryDate(h.deliveryDate),year,month,closingDay);}).sort((a,b)=>{const da=parseDeliveryDate(a.deliveryDate),db=parseDeliveryDate(b.deliveryDate);if(!da||!db)return(a.id||0)-(b.id||0);return new Date(da.y,da.m-1,da.d)-new Date(db.y,db.m-1,db.d)||(a.id||0)-(b.id||0);});if(!recs.length)return;if(recs.length>14)over14.push(`${customer}（${recs.length}枚）`);const invoices=recs.slice(0,14).map((h,idx)=>({invoiceNo:String(idx+1),deliveryDate:formatDeliveryDateForMeisai(h.deliveryDate),items:(h.items||[]).filter(it=>it.qty>0).map(it=>{const price=getBillingPrice(customer,it.code,it.name);if(!price)zeroPrice++;return{name:it.name,price,qty:it.qty};})}));meisaiData.push({customer,sheetName:`${customer}_${year}年${month}月`,year,month,closingDay,invoices});});if(!meisaiData.length){toast(`${year}年${month}月の請求データがありません`,'e');return;}const payload={meisaiData,exportedAt:new Date().toISOString(),source:'Purims'};dlFile(JSON.stringify(payload,null,2),`purims_meisai_${year}${String(month).padStart(2,'0')}.json`,'application/json');let msg=`${meisaiData.length}店舗分の請求JSONを出力しました`;if(over14.length)msg+=`（14枚超: ${over14.join('、')}）`;if(zeroPrice)msg+=`（単価未設定 ${zeroPrice}行）`;toast(msg,over14.length||zeroPrice?'e':'');}
+function updateBillingPendingBadge(){const el=document.getElementById('billing-pending-badge');if(!el)return;const n=(DB.history||[]).filter(h=>h.date===todayIso()&&!h.billingExportedAt).length;el.style.display=n?'inline':'none';el.textContent='未反映: '+n+'件';}
+function buildInvoicesFromRecs(recs,customer,warnings){if(recs.length>14)warnings.push(`${customer}（${recs.length}枚・14枚まで）`);let zeroPrice=0;const invoices=recs.slice(0,14).map((h,idx)=>({invoiceNo:String(idx+1),deliveryDate:h.deliveryDate,items:(h.items||[]).filter(it=>it.qty>0).map(it=>{const price=getBillingPrice(customer,it.code,it.name);if(!price)zeroPrice++;return{name:it.name,price,qty:it.qty};})}));if(zeroPrice)warnings.push(`${customer} 単価未設定${zeroPrice}行`);return invoices;}
+function collectMeisaiData(opts){const warnings=[];const mode=opts?.mode||'month';if(mode==='today'){const today=todayIso();const toMark=(DB.history||[]).filter(h=>h.date===today&&!h.billingExportedAt);if(!toMark.length)return{error:'本日の未反映伝票がありません'};const sheetKeys=new Map();toMark.forEach(h=>{const closingDay=parseClosingDay(DB.closing[h.client]||'');const bm=getBillingMonth(parseDeliveryDate(h.deliveryDate),closingDay);if(!bm)return;const k=`${h.client}\0${bm.year}\0${bm.month}`;if(!sheetKeys.has(k))sheetKeys.set(k,{customer:h.client,year:bm.year,month:bm.month,closingDay});});const meisaiData=[];sheetKeys.forEach(({customer,year,month,closingDay})=>{const recs=(DB.history||[]).filter(h=>{if(h.client!==customer)return false;return belongsToBillingMonth(parseDeliveryDate(h.deliveryDate),year,month,closingDay);}).sort(sortHistoryRecs);if(!recs.length)return;meisaiData.push({customer,sheetName:`${customer}_${year}年${month}月`,year,month,closingDay,invoices:buildInvoicesFromRecs(recs,customer,warnings)});});meisaiData.sort((a,b)=>a.customer.localeCompare(b.customer,'ja'));if(!meisaiData.length)return{error:'請求データを作成できませんでした'};return{meisaiData,toMark,warnings};}const year=parseInt(opts?.year,10),month=parseInt(opts?.month,10);if(!year||!month||month<1||month>12)return{error:'請求月（年月）を指定してください'};const meisaiData=[];Object.keys(DB.clients||{}).sort((a,b)=>a.localeCompare(b,'ja')).forEach(customer=>{const closingDay=parseClosingDay(DB.closing[customer]||'');const recs=(DB.history||[]).filter(h=>{if(h.client!==customer)return false;return belongsToBillingMonth(parseDeliveryDate(h.deliveryDate),year,month,closingDay);}).sort(sortHistoryRecs);if(!recs.length)return;meisaiData.push({customer,sheetName:`${customer}_${year}年${month}月`,year,month,closingDay,invoices:buildInvoicesFromRecs(recs,customer,warnings)});});if(!meisaiData.length)return{error:`${year}年${month}月の請求データがありません`};return{meisaiData,warnings};}
+function setupMeisaiSheet(ws,data){const merges=['A1:R1','A3:F3','N5:O5','P5:R5','B6:G6','B7:C7','N6:O6','P6:R6','N7:O7','P7:R7','C9:P9','A10:A11','B10:B11','Q10:Q11','R10:R11'];merges.forEach(r=>ws.mergeCells(r));for(let i=3;i<=16;i++)ws.mergeCells(`${xlCol(i)}10:${xlCol(i)}11`);ws.getCell('A1').value='請　求　明　細　書';ws.getCell('A3').value='株式会社ネクサス';ws.getCell('G3').value='様';ws.getCell('O3').value=data.year;ws.getCell('P3').value='年';ws.getCell('Q3').value=data.month;ws.getCell('R3').value='月分';ws.getCell('N5').value='小計金額';ws.getCell('P5').value={formula:'SUM(R12:R44)'};ws.getCell('A6').value='納品客先';ws.getCell('B6').value=data.customer;ws.getCell('N6').value='消費税';ws.getCell('P6').value={formula:'P5*0.1'};ws.getCell('A7').value='締め日';ws.getCell('B7').value=data.closingDay===99?'末':(data.closingDay?String(data.closingDay):'末');ws.getCell('D7').value='日';ws.getCell('N7').value='ご請求金額';ws.getCell('P7').value={formula:'P5+P6'};ws.getCell('C9').value='納　　品　　日';ws.getCell('A10').value='品名';ws.getCell('B10').value='単価';ws.getCell('Q10').value='合計数';ws.getCell('R10').value='合計金額';for(let r=12;r<=44;r++){ws.getCell(`Q${r}`).value={formula:`SUM(C${r}:P${r})`};ws.getCell(`R${r}`).value={formula:`B${r}*Q${r}`};}const itemRows=new Map();let nextRow=12;(data.invoices||[]).forEach((inv,i)=>{const col=3+i,letter=xlCol(col);ws.getCell(`${letter}10`).value=inv.invoiceNo+'\n'+formatDeliveryDateMD(inv.deliveryDate);(inv.items||[]).forEach(it=>{const key=it.name+'|'+it.price;let row=itemRows.get(key);if(!row){if(nextRow>44)return;row=nextRow++;itemRows.set(key,row);ws.getCell(`A${row}`).value=it.name;ws.getCell(`B${row}`).value=it.price;}ws.getCell(`${letter}${row}`).value=it.qty;});});}
+async function exportMeisaiXlsx(meisaiData,filename){if(typeof ExcelJS==='undefined'){toast('Excelライブラリの読み込みに失敗しました','e');return;}const wb=new ExcelJS.Workbook();meisaiData.forEach(data=>{const ws=wb.addWorksheet(sanitizeSheetName(data.sheetName));setupMeisaiSheet(ws,data);});const buf=await wb.xlsx.writeBuffer();const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;a.click();URL.revokeObjectURL(a.href);}
+function markBillingExported(entries){const now=new Date().toISOString();entries.forEach(h=>{h.billingExportedAt=now;persistHistoryLocal();fbSaveHistoryEntry(h);});updateBillingPendingBadge();}
+async function exportTodayBilling(){const result=collectMeisaiData({mode:'today'});if(result.error){toast(result.error,'e');return;}try{await exportMeisaiXlsx(result.meisaiData,`purims_meisai_${fileDate()}.xlsx`);markBillingExported(result.toMark);let msg=`${result.meisaiData.length}店舗分の請求明細Excelを出力しました`;if(result.warnings?.length)msg+='（'+result.warnings.join('、')+'）';toast(msg,result.warnings?.length?'e':'');}catch(e){toast('Excel出力に失敗しました: '+e.message,'e');}}
+async function exportMeisaiMonthXlsx(){const year=parseInt(document.getElementById('meisai-year')?.value,10);const month=parseInt(document.getElementById('meisai-month')?.value,10);const result=collectMeisaiData({mode:'month',year,month});if(result.error){toast(result.error,'e');return;}try{await exportMeisaiXlsx(result.meisaiData,`purims_meisai_${year}${String(month).padStart(2,'0')}.xlsx`);let msg=`${result.meisaiData.length}店舗分の請求明細Excelを出力しました`;if(result.warnings?.length)msg+='（'+result.warnings.join('、')+'）';toast(msg,result.warnings?.length?'e':'');}catch(e){toast('Excel出力に失敗しました: '+e.message,'e');}}
+function exportMeisaiJSON(){const year=parseInt(document.getElementById('meisai-year')?.value,10);const month=parseInt(document.getElementById('meisai-month')?.value,10);const result=collectMeisaiData({mode:'month',year,month});if(result.error){toast(result.error,'e');return;}const payload={meisaiData:result.meisaiData.map(d=>({...d,invoices:d.invoices.map(inv=>({...inv,deliveryDate:formatDeliveryDateForMeisai(inv.deliveryDate)}))})),exportedAt:new Date().toISOString(),source:'Purims'};dlFile(JSON.stringify(payload,null,2),`purims_meisai_${year}${String(month).padStart(2,'0')}.json`,'application/json');let msg=`${result.meisaiData.length}店舗分の請求JSONを出力しました`;if(result.warnings?.length)msg+='（'+result.warnings.join('、')+'）';toast(msg,result.warnings?.length?'e':'');}
 function importCSV(e){const file=e.target.files[0];if(!file)return;const r=new FileReader();r.onload=ev=>{try{const lines=ev.target.result.replace(/\r/g,'').split('\n').filter(l=>l.trim());const nc={};const ncy={};lines.slice(1).forEach(line=>{const cols=line.split(',').map(c=>c.replace(/^"|"$/g,'').replace(/""/g,'"').trim());if(cols.length<3||!cols[0])return;const[client,code,name,cyc]=cols;if(!nc[client])nc[client]={items:[]};if(name)nc[client].items.push({code:code||'P000',name});if(cyc)ncy[client]=cyc;});if(!Object.keys(nc).length){toast('読み込めるデータがありませんでした','e');return;}if(!confirm(`${Object.keys(nc).length}件の客先データをインポートします。続けますか？`))return;Object.assign(DB.clients,nc);Object.assign(DB.cycles,ncy);persist();fillSel('csel');fillSel('msel');toast(`${Object.keys(nc).length}件をインポートしました`);}catch(err){toast('CSVの読み込みに失敗しました','e');}e.target.value='';};r.readAsText(file,'UTF-8');}
 function importJSON(e){const file=e.target.files[0];if(!file)return;const r=new FileReader();r.onload=ev=>{try{const d=JSON.parse(ev.target.result);if(!d.clients){toast('フォーマットが違います','e');return;}if(!confirm('バックアップから全データを復元します。続けますか？'))return;DB.clients=d.clients;DB.cycles=d.cycles||{};if(d.products&&d.products.length)DB.products=d.products;if(d.groups&&d.groups.length)DB.groups=d.groups;if(d.clientGroups)DB.clientGroups=d.clientGroups;if(d.clientOrder)DB.clientOrder=d.clientOrder;if(d.closing)DB.closing=d.closing;if(Array.isArray(d.history)){DB.history=d.history;persistHistoryLocal();if(currentUser){const obj={};DB.history.forEach(h=>{if(h&&h.id!=null)obj[String(h.id)]=h;});db.ref('purims/history').set(obj).catch(e=>toast('履歴の復元に失敗しました: '+e.message,'e'));}}persist();fillSel('csel');fillSel('msel');fillGrpSel('e-grp');fillGrpSel('nc-grp');renderProducts();renderHistory();renderGroups();renderClientGrpList();toast(`${Object.keys(DB.clients).length}件を復元しました`);}catch(err){toast('JSONの読み込みに失敗しました','e');}e.target.value='';};r.readAsText(file,'UTF-8');}
 
@@ -1158,6 +1177,7 @@ function fbApplyData(d,history){
   localStorage.setItem('purims_v14',JSON.stringify({clients:DB.clients,cycles:DB.cycles,products:DB.products,groups:DB.groups,clientGroups:DB.clientGroups,clientOrder:DB.clientOrder,closing:DB.closing}));
   fillSel("csel",curC);fillSel("msel",editC);fillGrpSel("e-grp");fillGrpSel("nc-grp");
   renderProducts();renderHistory();renderGroups();renderClientGrpList();
+  updateBillingPendingBadge();
 }
 
 // 初回・手動：onceで確実に読み込む
