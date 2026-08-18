@@ -1005,46 +1005,53 @@ function initMeisaiMonth(){const y=document.getElementById('meisai-year'),m=docu
 function updateBillingPendingBadge(){const el=document.getElementById('billing-pending-badge');if(!el)return;const n=(DB.history||[]).filter(h=>!h.billingExportedAt).length;el.style.display=n?'inline':'none';el.textContent='未反映: '+n+'件';}
 function buildInvoicesFromRecs(recs,customer,warnings){if(recs.length>14)warnings.push(`${customer}（${recs.length}枚・14枚まで）`);let zeroPrice=0;const invoices=recs.slice(0,14).map((h,idx)=>({invoiceNo:String(idx+1),deliveryDate:h.deliveryDate,items:(h.items||[]).filter(it=>it.qty>0).map(it=>{const price=getBillingPrice(customer,it.code,it.name);if(!price)zeroPrice++;return{name:it.name,price,qty:it.qty};})}));if(zeroPrice)warnings.push(`${customer} 単価未設定${zeroPrice}行`);return invoices;}
 function collectMeisaiData(opts){const warnings=[];const mode=opts?.mode||'month';if(mode==='today'){const toMark=(DB.history||[]).filter(h=>!h.billingExportedAt);if(!toMark.length)return{error:'未反映の伝票がありません'};const sheetKeys=new Map();toMark.forEach(h=>{const closingDay=parseClosingDay(DB.closing[h.client]||'');const bm=getBillingMonth(parseDeliveryDate(h.deliveryDate),closingDay);if(!bm)return;const k=`${h.client}\0${bm.year}\0${bm.month}`;if(!sheetKeys.has(k))sheetKeys.set(k,{customer:h.client,year:bm.year,month:bm.month,closingDay});});const meisaiData=[];sheetKeys.forEach(({customer,year,month,closingDay})=>{const recs=(DB.history||[]).filter(h=>{if(h.client!==customer)return false;return belongsToBillingMonth(parseDeliveryDate(h.deliveryDate),year,month,closingDay);}).sort(sortHistoryRecs);if(!recs.length)return;meisaiData.push({customer,sheetName:`${customer}_${year}年${month}月`,year,month,closingDay,invoices:buildInvoicesFromRecs(recs,customer,warnings)});});meisaiData.sort((a,b)=>a.customer.localeCompare(b.customer,'ja'));if(!meisaiData.length)return{error:'請求データを作成できませんでした'};return{meisaiData,toMark,warnings};}const year=parseInt(opts?.year,10),month=parseInt(opts?.month,10);if(!year||!month||month<1||month>12)return{error:'請求月（年月）を指定してください'};const meisaiData=[];Object.keys(DB.clients||{}).sort((a,b)=>a.localeCompare(b,'ja')).forEach(customer=>{const closingDay=parseClosingDay(DB.closing[customer]||'');const recs=(DB.history||[]).filter(h=>{if(h.client!==customer)return false;return belongsToBillingMonth(parseDeliveryDate(h.deliveryDate),year,month,closingDay);}).sort(sortHistoryRecs);if(!recs.length)return;meisaiData.push({customer,sheetName:`${customer}_${year}年${month}月`,year,month,closingDay,invoices:buildInvoicesFromRecs(recs,customer,warnings)});});if(!meisaiData.length)return{error:`${year}年${month}月の請求データがありません`};return{meisaiData,warnings};}
+function meisaiThin(){return{style:'thin',color:{argb:'FF000000'}};}
+function meisaiBox(ws,r1,c1,r2,c2,inner){
+  const t=meisaiThin();
+  for(let r=r1;r<=r2;r++){
+    for(let c=c1;c<=c2;c++){
+      const b=inner?{top:t,left:t,bottom:t,right:t}:{};
+      if(r===r1)b.top=t;if(r===r2)b.bottom=t;if(c===c1)b.left=t;if(c===c2)b.right=t;
+      ws.getCell(r,c).border=b;
+    }
+  }
+}
 function setupMeisaiSheet(ws,data){
-  const thin={style:'thin',color:{argb:'FF000000'}};
-  const border={top:thin,left:thin,bottom:thin,right:thin};
   const font={name:'游ゴシック',size:10};
   const fontTitle={name:'游ゴシック',size:16,bold:true};
   const yen='"¥"#,##0';
-  ws.properties.outlineLevelCol=0;
+  const invCount=Math.min(14,(data.invoices||[]).length);
+  const lastInvCol=Math.max(3,2+invCount);
+  ws.views=[{showGridLines:false,state:'normal'}];
   ws.pageSetup.paperSize=9;
   ws.pageSetup.orientation='portrait';
   ws.pageSetup.fitToPage=true;
   ws.pageSetup.fitToWidth=1;
   ws.pageSetup.fitToHeight=1;
-  ws.pageSetup.printArea='A1:R44';
   ws.pageSetup.horizontalCentered=true;
   ws.columns=[{width:22},{width:8},...Array.from({length:14},()=>({width:6.6})),{width:8},{width:12}];
-  const merges=['A1:R1','A3:F3','N5:O5','P5:R5','B6:G6','B7:C7','N6:O6','P6:R6','N7:O7','P7:R7','C9:P9','A10:A11','B10:B11','Q10:Q11','R10:R11'];
-  merges.forEach(r=>ws.mergeCells(r));
-  for(let i=3;i<=16;i++)ws.mergeCells(`${xlCol(i)}10:${xlCol(i)}11`);
-  ws.getRow(1).height=24;ws.getRow(10).height=16;ws.getRow(11).height=16;
+  ws.mergeCells('A1:R1');ws.mergeCells('A3:F3');ws.mergeCells('N5:O5');ws.mergeCells('P5:R5');
+  ws.mergeCells('B6:G6');ws.mergeCells('B7:C7');ws.mergeCells('N6:O6');ws.mergeCells('P6:R6');ws.mergeCells('N7:O7');ws.mergeCells('P7:R7');
+  if(invCount)ws.mergeCells(`C9:${xlCol(lastInvCol)}9`);
+  ws.mergeCells('A10:A11');ws.mergeCells('B10:B11');ws.mergeCells('Q10:Q11');ws.mergeCells('R10:R11');
+  for(let i=3;i<=lastInvCol;i++)ws.mergeCells(`${xlCol(i)}10:${xlCol(i)}11`);
+  ws.getRow(1).height=24;ws.getRow(10).height=18;ws.getRow(11).height=16;
   ws.getCell('A1').value='請　求　明　細　書';
   ws.getCell('A1').font=fontTitle;ws.getCell('A1').alignment={horizontal:'center',vertical:'middle'};
   ws.getCell('A3').value='株式会社ネクサス';ws.getCell('A3').font={name:'游ゴシック',size:12,bold:true};
   ws.getCell('G3').value='様';
   ws.getCell('O3').value=data.year;ws.getCell('P3').value='年';ws.getCell('Q3').value=data.month;ws.getCell('R3').value='月分';
   if(data.sample){ws.getCell('A2').value='※印刷見本（実データではありません）';ws.getCell('A2').font={name:'游ゴシック',size:9,color:{argb:'FFC0392B'},bold:true};}
-  ws.getCell('N5').value='小計金額';ws.getCell('P5').value={formula:'SUM(R12:R44)'};ws.getCell('P5').numFmt=yen;
-  ws.getCell('A6').value='納品客先';ws.getCell('B6').value=data.customer;
+  ws.getCell('N5').value='小計金額';
+  ws.getCell('A6').value='納品客先';ws.getCell('B6').value=data.customer;ws.getCell('B6').font={name:'游ゴシック',size:12};
   ws.getCell('N6').value='消費税';ws.getCell('P6').value={formula:'P5*0.1'};ws.getCell('P6').numFmt=yen;
   ws.getCell('A7').value='締め日';ws.getCell('B7').value=data.closingDay===99?'末':(data.closingDay?String(data.closingDay):'末');ws.getCell('D7').value='日';
   ws.getCell('N7').value='ご請求金額';ws.getCell('P7').value={formula:'P5+P6'};ws.getCell('P7').numFmt=yen;ws.getCell('P7').font={name:'游ゴシック',size:12,bold:true};
-  ws.getCell('C9').value='納　　品　　日';ws.getCell('C9').alignment={horizontal:'center'};
+  if(invCount){ws.getCell('C9').value='納　　品　　日';ws.getCell('C9').alignment={horizontal:'center'};ws.getCell('C9').font={name:'游ゴシック',size:9,bold:true};}
   ws.getCell('A10').value='品名';ws.getCell('B10').value='単価';ws.getCell('Q10').value='合計数';ws.getCell('R10').value='合計金額';
   ['A10','B10','Q10','R10'].forEach(a=>{ws.getCell(a).alignment={horizontal:'center',vertical:'middle'};ws.getCell(a).font={name:'游ゴシック',size:9,bold:true};});
-  for(let r=12;r<=44;r++){
-    ws.getCell(`Q${r}`).value={formula:`SUM(C${r}:P${r})`};
-    ws.getCell(`R${r}`).value={formula:`B${r}*Q${r}`};ws.getCell(`R${r}`).numFmt=yen;
-    ws.getCell(`B${r}`).numFmt=yen;
-  }
   const itemRows=new Map();let nextRow=12;
-  (data.invoices||[]).forEach((inv,i)=>{
+  (data.invoices||[]).slice(0,14).forEach((inv,i)=>{
     const col=3+i,letter=xlCol(col);
     const c=ws.getCell(`${letter}10`);
     c.value=String(inv.invoiceNo)+'\n'+formatDeliveryDateMD(inv.deliveryDate);
@@ -1052,18 +1059,29 @@ function setupMeisaiSheet(ws,data){
     c.font={name:'游ゴシック',size:8};
     (inv.items||[]).forEach(it=>{
       const key=it.name+'|'+it.price;let row=itemRows.get(key);
-      if(!row){if(nextRow>44)return;row=nextRow++;itemRows.set(key,row);ws.getCell(`A${row}`).value=it.name;ws.getCell(`B${row}`).value=it.price;}
+      if(!row){if(nextRow>44)return;row=nextRow++;itemRows.set(key,row);ws.getCell(`A${row}`).value=it.name;ws.getCell(`A${row}`).font=font;ws.getCell(`B${row}`).value=it.price;}
       ws.getCell(`${letter}${row}`).value=it.qty;
+      ws.getCell(`${letter}${row}`).alignment={horizontal:'center'};
     });
   });
-  for(let r=1;r<=44;r++){
-    for(let c=1;c<=18;c++){
-      const cell=ws.getCell(r,c);
-      cell.border=border;
-      if(!cell.font||!cell.font.size)cell.font=Object.assign({},font,cell.font||{});
-      if(c>=3&&c<=16&&r>=12)cell.alignment={horizontal:'center'};
-    }
+  const lastItem=Math.max(12,nextRow-1);
+  const lastCol=lastInvCol;
+  ws.getCell('P5').value={formula:`SUM(R12:R${lastItem})`};ws.getCell('P5').numFmt=yen;
+  for(let r=12;r<=lastItem;r++){
+    ws.getCell(`Q${r}`).value={formula:`SUM(C${r}:${xlCol(lastCol)}${r})`};
+    ws.getCell(`R${r}`).value={formula:`B${r}*Q${r}`};ws.getCell(`R${r}`).numFmt=yen;
+    ws.getCell(`B${r}`).numFmt=yen;
+    ws.getCell(`Q${r}`).alignment={horizontal:'center'};
   }
+  meisaiBox(ws,1,1,1,18,false);
+  meisaiBox(ws,3,1,3,6,false);
+  meisaiBox(ws,6,2,6,7,false);
+  meisaiBox(ws,7,2,7,3,false);
+  meisaiBox(ws,5,14,7,18,true);
+  meisaiBox(ws,10,1,lastItem,2,true);
+  if(invCount)meisaiBox(ws,9,3,lastItem,lastCol,true);
+  meisaiBox(ws,10,17,lastItem,18,true);
+  ws.pageSetup.printArea=`A1:R${lastItem}`;
 }
 async function exportSampleBilling(){
   const sample=[
