@@ -337,7 +337,7 @@ select.cs:focus{outline:none;border-color:var(--ac)}
         </div>
         <button onclick="exportMasterCSV()" style="background:#185fa5;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;cursor:pointer;font-weight:bold;white-space:nowrap">📋 Excelマスター出力</button>
         <button onclick="exportCSV()" style="background:#1a6e3c;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;cursor:pointer;font-weight:bold;white-space:nowrap">📥 Excel用CSV出力</button>
-        <button onclick="exportTodayBilling()" id="billing-today-btn" style="background:#854f0b;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;cursor:pointer;font-weight:bold;white-space:nowrap">📄 本日分→請求明細Excel</button>
+        <button onclick="exportTodayBilling()" id="billing-today-btn" style="background:#854f0b;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;cursor:pointer;font-weight:bold;white-space:nowrap">📄 未反映→請求明細Excel</button>
         <span id="billing-pending-badge" style="display:none;background:#854f0b;color:#fff;border-radius:12px;padding:2px 10px;font-size:12px;font-weight:bold"></span>
       </div>
     </div>
@@ -567,7 +567,7 @@ select.cs:focus{outline:none;border-color:var(--ac)}
       伝票（プリームス）の発行履歴から、<strong style="color:var(--tx)">ネクサス請求明細 .xlsx</strong> を出力します（Excel を開いて取り込む必要はありません）。<br>
       単価はマスタの「請求単価」列を使います（伝票には出しません）。客先ごとにシートが自動作成されます。
       <div style="display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap">
-        <button onclick="exportTodayBilling()" style="padding:8px 16px;background:#854f0b;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">📄 本日分を請求明細Excel出力</button>
+        <button onclick="exportTodayBilling()" style="padding:8px 16px;background:#854f0b;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">📄 未反映分を請求明細Excel出力</button>
       </div>
       <div style="display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap">
         <label style="font-size:12px;color:var(--tx);font-weight:600">請求月指定</label>
@@ -622,12 +622,26 @@ select.cs:focus{outline:none;border-color:var(--ac)}
     <span>📖 使い方・困ったときのガイド</span>
     <button class="btn" style="font-size:12px;padding:5px 12px;background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.3)" onclick="helpExpandAll()">すべて開く</button>
   </div></div>
-  <div class="help-section" id="help-basic">
-    <div class="help-section-hd" onclick="toggleHelp('basic')">📋 毎日の伝票発行の手順<span class="help-toggle" id="help-toggle-basic">▼</span></div>
+  <div class="help-section" id="help-daily">
+    <div class="help-section-hd" onclick="toggleHelp('daily')">🗓 日常の運用（1日の流れ）<span class="help-toggle" id="help-toggle-daily">▼</span></div>
+    <div class="help-section-body">
+      <p>伝票は<strong>プリームス</strong>名義、請求明細は<strong>ネクサス</strong>名義です。Excel テンプレートの取り込みは<strong>不要</strong>（Purims が .xlsx を直接作成します）。</p>
+      <div class="help-step"><div class="help-step-num">朝〜夕</div><div class="help-step-body"><div class="help-step-title">伝票を発行する</div>客先を選び数量を入力 → <span class="help-tag">伝票発行</span>。出さない店は <span class="help-tag">⏭ 飛ばす</span>。一括印刷モードなら最後に <span class="help-tag">まとめて印刷</span>。</div></div>
+      <div class="help-step"><div class="help-step-num">終了時</div><div class="help-step-body"><div class="help-step-title">請求明細 Excel を出力</div><span class="help-tag">未反映→請求明細Excel</span> を押す → <code>purims_meisai_YYYYMMDD.xlsx</code> がダウンロード。客先ごとにシート自動作成。</div></div>
+      <div class="help-step"><div class="help-step-num">必要なら</div><div class="help-step-body"><div class="help-step-title">確認・印刷・保存</div>ダウンロードした .xlsx を Excel で開く（取り込み操作なし）。印刷または所定フォルダに保存。</div></div>
+      <div class="help-note">💡 <strong>未反映: N件</strong> と表示されている間は、まだ請求明細に載せていない伝票があります（本日以前の分も含む）。ボタンを押すと反映済みになり、同じ伝票は二重に出力されません。</div>
+      <div class="help-note">💡 <strong>押し忘れた場合</strong> … 翌日（または後日）に <span class="help-tag">未反映→請求明細Excel</span> を押せば、未反映分がまとめて出力されます。または <span class="help-tag">データ</span> タブ → 請求月を指定 → <span class="help-tag">請求月Excel出力</span> でも再出力できます。</div>
+      <div class="help-note">💡 毎回<strong>新しい Excel ファイル</strong>が作成されます。前日保存したファイルを Purims が自動更新することはありません。</div>
+    </div>
+  </div>
+  <div class="help-section help-collapsed" id="help-basic">
+    <div class="help-section-hd" onclick="toggleHelp('basic')">📋 伝票発行の詳細<span class="help-toggle" id="help-toggle-basic">▶</span></div>
     <div class="help-section-body">
       <div class="help-step"><div class="help-step-num">1</div><div class="help-step-body"><div class="help-step-title">印刷モードを選ぶ</div>画面上部の「🖨 印刷モード」バーで <span class="help-tag">1件ずつ印刷</span> か <span class="help-tag">一括印刷</span> を選びます。</div></div>
       <div class="help-step"><div class="help-step-num">2</div><div class="help-step-body"><div class="help-step-title">客先をプルダウンで選ぶ</div>「客先を選択してください」から届け先を選びます。</div></div>
       <div class="help-step"><div class="help-step-num">3</div><div class="help-step-body"><div class="help-step-title">数量を入力して伝票発行</div>品目一覧に数量を入力し、<span class="help-tag">伝票発行</span>ボタンを押します。発行しない客先は <span class="help-tag">⏭ 飛ばす</span> で次の客先へ進めます（リストから選び直す必要はありません）。</div></div>
+      <div class="help-step"><div class="help-step-num">4</div><div class="help-step-body"><div class="help-step-title">次の客先へ</div>発行後は <span class="help-tag">▶ 客先名</span> で次へ。<span class="help-tag">客先選択に戻る</span> はリストの先頭からやり直すとき。</div></div>
+      <div class="help-step"><div class="help-step-num">5</div><div class="help-step-body"><div class="help-step-title">間違えたとき</div>完了画面の <span class="help-tag">入力に戻る（発行取消）</span> で履歴から取り消せます。</div></div>
       <div class="help-note">💡 データはクラウド（Firebase）に自動保存されます。別のPCで開いても同じデータが表示されます。</div>
     </div>
   </div>
@@ -639,14 +653,25 @@ select.cs:focus{outline:none;border-color:var(--ac)}
       <div class="help-note">💡 Chromeブラウザでの印刷が最も安定しています。</div>
     </div>
   </div>
-  <div class="help-section help-collapsed" id="help-billing">
-    <div class="help-section-hd" onclick="toggleHelp('billing')">📄 ネクサス請求明細書の出力<span class="help-toggle" id="help-toggle-billing">▶</span></div>
+  <div class="help-section help-collapsed" id="help-master">
+    <div class="help-section-hd" onclick="toggleHelp('master')">⚙️ 最初に一度だけ（マスタ設定）<span class="help-toggle" id="help-toggle-master">▶</span></div>
     <div class="help-section-body">
-      <p>伝票は<strong>プリームス</strong>名義のまま発行し、請求書だけ<strong>ネクサス</strong>明細書で作成します。</p>
-      <div class="help-step"><div class="help-step-num">1</div><div class="help-step-body"><div class="help-step-title">請求単価をマスタに登録</div><span class="help-tag">マスタ管理</span> → 各客先の品目に「請求単価」を入力（伝票には表示されません）。</div></div>
-      <div class="help-step"><div class="help-step-num">2</div><div class="help-step-body"><div class="help-step-title">1日の発行が終わったら</div>伝票発行画面の <span class="help-tag">本日分→請求明細Excel</span> を押す（または <span class="help-tag">データ</span> タブから）。請求明細 .xlsx がダウンロードされます。</div></div>
-      <div class="help-step"><div class="help-step-num">3</div><div class="help-step-body"><div class="help-step-title">Excel ファイルを確認・印刷</div>ダウンロードされた .xlsx を開いて内容確認・印刷（取り込み操作は不要）。客先ごとにシートが作成されています。</div></div>
-      <div class="help-note">💡 週2回程度の発行なら1店舗14伝票以内で収まります。締め日（20日・25日・末日）は客先マスタの設定を Excel に反映します。</div>
+      <p><span class="help-tag">マスタ管理</span> → 客先編集 で、客先ごとに次を設定します。</p>
+      <div class="help-step"><div class="help-step-num">1</div><div class="help-step-body"><div class="help-step-title">締め日</div>20日〆・25日〆・末日〆から選択。請求月の判定に使います（客先ごとに異なってOK）。</div></div>
+      <div class="help-step"><div class="help-step-num">2</div><div class="help-step-body"><div class="help-step-title">請求単価</div>各品目の「請求単価」列に入力。<strong>伝票には表示されません。</strong> 請求明細 Excel だけに使います。</div></div>
+      <div class="help-step"><div class="help-step-num">3</div><div class="help-step-body"><div class="help-step-title">納品サイクル・品目</div>納品曜日と品目一覧・並び順を設定。伝票入力画面に反映されます。</div></div>
+      <div class="help-warn">⚠️ 請求単価が未設定の品目は、請求明細で 0 円になり警告が出ます。</div>
+    </div>
+  </div>
+  <div class="help-section help-collapsed" id="help-billing">
+    <div class="help-section-hd" onclick="toggleHelp('billing')">📄 請求明細 Excel の出力<span class="help-toggle" id="help-toggle-billing">▶</span></div>
+    <div class="help-section-body">
+      <p>Purims がブラウザ内で請求明細書（.xlsx）を<strong>直接生成</strong>します。運用 PC に Excel テンプレート（.xlsm）を置く必要はありません。</p>
+      <div class="help-step"><div class="help-step-num">日次</div><div class="help-step-body"><div class="help-step-title">未反映→請求明細Excel</div>未反映の伝票（押し忘れ分を含む）を対象に、該当客先・請求月のシートを含む Excel を出力。ファイル名例: <code>purims_meisai_20250818.xlsx</code></div></div>
+      <div class="help-step"><div class="help-step-num">月次</div><div class="help-step-body"><div class="help-step-title">請求月Excel出力</div><span class="help-tag">データ</span> タブで年月を指定して再出力。ファイル名例: <code>purims_meisai_202508.xlsx</code></div></div>
+      <div class="help-step"><div class="help-step-num">内容</div><div class="help-step-body"><div class="help-step-title">シート構成</div>シート名は <code>客先名_YYYY年M月</code>。品名・単価・日別数量・小計・消費税10%・ご請求金額を含みます。</div></div>
+      <div class="help-note">💡 週2回程度の発行なら1店舗14伝票以内で問題ありません。14枚を超える客先は警告が出ます。</div>
+      <div class="help-note">💡 旧方式（JSON → ネクサス明細書.xlsm 取り込み）も <span class="help-tag">データ</span> タブの「JSON（旧xlsm用）」から利用できます。</div>
     </div>
   </div>
   <div class="help-section help-collapsed" id="help-data">
@@ -975,9 +1000,9 @@ function sortHistoryRecs(a,b){const da=parseDeliveryDate(a.deliveryDate),db=pars
 function sanitizeSheetName(n){return String(n).replace(/[\\/*?:\[\]]/g,'_').slice(0,31);}
 function xlCol(n){let s='';while(n>0){const r=(n-1)%26;s=String.fromCharCode(65+r)+s;n=Math.floor((n-1)/26);}return s;}
 function initMeisaiMonth(){const y=document.getElementById('meisai-year'),m=document.getElementById('meisai-month');if(!y||!m)return;const now=new Date();y.value=now.getFullYear();m.value=now.getMonth()+1;}
-function updateBillingPendingBadge(){const el=document.getElementById('billing-pending-badge');if(!el)return;const n=(DB.history||[]).filter(h=>h.date===todayIso()&&!h.billingExportedAt).length;el.style.display=n?'inline':'none';el.textContent='未反映: '+n+'件';}
+function updateBillingPendingBadge(){const el=document.getElementById('billing-pending-badge');if(!el)return;const n=(DB.history||[]).filter(h=>!h.billingExportedAt).length;el.style.display=n?'inline':'none';el.textContent='未反映: '+n+'件';}
 function buildInvoicesFromRecs(recs,customer,warnings){if(recs.length>14)warnings.push(`${customer}（${recs.length}枚・14枚まで）`);let zeroPrice=0;const invoices=recs.slice(0,14).map((h,idx)=>({invoiceNo:String(idx+1),deliveryDate:h.deliveryDate,items:(h.items||[]).filter(it=>it.qty>0).map(it=>{const price=getBillingPrice(customer,it.code,it.name);if(!price)zeroPrice++;return{name:it.name,price,qty:it.qty};})}));if(zeroPrice)warnings.push(`${customer} 単価未設定${zeroPrice}行`);return invoices;}
-function collectMeisaiData(opts){const warnings=[];const mode=opts?.mode||'month';if(mode==='today'){const today=todayIso();const toMark=(DB.history||[]).filter(h=>h.date===today&&!h.billingExportedAt);if(!toMark.length)return{error:'本日の未反映伝票がありません'};const sheetKeys=new Map();toMark.forEach(h=>{const closingDay=parseClosingDay(DB.closing[h.client]||'');const bm=getBillingMonth(parseDeliveryDate(h.deliveryDate),closingDay);if(!bm)return;const k=`${h.client}\0${bm.year}\0${bm.month}`;if(!sheetKeys.has(k))sheetKeys.set(k,{customer:h.client,year:bm.year,month:bm.month,closingDay});});const meisaiData=[];sheetKeys.forEach(({customer,year,month,closingDay})=>{const recs=(DB.history||[]).filter(h=>{if(h.client!==customer)return false;return belongsToBillingMonth(parseDeliveryDate(h.deliveryDate),year,month,closingDay);}).sort(sortHistoryRecs);if(!recs.length)return;meisaiData.push({customer,sheetName:`${customer}_${year}年${month}月`,year,month,closingDay,invoices:buildInvoicesFromRecs(recs,customer,warnings)});});meisaiData.sort((a,b)=>a.customer.localeCompare(b.customer,'ja'));if(!meisaiData.length)return{error:'請求データを作成できませんでした'};return{meisaiData,toMark,warnings};}const year=parseInt(opts?.year,10),month=parseInt(opts?.month,10);if(!year||!month||month<1||month>12)return{error:'請求月（年月）を指定してください'};const meisaiData=[];Object.keys(DB.clients||{}).sort((a,b)=>a.localeCompare(b,'ja')).forEach(customer=>{const closingDay=parseClosingDay(DB.closing[customer]||'');const recs=(DB.history||[]).filter(h=>{if(h.client!==customer)return false;return belongsToBillingMonth(parseDeliveryDate(h.deliveryDate),year,month,closingDay);}).sort(sortHistoryRecs);if(!recs.length)return;meisaiData.push({customer,sheetName:`${customer}_${year}年${month}月`,year,month,closingDay,invoices:buildInvoicesFromRecs(recs,customer,warnings)});});if(!meisaiData.length)return{error:`${year}年${month}月の請求データがありません`};return{meisaiData,warnings};}
+function collectMeisaiData(opts){const warnings=[];const mode=opts?.mode||'month';if(mode==='today'){const toMark=(DB.history||[]).filter(h=>!h.billingExportedAt);if(!toMark.length)return{error:'未反映の伝票がありません'};const sheetKeys=new Map();toMark.forEach(h=>{const closingDay=parseClosingDay(DB.closing[h.client]||'');const bm=getBillingMonth(parseDeliveryDate(h.deliveryDate),closingDay);if(!bm)return;const k=`${h.client}\0${bm.year}\0${bm.month}`;if(!sheetKeys.has(k))sheetKeys.set(k,{customer:h.client,year:bm.year,month:bm.month,closingDay});});const meisaiData=[];sheetKeys.forEach(({customer,year,month,closingDay})=>{const recs=(DB.history||[]).filter(h=>{if(h.client!==customer)return false;return belongsToBillingMonth(parseDeliveryDate(h.deliveryDate),year,month,closingDay);}).sort(sortHistoryRecs);if(!recs.length)return;meisaiData.push({customer,sheetName:`${customer}_${year}年${month}月`,year,month,closingDay,invoices:buildInvoicesFromRecs(recs,customer,warnings)});});meisaiData.sort((a,b)=>a.customer.localeCompare(b.customer,'ja'));if(!meisaiData.length)return{error:'請求データを作成できませんでした'};return{meisaiData,toMark,warnings};}const year=parseInt(opts?.year,10),month=parseInt(opts?.month,10);if(!year||!month||month<1||month>12)return{error:'請求月（年月）を指定してください'};const meisaiData=[];Object.keys(DB.clients||{}).sort((a,b)=>a.localeCompare(b,'ja')).forEach(customer=>{const closingDay=parseClosingDay(DB.closing[customer]||'');const recs=(DB.history||[]).filter(h=>{if(h.client!==customer)return false;return belongsToBillingMonth(parseDeliveryDate(h.deliveryDate),year,month,closingDay);}).sort(sortHistoryRecs);if(!recs.length)return;meisaiData.push({customer,sheetName:`${customer}_${year}年${month}月`,year,month,closingDay,invoices:buildInvoicesFromRecs(recs,customer,warnings)});});if(!meisaiData.length)return{error:`${year}年${month}月の請求データがありません`};return{meisaiData,warnings};}
 function setupMeisaiSheet(ws,data){const merges=['A1:R1','A3:F3','N5:O5','P5:R5','B6:G6','B7:C7','N6:O6','P6:R6','N7:O7','P7:R7','C9:P9','A10:A11','B10:B11','Q10:Q11','R10:R11'];merges.forEach(r=>ws.mergeCells(r));for(let i=3;i<=16;i++)ws.mergeCells(`${xlCol(i)}10:${xlCol(i)}11`);ws.getCell('A1').value='請　求　明　細　書';ws.getCell('A3').value='株式会社ネクサス';ws.getCell('G3').value='様';ws.getCell('O3').value=data.year;ws.getCell('P3').value='年';ws.getCell('Q3').value=data.month;ws.getCell('R3').value='月分';ws.getCell('N5').value='小計金額';ws.getCell('P5').value={formula:'SUM(R12:R44)'};ws.getCell('A6').value='納品客先';ws.getCell('B6').value=data.customer;ws.getCell('N6').value='消費税';ws.getCell('P6').value={formula:'P5*0.1'};ws.getCell('A7').value='締め日';ws.getCell('B7').value=data.closingDay===99?'末':(data.closingDay?String(data.closingDay):'末');ws.getCell('D7').value='日';ws.getCell('N7').value='ご請求金額';ws.getCell('P7').value={formula:'P5+P6'};ws.getCell('C9').value='納　　品　　日';ws.getCell('A10').value='品名';ws.getCell('B10').value='単価';ws.getCell('Q10').value='合計数';ws.getCell('R10').value='合計金額';for(let r=12;r<=44;r++){ws.getCell(`Q${r}`).value={formula:`SUM(C${r}:P${r})`};ws.getCell(`R${r}`).value={formula:`B${r}*Q${r}`};}const itemRows=new Map();let nextRow=12;(data.invoices||[]).forEach((inv,i)=>{const col=3+i,letter=xlCol(col);ws.getCell(`${letter}10`).value=inv.invoiceNo+'\n'+formatDeliveryDateMD(inv.deliveryDate);(inv.items||[]).forEach(it=>{const key=it.name+'|'+it.price;let row=itemRows.get(key);if(!row){if(nextRow>44)return;row=nextRow++;itemRows.set(key,row);ws.getCell(`A${row}`).value=it.name;ws.getCell(`B${row}`).value=it.price;}ws.getCell(`${letter}${row}`).value=it.qty;});});}
 async function exportMeisaiXlsx(meisaiData,filename){if(typeof ExcelJS==='undefined'){toast('Excelライブラリの読み込みに失敗しました','e');return;}const wb=new ExcelJS.Workbook();meisaiData.forEach(data=>{const ws=wb.addWorksheet(sanitizeSheetName(data.sheetName));setupMeisaiSheet(ws,data);});const buf=await wb.xlsx.writeBuffer();const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;a.click();URL.revokeObjectURL(a.href);}
 function markBillingExported(entries){const now=new Date().toISOString();entries.forEach(h=>{h.billingExportedAt=now;persistHistoryLocal();fbSaveHistoryEntry(h);});updateBillingPendingBadge();}
@@ -1079,7 +1104,7 @@ function clearHist(){if(!confirm('全履歴を削除しますか？'))return;DB.
 
 // ===== ヘルプ =====
 function toggleHelp(id){const sec=document.getElementById('help-'+id);const tog=document.getElementById('help-toggle-'+id);if(!sec)return;const collapsed=sec.classList.toggle('help-collapsed');if(tog)tog.textContent=collapsed?'▶':'▼';}
-function helpExpandAll(){['basic','print','billing','data'].forEach(id=>{const sec=document.getElementById('help-'+id);const tog=document.getElementById('help-toggle-'+id);if(sec){sec.classList.remove('help-collapsed');if(tog)tog.textContent='▼';}});}
+function helpExpandAll(){['daily','basic','master','billing','print','data'].forEach(id=>{const sec=document.getElementById('help-'+id);const tog=document.getElementById('help-toggle-'+id);if(sec){sec.classList.remove('help-collapsed');if(tog)tog.textContent='▼';}});}
 
 // ===== Firebase連携 =====
 const db=firebase.database();
