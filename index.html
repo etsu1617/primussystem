@@ -1060,9 +1060,9 @@ function setupMeisaiSheet(ws,data){
   (data.invoices||[]).slice(0,14).forEach((inv,i)=>{
     const col=3+i,letter=xlCol(col);
     const c=ws.getCell(`${letter}10`);
-    c.value=String(inv.invoiceNo)+'\n'+formatDeliveryDateMD(inv.deliveryDate);
-    c.alignment={wrapText:true,horizontal:'center',vertical:'middle'};
-    c.font={name:'游ゴシック',size:8};
+    c.value=formatDeliveryDateMD(inv.deliveryDate);
+    c.alignment={horizontal:'center',vertical:'middle'};
+    c.font={name:'游ゴシック',size:9};
     (inv.items||[]).forEach(it=>{
       const key=it.name+'|'+it.price;let row=itemRows.get(key);
       if(!row){if(nextRow>44)return;row=nextRow++;itemRows.set(key,row);ws.getCell(`A${row}`).value=it.name;ws.getCell(`B${row}`).value=it.price;}
