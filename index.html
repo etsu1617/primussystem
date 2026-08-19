@@ -646,7 +646,7 @@ select.cs:focus{outline:none;border-color:var(--ac)}
       <div class="help-step"><div class="help-step-num">朝〜夕</div><div class="help-step-body"><div class="help-step-title">伝票を発行する</div>客先を選び数量を入力 → <span class="help-tag">伝票発行</span>。出さない店は <span class="help-tag">⏭ 飛ばす</span>。一括印刷モードなら最後に <span class="help-tag">まとめて印刷</span>。</div></div>
       <div class="help-step"><div class="help-step-num">終了時</div><div class="help-step-body"><div class="help-step-title">請求明細 Excel を出力</div><span class="help-tag">未反映→請求明細Excel</span> を押す → <code>purims_meisai_YYYYMMDD.xlsx</code> がダウンロード。客先ごとにシート自動作成。</div></div>
       <div class="help-step"><div class="help-step-num">必要なら</div><div class="help-step-body"><div class="help-step-title">確認・印刷・保存</div>ダウンロードした .xlsx を Excel で開く（取り込み操作なし）。印刷または所定フォルダに保存。</div></div>
-      <div class="help-note">💡 <strong>未反映: N件</strong> と表示されている間は、まだ請求明細に載せていない伝票があります（本日以前の分も含む）。ボタンを押すと反映済みになり、同じ伝票は二重に出力されません。件数は <strong>2026年8月1日以降の納品</strong> のみです（7月以前は対象外）。</div>
+      <div class="help-note">💡 <strong>未反映: N件</strong> と表示されている間は、まだ請求明細に載せていない伝票があります（本日以前の分も含む）。ボタンを押すと反映済みになり、同じ伝票は二重に出力されません。件数は <strong>2026年8月1日以降の納品</strong> のみです。7月以前は初回読み込み時に反映済み扱いになります。</div>
       <div class="help-note">💡 <strong>押し忘れた場合</strong> … 翌日（または後日）に <span class="help-tag">未反映→請求明細Excel</span> を押せば、未反映分がまとめて出力されます。または <span class="help-tag">データ</span> タブ → 請求月を指定 → <span class="help-tag">請求月Excel出力</span> でも再出力できます。</div>
       <div class="help-note">💡 毎回<strong>新しい Excel ファイル</strong>が作成されます。前日保存したファイルを Purims が自動更新することはありません。</div>
       <div class="help-note">💡 印刷の見た目を確認したいときは、<span class="help-tag">データ</span> タブの <span class="help-tag">印刷見本を出力</span>（実データは使いません）。</div>
@@ -1027,8 +1027,34 @@ function historyDeliveryDate(h){
 }
 function parseHistDeliveryDate(h){return parseDeliveryDate(historyDeliveryDate(h));}
 const BILLING_DELIVERY_MIN={y:2026,m:8,d:1};
+const BILLING_OUT_OF_SCOPE_MARK='out-of-scope-before-2026-08';
 function isBillingDeliveryInScope(d){if(!d)return false;if(d.y<BILLING_DELIVERY_MIN.y)return false;if(d.y===BILLING_DELIVERY_MIN.y){if(d.m<BILLING_DELIVERY_MIN.m)return false;if(d.m===BILLING_DELIVERY_MIN.m&&d.d<BILLING_DELIVERY_MIN.d)return false;}return true;}
 function isExportableHist(h){const d=parseHistDeliveryDate(h);return!!(h&&h.client&&d&&isBillingDeliveryInScope(d));}
+function outOfScopeUnbilled(){return(DB.history||[]).filter(h=>{if(h.billingExportedAt)return false;const d=parseHistDeliveryDate(h);return d&&!isBillingDeliveryInScope(d);});}
+function markOutOfScopeAsBilled(){
+  const entries=outOfScopeUnbilled();
+  if(!entries.length)return 0;
+  entries.forEach(h=>{h.billingExportedAt=BILLING_OUT_OF_SCOPE_MARK;});
+  persistHistoryLocal();
+  updateBillingPendingBadge();
+  if(typeof currentUser!=='undefined'&&currentUser){
+    const tok=markSelfSaving();
+    const updates={};
+    entries.forEach(h=>{if(h&&h.id!=null)updates[histPath(h.id)+'/billingExportedAt']=BILLING_OUT_OF_SCOPE_MARK;});
+    const keys=Object.keys(updates);
+    const chunk=400;
+    const writes=[];
+    for(let i=0;i<keys.length;i+=chunk){
+      const part={};
+      keys.slice(i,i+chunk).forEach(k=>{part[k]=updates[k];});
+      writes.push(db.ref().update(part));
+    }
+    Promise.all(writes)
+      .catch(e=>toast('7月以前の反映済み更新に失敗しました: '+e.message,'e'))
+      .finally(()=>setTimeout(()=>clearSelfSaving(tok),800));
+  }
+  return entries.length;
+}
 function getBillingMonth(d,closingDay){if(!d)return null;if(!closingDay||closingDay===99)return{y:d.y,m:d.m};if(d.d>closingDay){let m=d.m+1,y=d.y;if(m>12){m=1;y++;}return{y,m};}return{y:d.y,m:d.m};}
 function belongsToBillingMonth(d,year,month,closingDay){if(!d)return false;if(!closingDay||closingDay===99)return d.y===year&&d.m===month;let sy=year,sm=month-1,sd=closingDay+1;if(sm<1){sm=12;sy--;}const start=new Date(sy,sm-1,sd);const end=new Date(year,month-1,closingDay,23,59,59);const dt=new Date(d.y,d.m-1,d.d);return dt>=start&&dt<=end;}
 function formatDeliveryDateForMeisai(ds){const d=parseDeliveryDate(ds);return d?`${d.y}/${d.m}/${d.d}`:(ds||'');}
@@ -1038,7 +1064,7 @@ function sortHistoryRecs(a,b){const da=parseHistDeliveryDate(a),db=parseHistDeli
 function sanitizeSheetName(n){return String(n).replace(/[\\/*?:\[\]]/g,'_').slice(0,31);}
 function xlCol(n){let s='';while(n>0){const r=(n-1)%26;s=String.fromCharCode(65+r)+s;n=Math.floor((n-1)/26);}return s;}
 function initMeisaiMonth(){const y=document.getElementById('meisai-year'),m=document.getElementById('meisai-month');if(!y||!m)return;const now=new Date();y.value=now.getFullYear();m.value=now.getMonth()+1;}
-function updateBillingPendingBadge(){const el=document.getElementById('billing-pending-badge');if(!el)return;const pending=(DB.history||[]).filter(h=>!h.billingExportedAt);const n=pending.filter(isExportableHist).length;el.style.display=n?'inline':'none';el.textContent='未反映: '+n+'件';const skipped=pending.filter(h=>{const d=parseHistDeliveryDate(h);return d&&!isBillingDeliveryInScope(d);}).length;if(skipped||n<pending.length){const parts=[];if(skipped)parts.push(`7月以前 ${skipped}件除外`);if(n+skipped<pending.length)parts.push(`納品日不明など ${pending.length-n-skipped}件`);el.title=parts.join(' / ');}else el.removeAttribute('title');}
+function updateBillingPendingBadge(){const el=document.getElementById('billing-pending-badge');if(!el)return;const pending=(DB.history||[]).filter(h=>!h.billingExportedAt);const n=pending.filter(isExportableHist).length;el.style.display=n?'inline':'none';el.textContent='未反映: '+n+'件';}
 function buildInvoicesFromRecs(recs,customer,warnings){if(recs.length>14)warnings.push(`${customer}（${recs.length}枚・14枚まで）`);let zeroPrice=0;const invoices=recs.slice(0,14).map((h,idx)=>({invoiceNo:String(idx+1),deliveryDate:historyDeliveryDate(h),items:(h.items||[]).filter(it=>it.qty>0).map(it=>{const price=getBillingPrice(customer,it.code,it.name);if(!price)zeroPrice++;return{name:it.name,price,qty:it.qty};})}));if(zeroPrice)warnings.push(`${customer} 単価未設定${zeroPrice}行`);return invoices;}
 function collectMeisaiData(opts){const warnings=[];const mode=opts?.mode||'month';if(mode==='today'){const toMark=(DB.history||[]).filter(h=>!h.billingExportedAt&&isExportableHist(h));if(!toMark.length){const raw=(DB.history||[]).filter(h=>!h.billingExportedAt).length;if(raw)return{error:`未反映 ${raw}件ありますが、7月以前・納品日不明などで出力対象がありません`};return{error:'未反映の伝票がありません'};}const sheetKeys=new Map();toMark.forEach(h=>{const closingDay=parseClosingDay(DB.closing[h.client]||'');const bm=getBillingMonth(parseHistDeliveryDate(h),closingDay);if(!bm)return;const k=`${h.client}\0${bm.y}\0${bm.m}`;if(!sheetKeys.has(k))sheetKeys.set(k,{customer:h.client,year:bm.y,month:bm.m,closingDay});});const meisaiData=[];sheetKeys.forEach(({customer,year,month,closingDay})=>{const recs=toMark.filter(h=>{if(h.client!==customer)return false;return belongsToBillingMonth(parseHistDeliveryDate(h),year,month,closingDay);}).sort(sortHistoryRecs);if(!recs.length)return;meisaiData.push({customer,sheetName:`${customer}_${year}年${month}月`,year,month,closingDay,minCharge:getMinCharge(customer),invoices:buildInvoicesFromRecs(recs,customer,warnings)});});meisaiData.sort((a,b)=>a.customer.localeCompare(b.customer,'ja')||a.year-b.year||a.month-b.month);if(!meisaiData.length)return{error:'請求データを作成できませんでした（締め日・納品日の組み合わせを確認してください）'};return{meisaiData,toMark,warnings};}const year=parseInt(opts?.year,10),month=parseInt(opts?.month,10);if(!year||!month||month<1||month>12)return{error:'請求月（年月）を指定してください'};if(year<BILLING_DELIVERY_MIN.y||(year===BILLING_DELIVERY_MIN.y&&month<BILLING_DELIVERY_MIN.m))return{error:`${year}年${month}月は請求対象外です（${BILLING_DELIVERY_MIN.y}年${BILLING_DELIVERY_MIN.m}月以降の納品のみ）`};const meisaiData=[];Object.keys(DB.clients||{}).sort((a,b)=>a.localeCompare(b,'ja')).forEach(customer=>{const closingDay=parseClosingDay(DB.closing[customer]||'');const recs=(DB.history||[]).filter(h=>{if(h.client!==customer)return false;if(!isBillingDeliveryInScope(parseHistDeliveryDate(h)))return false;return belongsToBillingMonth(parseHistDeliveryDate(h),year,month,closingDay);}).sort(sortHistoryRecs);if(!recs.length)return;meisaiData.push({customer,sheetName:`${customer}_${year}年${month}月`,year,month,closingDay,minCharge:getMinCharge(customer),invoices:buildInvoicesFromRecs(recs,customer,warnings)});});if(!meisaiData.length)return{error:`${year}年${month}月の請求データがありません`};return{meisaiData,warnings};}
 function meisaiThin(){return{style:'thin',color:{argb:'FF000000'}};}
@@ -1360,7 +1386,7 @@ function fbApplyData(d,history){
   localStorage.setItem('purims_v14',JSON.stringify({clients:DB.clients,cycles:DB.cycles,products:DB.products,groups:DB.groups,clientGroups:DB.clientGroups,clientOrder:DB.clientOrder,closing:DB.closing,minCharge:DB.minCharge||{}}));
   fillSel("csel",curC);fillSel("msel",editC);fillGrpSel("e-grp");fillGrpSel("nc-grp");
   renderProducts();renderHistory();renderGroups();renderClientGrpList();
-  updateBillingPendingBadge();
+  return markOutOfScopeAsBilled();
 }
 
 // 初回・手動：onceで確実に読み込む
@@ -1373,8 +1399,8 @@ function fbLoad(){
     const d=snapD.val();
     if(!d||!d.clients){toast("クラウドにデータがありません","e");return;}
     const histRaw=await migrateHistoryIfNeeded(snapH.val());
-    fbApplyData(d,histRaw);
-    toast("クラウドから読み込みました");
+    const skipped=fbApplyData(d,histRaw)||0;
+    toast(skipped?`クラウドから読み込みました（7月以前 ${skipped}件を請求対象外にしました）`:"クラウドから読み込みました");
     fbStartListeners();
   }).catch(e=>toast("読み込み失敗: "+e.message,"e"));
 }
