@@ -203,6 +203,30 @@ select.cs:focus{outline:none;border-color:var(--ac)}
 #user-modal.hidden{display:none}
 .user-modal-box{background:#fff;border-radius:12px;padding:28px;width:480px;max-height:80vh;overflow-y:auto}
 .user-modal-title{font-size:16px;font-weight:700;color:var(--nv);margin-bottom:18px}
+#meisai-viewer{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:stretch;justify-content:center;z-index:8500;padding:12px}
+#meisai-viewer.open{display:flex}
+.meisai-viewer-box{background:#fff;border-radius:12px;width:min(1200px,100%);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.25)}
+.meisai-viewer-hd{background:#5c3d1e;color:#fff;padding:12px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex-shrink:0}
+.meisai-viewer-hd h2{font-size:15px;font-weight:700;margin:0}
+.meisai-viewer-body{display:flex;flex:1;min-height:0;overflow:hidden}
+.meisai-viewer-side{width:220px;flex-shrink:0;border-right:1px solid var(--bd);background:var(--s);display:flex;flex-direction:column;min-height:0}
+.meisai-viewer-side input{margin:10px;padding:7px 10px;border:1px solid var(--b2);border-radius:6px;font-size:12px}
+.meisai-viewer-list{overflow-y:auto;flex:1;padding:0 6px 10px}
+.meisai-viewer-item{display:block;width:100%;text-align:left;padding:8px 10px;border:none;background:transparent;border-radius:6px;cursor:pointer;font-size:12px;color:var(--tx);margin-bottom:2px}
+.meisai-viewer-item:hover{background:#fff}
+.meisai-viewer-item.on{background:#5c3d1e;color:#fff;font-weight:600}
+.meisai-viewer-main{flex:1;overflow:auto;padding:16px;background:#faf8f5}
+.meisai-sheet{background:#fff;border:1px solid #ccc;padding:16px;max-width:980px;margin:0 auto;font-family:'游ゴシック','Yu Gothic',sans-serif;color:#000;font-size:12px}
+.meisai-sheet table{border-collapse:collapse;width:100%;table-layout:fixed}
+.meisai-sheet th,.meisai-sheet td{border:1px solid #333;padding:3px 4px;vertical-align:middle}
+.meisai-sheet .title{font-size:20px;font-weight:700;text-align:center;padding:8px;border:1px solid #333}
+.meisai-sheet .num{text-align:right;font-variant-numeric:tabular-nums}
+.meisai-sheet .cen{text-align:center}
+.meisai-sheet .tot{font-weight:700;font-size:13px}
+@media (max-width:800px){
+  .meisai-viewer-body{flex-direction:column}
+  .meisai-viewer-side{width:100%;max-height:160px;border-right:none;border-bottom:1px solid var(--bd)}
+}
 .user-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border:0.5px solid var(--bd);border-radius:8px;margin-bottom:8px}
 .user-row-name{flex:1;font-size:13px;font-weight:600}
 .user-row-role{font-size:11px;padding:2px 8px;border-radius:10px;background:#e8f0fe;color:#185fa5}
@@ -229,6 +253,28 @@ select.cs:focus{outline:none;border-color:var(--ac)}
     </div>
     <button class="login-btn" onclick="doLogin()">ログイン</button>
     <div class="login-err" id="login-err"></div>
+  </div>
+</div>
+
+<!-- 請求明細閲覧 -->
+<div id="meisai-viewer">
+  <div class="meisai-viewer-box">
+    <div class="meisai-viewer-hd">
+      <h2>📄 請求明細書（閲覧）</h2>
+      <span id="meisai-viewer-period" style="font-size:13px;opacity:.9"></span>
+      <span id="meisai-viewer-count" style="font-size:12px;background:rgba(255,255,255,.2);padding:2px 10px;border-radius:10px"></span>
+      <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
+        <button type="button" onclick="printMeisaiViewerSheet()" style="padding:6px 12px;background:#fff;color:#5c3d1e;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer">🖨 この客先を印刷</button>
+        <button type="button" onclick="closeMeisaiViewer()" style="padding:6px 12px;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.4);border-radius:6px;font-size:12px;cursor:pointer">閉じる</button>
+      </div>
+    </div>
+    <div class="meisai-viewer-body">
+      <div class="meisai-viewer-side">
+        <input type="search" id="meisai-viewer-search" placeholder="客先を検索…" oninput="renderMeisaiViewerList()">
+        <div class="meisai-viewer-list" id="meisai-viewer-list"></div>
+      </div>
+      <div class="meisai-viewer-main" id="meisai-viewer-main"><div style="color:var(--mu);padding:40px;text-align:center">左の一覧から客先を選んでください</div></div>
+    </div>
   </div>
 </div>
 
@@ -593,6 +639,7 @@ select.cs:focus{outline:none;border-color:var(--ac)}
         <input type="number" id="meisai-month" min="1" max="12" style="width:60px;padding:7px 10px;border:1.5px solid var(--b2);border-radius:6px;font-size:14px" placeholder="月">
         <span>月</span>
         <button onclick="exportMeisaiMonthXlsx()" style="padding:8px 16px;background:#5c3d1e;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">📥 請求月Excel出力</button>
+        <button onclick="openMeisaiViewer()" style="padding:8px 16px;background:#fff;color:#5c3d1e;border:1.5px solid #5c3d1e;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">👁 請求明細を見る</button>
         <button onclick="exportMeisaiJSON()" style="padding:8px 14px;background:var(--s);color:var(--mu);border:1px solid var(--b2);border-radius:6px;font-size:12px;cursor:pointer">JSON（旧xlsm用）</button>
       </div>
     </div>
@@ -648,6 +695,7 @@ select.cs:focus{outline:none;border-color:var(--ac)}
       <div class="help-step"><div class="help-step-num">必要なら</div><div class="help-step-body"><div class="help-step-title">確認・印刷・保存</div>ダウンロードした .xlsx を Excel で開く（取り込み操作なし）。印刷または所定フォルダに保存。</div></div>
       <div class="help-note">💡 <strong>未反映: N件</strong> と表示されている間は、まだ請求明細に載せていない伝票があります（本日以前の分も含む）。ボタンを押すと反映済みになり、同じ伝票は二重に出力されません。件数は <strong>2026年8月1日以降の納品</strong> のみです。7月以前は初回読み込み時に反映済み扱いになります。</div>
       <div class="help-note">💡 <strong>押し忘れた場合</strong> … 翌日（または後日）に <span class="help-tag">未反映→請求明細Excel</span> を押せば、未反映分を含む<strong>その請求月の全伝票</strong>がシートに載ります（前回分も消えない）。反映済みフラグは今回の未反映分にだけ付きます。または <span class="help-tag">データ</span> タブ → 請求月を指定 → <span class="help-tag">請求月Excel出力</span> でも再出力できます。</div>
+      <div class="help-note">💡 <strong>アプリ内で確認</strong> … <span class="help-tag">データ</span> タブで請求月を指定 → <span class="help-tag">請求明細を見る</span>。客先一覧から選んで明細書を表示できます（Excel不要）。必要ならその場で印刷も可能です。</div>
       <div class="help-note">💡 毎回<strong>新しい Excel ファイル</strong>が作成されます。前日保存したファイルを Purims が自動更新することはありません。</div>
       <div class="help-note">💡 印刷の見た目を確認したいときは、<span class="help-tag">データ</span> タブの <span class="help-tag">印刷見本を出力</span>（実データは使いません）。</div>
     </div>
@@ -1164,6 +1212,107 @@ function splitMeisaiByMonth(meisaiData){const groups=new Map();meisaiData.forEac
 async function exportTodayBilling(){const result=collectMeisaiData({mode:'today'});if(result.error){toast(result.error,'e');return;}try{if(result.meisaiData.length<=MEISAI_MAX_SHEETS){await exportMeisaiXlsx(result.meisaiData,`purims_meisai_${fileDate()}.xlsx`);}else{const parts=splitMeisaiByMonth(result.meisaiData);for(const part of parts){await exportMeisaiXlsx(part.rows,`purims_meisai_${part.key}.xlsx`);}}markBillingExported(result.toMark);let msg=`${result.meisaiData.length}シートの請求明細Excelを出力しました`;if(result.meisaiData.length>MEISAI_MAX_SHEETS)msg+=`（${splitMeisaiByMonth(result.meisaiData).length}ファイルに分割）`;if(result.warnings?.length)msg+='（'+result.warnings.slice(0,3).join('、')+(result.warnings.length>3?'…':'')+'）';toast(msg,result.warnings?.length?'e':'');}catch(e){toast('Excel出力に失敗しました: '+e.message,'e');}}
 async function exportMeisaiMonthXlsx(){const year=parseInt(document.getElementById('meisai-year')?.value,10);const month=parseInt(document.getElementById('meisai-month')?.value,10);const result=collectMeisaiData({mode:'month',year,month});if(result.error){toast(result.error,'e');return;}try{await exportMeisaiXlsx(result.meisaiData,`purims_meisai_${year}${String(month).padStart(2,'0')}.xlsx`);let msg=`${result.meisaiData.length}店舗分の請求明細Excelを出力しました`;if(result.warnings?.length)msg+='（'+result.warnings.join('、')+'）';toast(msg,result.warnings?.length?'e':'');}catch(e){toast('Excel出力に失敗しました: '+e.message,'e');}}
 function exportMeisaiJSON(){const year=parseInt(document.getElementById('meisai-year')?.value,10);const month=parseInt(document.getElementById('meisai-month')?.value,10);const result=collectMeisaiData({mode:'month',year,month});if(result.error){toast(result.error,'e');return;}const payload={meisaiData:result.meisaiData.map(d=>({...d,invoices:d.invoices.map(inv=>({...inv,deliveryDate:formatDeliveryDateForMeisai(inv.deliveryDate)}))})),exportedAt:new Date().toISOString(),source:'Purims'};dlFile(JSON.stringify(payload,null,2),`purims_meisai_${year}${String(month).padStart(2,'0')}.json`,'application/json');let msg=`${result.meisaiData.length}店舗分の請求JSONを出力しました`;if(result.warnings?.length)msg+='（'+result.warnings.join('、')+'）';toast(msg,result.warnings?.length?'e':'');}
+
+let _meisaiViewerData=[];
+let _meisaiViewerIdx=0;
+function yenFmt(n){return'¥'+Math.round(Number(n)||0).toLocaleString('ja-JP');}
+function buildMeisaiRows(data){
+  const invoices=(data.invoices||[]).slice(0,14);
+  const itemRows=[];
+  const rowMap=new Map();
+  invoices.forEach((inv,i)=>{
+    (inv.items||[]).forEach(it=>{
+      const key=it.name+'|'+it.price;
+      let row=rowMap.get(key);
+      if(!row){row={name:it.name,price:Number(it.price)||0,qtys:Array(invoices.length).fill(0)};rowMap.set(key,row);itemRows.push(row);}
+      row.qtys[i]=(row.qtys[i]||0)+(Number(it.qty)||0);
+    });
+  });
+  itemRows.forEach(r=>{r.totalQty=r.qtys.reduce((s,q)=>s+q,0);r.amount=r.price*r.totalQty;});
+  const sum=itemRows.reduce((s,r)=>s+r.amount,0);
+  const min=Number(data.minCharge)||0;
+  const subtotal=min>0?Math.max(sum,min):sum;
+  const tax=Math.round(subtotal*0.1);
+  return{invoices,itemRows,sum,min,subtotal,tax,total:subtotal+tax};
+}
+function meisaiSheetHtml(data){
+  const {invoices,itemRows,sum,min,subtotal,tax,total}=buildMeisaiRows(data);
+  const closingLabel=data.closingDay===99?'末':(data.closingDay?String(data.closingDay):'末');
+  const dateHeaders=invoices.map(inv=>`<th class="cen" style="width:48px;font-size:11px">${escH(formatDeliveryDateMD(inv.deliveryDate))}</th>`).join('')+Array.from({length:Math.max(0,14-invoices.length)},()=>'<th></th>').join('');
+  const body=itemRows.map(r=>{
+    const qtyCells=r.qtys.map(q=>`<td class="cen">${q||''}</td>`).join('')+Array.from({length:Math.max(0,14-r.qtys.length)},()=>'<td></td>').join('');
+    return`<tr><td>${escH(r.name)}</td><td class="num">${yenFmt(r.price)}</td>${qtyCells}<td class="cen">${r.totalQty||''}</td><td class="num">${r.amount?yenFmt(r.amount):''}</td></tr>`;
+  }).join('')||'<tr><td colspan="18" class="cen" style="color:#888;padding:16px">品目がありません</td></tr>';
+  return`<div class="meisai-sheet" id="meisai-sheet-print">
+    <div class="title">請　求　明　細　書</div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin:12px 0 8px;gap:12px;flex-wrap:wrap">
+      <div>
+        <div style="font-size:14px;font-weight:700">株式会社ネクサス</div>
+        <div style="margin-top:8px"><span style="color:#666;font-size:11px">納品客先</span> <strong style="font-size:15px">${escH(data.customer)}</strong> 様</div>
+        <div style="margin-top:4px;font-size:12px"><span style="color:#666">締め日</span> ${escH(closingLabel)}日</div>
+        ${min>0?`<div style="margin-top:6px;font-size:11px;color:#854f0b">※最低保証 ${yenFmt(min)}（税抜）。品目合計が下回る場合は保証額を小計とします。</div>`:''}
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:14px;font-weight:700;margin-bottom:8px">${data.year}年${data.month}月分</div>
+        <table style="width:auto;margin-left:auto"><tr><td>小計金額</td><td class="num tot">${yenFmt(subtotal)}</td></tr><tr><td>消費税</td><td class="num">${yenFmt(tax)}</td></tr><tr><td>ご請求金額</td><td class="num tot" style="font-size:15px">${yenFmt(total)}</td></tr></table>
+        ${min>0&&sum<min?`<div style="font-size:11px;color:#854f0b;margin-top:4px">品目合計 ${yenFmt(sum)} → 最低保証適用</div>`:''}
+      </div>
+    </div>
+    <div style="font-size:11px;font-weight:700;text-align:center;margin-bottom:4px;border:1px solid #333;padding:3px">納　　品　　日</div>
+    <table>
+      <thead><tr><th style="width:140px">品名</th><th style="width:64px">単価</th>${dateHeaders}<th style="width:52px">合計数</th><th style="width:72px">合計金額</th></tr></thead>
+      <tbody>${body}</tbody>
+    </table>
+  </div>`;
+}
+function openMeisaiViewer(){
+  const year=parseInt(document.getElementById('meisai-year')?.value,10);
+  const month=parseInt(document.getElementById('meisai-month')?.value,10);
+  const result=collectMeisaiData({mode:'month',year,month});
+  if(result.error){toast(result.error,'e');return;}
+  _meisaiViewerData=result.meisaiData||[];
+  _meisaiViewerIdx=0;
+  const search=document.getElementById('meisai-viewer-search');
+  if(search)search.value='';
+  document.getElementById('meisai-viewer-period').textContent=`${year}年${month}月分`;
+  document.getElementById('meisai-viewer-count').textContent=`${_meisaiViewerData.length}店舗`;
+  document.getElementById('meisai-viewer').classList.add('open');
+  renderMeisaiViewerList();
+  if(_meisaiViewerData.length)selectMeisaiViewer(0);
+  else document.getElementById('meisai-viewer-main').innerHTML='<div style="color:var(--mu);padding:40px;text-align:center">この請求月のデータがありません</div>';
+  if(result.warnings?.length)toast(result.warnings.slice(0,3).join('、')+(result.warnings.length>3?'…':''),'e');
+}
+function closeMeisaiViewer(){document.getElementById('meisai-viewer').classList.remove('open');}
+function renderMeisaiViewerList(){
+  const q=(document.getElementById('meisai-viewer-search')?.value||'').trim().toLowerCase();
+  const el=document.getElementById('meisai-viewer-list');
+  if(!el)return;
+  const filtered=_meisaiViewerData.map((d,i)=>({d,i})).filter(({d})=>!q||String(d.customer||'').toLowerCase().includes(q));
+  if(!filtered.length){el.innerHTML='<div style="padding:12px;font-size:12px;color:var(--mu)">該当なし</div>';return;}
+  el.innerHTML=filtered.map(({d,i})=>`<button type="button" class="meisai-viewer-item${i===_meisaiViewerIdx?' on':''}" onclick="selectMeisaiViewer(${i})">${escH(d.customer)}</button>`).join('');
+}
+function selectMeisaiViewer(idx){
+  if(!_meisaiViewerData[idx])return;
+  _meisaiViewerIdx=idx;
+  renderMeisaiViewerList();
+  document.getElementById('meisai-viewer-main').innerHTML=meisaiSheetHtml(_meisaiViewerData[idx]);
+}
+function printMeisaiViewerSheet(){
+  const sheet=document.getElementById('meisai-sheet-print');
+  if(!sheet){toast('表示中の明細がありません','e');return;}
+  const w=window.open('','_blank','noopener,noreferrer');
+  if(!w){toast('印刷ウィンドウを開けませんでした','e');return;}
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>請求明細書</title><style>
+    body{font-family:'游ゴシック','Yu Gothic',sans-serif;color:#000;margin:12px;font-size:11px}
+    table{border-collapse:collapse;width:100%;table-layout:fixed}
+    th,td{border:1px solid #333;padding:2px 3px;vertical-align:middle}
+    .title{font-size:18px;font-weight:700;text-align:center;padding:6px;border:1px solid #333}
+    .num{text-align:right}.cen{text-align:center}.tot{font-weight:700}
+    @media print{body{margin:0}}
+  </style></head><body>${sheet.outerHTML}<script>window.onload=()=>{window.print();}</script></body></html>`);
+  w.document.close();
+}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('meisai-viewer')?.classList.contains('open'))closeMeisaiViewer();});
 function importCSV(e){const file=e.target.files[0];if(!file)return;const r=new FileReader();r.onload=ev=>{try{const lines=ev.target.result.replace(/\r/g,'').split('\n').filter(l=>l.trim());const nc={};const ncy={};lines.slice(1).forEach(line=>{const cols=line.split(',').map(c=>c.replace(/^"|"$/g,'').replace(/""/g,'"').trim());if(cols.length<3||!cols[0])return;const[client,code,name,cyc]=cols;if(!nc[client])nc[client]={items:[]};if(name)nc[client].items.push({code:code||'P000',name});if(cyc)ncy[client]=cyc;});if(!Object.keys(nc).length){toast('読み込めるデータがありませんでした','e');return;}if(!confirm(`${Object.keys(nc).length}件の客先データをインポートします。続けますか？`))return;Object.assign(DB.clients,nc);Object.assign(DB.cycles,ncy);persist();fillSel('csel');fillSel('msel');toast(`${Object.keys(nc).length}件をインポートしました`);}catch(err){toast('CSVの読み込みに失敗しました','e');}e.target.value='';};r.readAsText(file,'UTF-8');}
 function importJSON(e){const file=e.target.files[0];if(!file)return;const r=new FileReader();r.onload=ev=>{try{const d=JSON.parse(ev.target.result);if(!d.clients){toast('フォーマットが違います','e');return;}if(!confirm('バックアップから全データを復元します。続けますか？'))return;DB.clients=d.clients;DB.cycles=d.cycles||{};if(d.products&&d.products.length)DB.products=d.products;if(d.groups&&d.groups.length)DB.groups=d.groups;if(d.clientGroups)DB.clientGroups=d.clientGroups;if(d.clientOrder)DB.clientOrder=d.clientOrder;if(d.closing)DB.closing=d.closing;if(d.minCharge)DB.minCharge=d.minCharge;if(Array.isArray(d.history)){DB.history=d.history;persistHistoryLocal();if(currentUser){const obj={};DB.history.forEach(h=>{if(h&&h.id!=null)obj[String(h.id)]=h;});db.ref('purims/history').set(obj).catch(e=>toast('履歴の復元に失敗しました: '+e.message,'e'));}}persist();fillSel('csel');fillSel('msel');fillGrpSel('e-grp');fillGrpSel('nc-grp');renderProducts();renderHistory();renderGroups();renderClientGrpList();toast(`${Object.keys(DB.clients).length}件を復元しました`);}catch(err){toast('JSONの読み込みに失敗しました','e');}e.target.value='';};r.readAsText(file,'UTF-8');}
 
