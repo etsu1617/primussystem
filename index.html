@@ -208,7 +208,19 @@ select.cs:focus{outline:none;border-color:var(--ac)}
 .meisai-viewer-box{background:#fff;border-radius:12px;width:min(1200px,100%);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.25)}
 .meisai-viewer-hd{background:#5c3d1e;color:#fff;padding:12px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex-shrink:0}
 .meisai-viewer-hd h2{font-size:15px;font-weight:700;margin:0}
+.meisai-viewer-tabs{display:flex;gap:0;background:#4a3118;flex-shrink:0}
+.meisai-viewer-tab{padding:9px 18px;border:none;background:transparent;color:rgba(255,255,255,.65);font-size:13px;font-weight:600;cursor:pointer}
+.meisai-viewer-tab.on{background:#fff;color:#5c3d1e}
 .meisai-viewer-body{display:flex;flex:1;min-height:0;overflow:hidden}
+.meisai-summary-wrap{flex:1;overflow:auto;padding:16px;background:#faf8f5;display:none}
+.meisai-summary-wrap.on{display:block}
+.meisai-summary-tbl{width:100%;border-collapse:collapse;background:#fff;font-size:13px}
+.meisai-summary-tbl th{background:#5c3d1e;color:#fff;padding:8px 10px;font-weight:600;text-align:left;position:sticky;top:0;z-index:1}
+.meisai-summary-tbl td{padding:8px 10px;border-bottom:1px solid var(--bd);vertical-align:middle}
+.meisai-summary-tbl tr:hover td{background:#f5efe6;cursor:pointer}
+.meisai-summary-tbl .num{text-align:right;font-variant-numeric:tabular-nums}
+.meisai-summary-tbl .cen{text-align:center}
+.meisai-summary-tbl tfoot td{background:#f0ebe3;font-weight:700;border-top:2px solid #5c3d1e}
 .meisai-viewer-side{width:220px;flex-shrink:0;border-right:1px solid var(--bd);background:var(--s);display:flex;flex-direction:column;min-height:0}
 .meisai-viewer-side input{margin:10px;padding:7px 10px;border:1px solid var(--b2);border-radius:6px;font-size:12px}
 .meisai-viewer-list{overflow-y:auto;flex:1;padding:0 6px 10px}
@@ -260,15 +272,21 @@ select.cs:focus{outline:none;border-color:var(--ac)}
 <div id="meisai-viewer">
   <div class="meisai-viewer-box">
     <div class="meisai-viewer-hd">
-      <h2>📄 請求明細書（閲覧）</h2>
+      <h2>📄 請求明細書</h2>
       <span id="meisai-viewer-period" style="font-size:13px;opacity:.9"></span>
       <span id="meisai-viewer-count" style="font-size:12px;background:rgba(255,255,255,.2);padding:2px 10px;border-radius:10px"></span>
       <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
-        <button type="button" onclick="printMeisaiViewerSheet()" style="padding:6px 12px;background:#fff;color:#5c3d1e;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer">🖨 この客先を印刷</button>
+        <button type="button" id="meisai-print-btn" onclick="printMeisaiViewerActive()" style="padding:6px 12px;background:#fff;color:#5c3d1e;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer">🖨 印刷</button>
+        <button type="button" id="meisai-csv-btn" onclick="exportMeisaiSummaryCSV()" style="display:none;padding:6px 12px;background:#fff;color:#5c3d1e;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer">📥 CSV</button>
         <button type="button" onclick="closeMeisaiViewer()" style="padding:6px 12px;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.4);border-radius:6px;font-size:12px;cursor:pointer">閉じる</button>
       </div>
     </div>
-    <div class="meisai-viewer-body">
+    <div class="meisai-viewer-tabs">
+      <button type="button" class="meisai-viewer-tab on" id="meisai-tab-summary" onclick="setMeisaiViewerMode('summary')">請求額一覧</button>
+      <button type="button" class="meisai-viewer-tab" id="meisai-tab-detail" onclick="setMeisaiViewerMode('detail')">客先明細</button>
+    </div>
+    <div class="meisai-summary-wrap on" id="meisai-summary-wrap"></div>
+    <div class="meisai-viewer-body" id="meisai-detail-wrap" style="display:none">
       <div class="meisai-viewer-side">
         <input type="search" id="meisai-viewer-search" placeholder="客先を検索…" oninput="renderMeisaiViewerList()">
         <div class="meisai-viewer-list" id="meisai-viewer-list"></div>
@@ -639,7 +657,8 @@ select.cs:focus{outline:none;border-color:var(--ac)}
         <input type="number" id="meisai-month" min="1" max="12" style="width:60px;padding:7px 10px;border:1.5px solid var(--b2);border-radius:6px;font-size:14px" placeholder="月">
         <span>月</span>
         <button onclick="exportMeisaiMonthXlsx()" style="padding:8px 16px;background:#5c3d1e;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">📥 請求月Excel出力</button>
-        <button onclick="openMeisaiViewer()" style="padding:8px 16px;background:#fff;color:#5c3d1e;border:1.5px solid #5c3d1e;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">👁 請求明細を見る</button>
+        <button onclick="openMeisaiViewer('summary')" style="padding:8px 16px;background:#fff;color:#5c3d1e;border:1.5px solid #5c3d1e;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">📋 請求額一覧</button>
+        <button onclick="openMeisaiViewer('detail')" style="padding:8px 16px;background:#fff;color:#5c3d1e;border:1.5px solid #5c3d1e;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">👁 請求明細を見る</button>
         <button onclick="exportMeisaiJSON()" style="padding:8px 14px;background:var(--s);color:var(--mu);border:1px solid var(--b2);border-radius:6px;font-size:12px;cursor:pointer">JSON（旧xlsm用）</button>
       </div>
     </div>
@@ -695,7 +714,7 @@ select.cs:focus{outline:none;border-color:var(--ac)}
       <div class="help-step"><div class="help-step-num">必要なら</div><div class="help-step-body"><div class="help-step-title">確認・印刷・保存</div>ダウンロードした .xlsx を Excel で開く（取り込み操作なし）。印刷または所定フォルダに保存。</div></div>
       <div class="help-note">💡 <strong>未反映: N件</strong> と表示されている間は、まだ請求明細に載せていない伝票があります（本日以前の分も含む）。ボタンを押すと反映済みになり、同じ伝票は二重に出力されません。件数は <strong>2026年8月1日以降の納品</strong> のみです。7月以前は初回読み込み時に反映済み扱いになります。</div>
       <div class="help-note">💡 <strong>押し忘れた場合</strong> … 翌日（または後日）に <span class="help-tag">未反映→請求明細Excel</span> を押せば、未反映分を含む<strong>その請求月の全伝票</strong>がシートに載ります（前回分も消えない）。反映済みフラグは今回の未反映分にだけ付きます。または <span class="help-tag">データ</span> タブ → 請求月を指定 → <span class="help-tag">請求月Excel出力</span> でも再出力できます。</div>
-      <div class="help-note">💡 <strong>アプリ内で確認</strong> … <span class="help-tag">データ</span> タブで請求月を指定 → <span class="help-tag">請求明細を見る</span>。客先一覧から選んで明細書を表示できます（Excel不要）。必要ならその場で印刷も可能です。</div>
+      <div class="help-note">💡 <strong>アプリ内で確認</strong> … <span class="help-tag">データ</span> タブで請求月を指定 → <span class="help-tag">請求額一覧</span>（全店の請求額）または <span class="help-tag">請求明細を見る</span>（客先ごとの明細書）。行クリックで明細へ移動。印刷・CSVも可能です。</div>
       <div class="help-note">💡 毎回<strong>新しい Excel ファイル</strong>が作成されます。前日保存したファイルを Purims が自動更新することはありません。</div>
       <div class="help-note">💡 印刷の見た目を確認したいときは、<span class="help-tag">データ</span> タブの <span class="help-tag">印刷見本を出力</span>（実データは使いません）。</div>
     </div>
@@ -1215,6 +1234,9 @@ function exportMeisaiJSON(){const year=parseInt(document.getElementById('meisai-
 
 let _meisaiViewerData=[];
 let _meisaiViewerIdx=0;
+let _meisaiViewerMode='summary';
+let _meisaiViewerYear=0;
+let _meisaiViewerMonth=0;
 function yenFmt(n){return'¥'+Math.round(Number(n)||0).toLocaleString('ja-JP');}
 function buildMeisaiRows(data){
   const invoices=(data.invoices||[]).slice(0,14);
@@ -1233,7 +1255,14 @@ function buildMeisaiRows(data){
   const min=Number(data.minCharge)||0;
   const subtotal=min>0?Math.max(sum,min):sum;
   const tax=Math.round(subtotal*0.1);
-  return{invoices,itemRows,sum,min,subtotal,tax,total:subtotal+tax};
+  return{invoices,itemRows,sum,min,subtotal,tax,total:subtotal+tax,slipCount:invoices.length,minApplied:min>0&&sum<min};
+}
+function buildMeisaiSummaryRows(){
+  return _meisaiViewerData.map((d,i)=>{
+    const r=buildMeisaiRows(d);
+    const closing=d.closingDay===99?'末':(d.closingDay?String(d.closingDay):'末');
+    return{idx:i,customer:d.customer,closing,slipCount:r.slipCount,sum:r.sum,min:r.min,subtotal:r.subtotal,tax:r.tax,total:r.total,minApplied:r.minApplied};
+  });
 }
 function meisaiSheetHtml(data){
   const {invoices,itemRows,sum,min,subtotal,tax,total}=buildMeisaiRows(data);
@@ -1265,21 +1294,77 @@ function meisaiSheetHtml(data){
     </table>
   </div>`;
 }
-function openMeisaiViewer(){
+function meisaiSummaryHtml(){
+  const rows=buildMeisaiSummaryRows();
+  const sumSub=rows.reduce((s,r)=>s+r.subtotal,0);
+  const sumTax=rows.reduce((s,r)=>s+r.tax,0);
+  const sumTot=rows.reduce((s,r)=>s+r.total,0);
+  const sumSlips=rows.reduce((s,r)=>s+r.slipCount,0);
+  const body=rows.map((r,n)=>`<tr onclick="selectMeisaiViewer(${r.idx});setMeisaiViewerMode('detail')">
+    <td class="cen">${n+1}</td>
+    <td>${escH(r.customer)}</td>
+    <td class="cen">${escH(r.closing)}</td>
+    <td class="cen">${r.slipCount}</td>
+    <td class="num">${yenFmt(r.subtotal)}${r.minApplied?' <span style="color:#854f0b;font-size:11px">保</span>':''}</td>
+    <td class="num">${yenFmt(r.tax)}</td>
+    <td class="num" style="font-weight:700">${yenFmt(r.total)}</td>
+  </tr>`).join('')||'<tr><td colspan="7" class="cen" style="padding:24px;color:#888">データがありません</td></tr>';
+  return`<div id="meisai-summary-print">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+      <div>
+        <div style="font-size:16px;font-weight:700;color:#5c3d1e">請求額一覧表</div>
+        <div style="font-size:12px;color:#666;margin-top:2px">株式会社ネクサス　／　${_meisaiViewerYear}年${_meisaiViewerMonth}月分</div>
+      </div>
+      <div style="font-size:12px;color:#666">行をクリックすると客先明細を表示　｜　「保」＝最低保証適用</div>
+    </div>
+    <table class="meisai-summary-tbl">
+      <thead><tr><th style="width:48px" class="cen">No</th><th>納品客先</th><th style="width:64px" class="cen">締め日</th><th style="width:64px" class="cen">伝票数</th><th style="width:120px" class="num">小計（税抜）</th><th style="width:100px" class="num">消費税</th><th style="width:120px" class="num">ご請求金額</th></tr></thead>
+      <tbody>${body}</tbody>
+      <tfoot><tr><td></td><td>合計（${rows.length}店舗）</td><td></td><td class="cen">${sumSlips}</td><td class="num">${yenFmt(sumSub)}</td><td class="num">${yenFmt(sumTax)}</td><td class="num">${yenFmt(sumTot)}</td></tr></tfoot>
+    </table>
+  </div>`;
+}
+function setMeisaiViewerMode(mode){
+  _meisaiViewerMode=mode==='detail'?'detail':'summary';
+  const sumTab=document.getElementById('meisai-tab-summary');
+  const detTab=document.getElementById('meisai-tab-detail');
+  const sumWrap=document.getElementById('meisai-summary-wrap');
+  const detWrap=document.getElementById('meisai-detail-wrap');
+  const csvBtn=document.getElementById('meisai-csv-btn');
+  const printBtn=document.getElementById('meisai-print-btn');
+  if(sumTab)sumTab.classList.toggle('on',_meisaiViewerMode==='summary');
+  if(detTab)detTab.classList.toggle('on',_meisaiViewerMode==='detail');
+  if(sumWrap){sumWrap.classList.toggle('on',_meisaiViewerMode==='summary');sumWrap.style.display=_meisaiViewerMode==='summary'?'block':'none';}
+  if(detWrap)detWrap.style.display=_meisaiViewerMode==='detail'?'flex':'none';
+  if(csvBtn)csvBtn.style.display=_meisaiViewerMode==='summary'?'inline-block':'none';
+  if(printBtn)printBtn.textContent=_meisaiViewerMode==='summary'?'🖨 一覧を印刷':'🖨 この客先を印刷';
+  if(_meisaiViewerMode==='summary')renderMeisaiSummary();
+}
+function renderMeisaiSummary(){
+  const el=document.getElementById('meisai-summary-wrap');
+  if(el)el.innerHTML=meisaiSummaryHtml();
+}
+function openMeisaiViewer(mode){
   const year=parseInt(document.getElementById('meisai-year')?.value,10);
   const month=parseInt(document.getElementById('meisai-month')?.value,10);
   const result=collectMeisaiData({mode:'month',year,month});
   if(result.error){toast(result.error,'e');return;}
   _meisaiViewerData=result.meisaiData||[];
   _meisaiViewerIdx=0;
+  _meisaiViewerYear=year;
+  _meisaiViewerMonth=month;
   const search=document.getElementById('meisai-viewer-search');
   if(search)search.value='';
   document.getElementById('meisai-viewer-period').textContent=`${year}年${month}月分`;
   document.getElementById('meisai-viewer-count').textContent=`${_meisaiViewerData.length}店舗`;
   document.getElementById('meisai-viewer').classList.add('open');
   renderMeisaiViewerList();
-  if(_meisaiViewerData.length)selectMeisaiViewer(0);
-  else document.getElementById('meisai-viewer-main').innerHTML='<div style="color:var(--mu);padding:40px;text-align:center">この請求月のデータがありません</div>';
+  if(_meisaiViewerData.length){
+    selectMeisaiViewer(0);
+  }else{
+    document.getElementById('meisai-viewer-main').innerHTML='<div style="color:var(--mu);padding:40px;text-align:center">この請求月のデータがありません</div>';
+  }
+  setMeisaiViewerMode(mode==='detail'?'detail':'summary');
   if(result.warnings?.length)toast(result.warnings.slice(0,3).join('、')+(result.warnings.length>3?'…':''),'e');
 }
 function closeMeisaiViewer(){document.getElementById('meisai-viewer').classList.remove('open');}
@@ -1289,13 +1374,20 @@ function renderMeisaiViewerList(){
   if(!el)return;
   const filtered=_meisaiViewerData.map((d,i)=>({d,i})).filter(({d})=>!q||String(d.customer||'').toLowerCase().includes(q));
   if(!filtered.length){el.innerHTML='<div style="padding:12px;font-size:12px;color:var(--mu)">該当なし</div>';return;}
-  el.innerHTML=filtered.map(({d,i})=>`<button type="button" class="meisai-viewer-item${i===_meisaiViewerIdx?' on':''}" onclick="selectMeisaiViewer(${i})">${escH(d.customer)}</button>`).join('');
+  el.innerHTML=filtered.map(({d,i})=>{
+    const tot=buildMeisaiRows(d).total;
+    return`<button type="button" class="meisai-viewer-item${i===_meisaiViewerIdx?' on':''}" onclick="selectMeisaiViewer(${i})"><div>${escH(d.customer)}</div><div style="font-size:11px;opacity:.85;margin-top:2px">${yenFmt(tot)}</div></button>`;
+  }).join('');
 }
 function selectMeisaiViewer(idx){
   if(!_meisaiViewerData[idx])return;
   _meisaiViewerIdx=idx;
   renderMeisaiViewerList();
   document.getElementById('meisai-viewer-main').innerHTML=meisaiSheetHtml(_meisaiViewerData[idx]);
+}
+function printMeisaiViewerActive(){
+  if(_meisaiViewerMode==='summary')printMeisaiSummary();
+  else printMeisaiViewerSheet();
 }
 function printMeisaiViewerSheet(){
   const sheet=document.getElementById('meisai-sheet-print');
@@ -1311,6 +1403,34 @@ function printMeisaiViewerSheet(){
     @media print{body{margin:0}}
   </style></head><body>${sheet.outerHTML}<script>window.onload=()=>{window.print();}</script></body></html>`);
   w.document.close();
+}
+function printMeisaiSummary(){
+  const sheet=document.getElementById('meisai-summary-print');
+  if(!sheet){toast('一覧がありません','e');return;}
+  const w=window.open('','_blank','noopener,noreferrer');
+  if(!w){toast('印刷ウィンドウを開けませんでした','e');return;}
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>請求額一覧表</title><style>
+    body{font-family:'游ゴシック','Yu Gothic',sans-serif;color:#000;margin:16px;font-size:12px}
+    table{border-collapse:collapse;width:100%}
+    th,td{border:1px solid #333;padding:5px 8px}
+    th{background:#eee}
+    .num{text-align:right}.cen{text-align:center}
+    tfoot td{font-weight:700;background:#f5f5f5}
+    @media print{body{margin:8px}}
+  </style></head><body>${sheet.innerHTML}<script>window.onload=()=>{window.print();}</script></body></html>`);
+  w.document.close();
+}
+function exportMeisaiSummaryCSV(){
+  const rows=buildMeisaiSummaryRows();
+  if(!rows.length){toast('出力するデータがありません','e');return;}
+  const bom='\uFEFF';
+  const lines=[['No','納品客先','締め日','伝票数','小計（税抜）','消費税','ご請求金額','最低保証適用']];
+  rows.forEach((r,i)=>lines.push([i+1,r.customer,r.closing,r.slipCount,r.subtotal,r.tax,r.total,r.minApplied?'○':'']));
+  const sumSub=rows.reduce((s,r)=>s+r.subtotal,0),sumTax=rows.reduce((s,r)=>s+r.tax,0),sumTot=rows.reduce((s,r)=>s+r.total,0),sumSlips=rows.reduce((s,r)=>s+r.slipCount,0);
+  lines.push(['','合計','',sumSlips,sumSub,sumTax,sumTot,'']);
+  const csv=bom+lines.map(r=>r.map(v=>{const s=String(v??'');return s.includes(',')||s.includes('"')||s.includes('\n')?'"'+s.replace(/"/g,'""')+'"':s;}).join(',')).join('\r\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));a.download=`purims_billing_summary_${_meisaiViewerYear}${String(_meisaiViewerMonth).padStart(2,'0')}.csv`;a.click();URL.revokeObjectURL(a.href);
+  toast(`${rows.length}店舗の請求額一覧CSVを出力しました`);
 }
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('meisai-viewer')?.classList.contains('open'))closeMeisaiViewer();});
 function importCSV(e){const file=e.target.files[0];if(!file)return;const r=new FileReader();r.onload=ev=>{try{const lines=ev.target.result.replace(/\r/g,'').split('\n').filter(l=>l.trim());const nc={};const ncy={};lines.slice(1).forEach(line=>{const cols=line.split(',').map(c=>c.replace(/^"|"$/g,'').replace(/""/g,'"').trim());if(cols.length<3||!cols[0])return;const[client,code,name,cyc]=cols;if(!nc[client])nc[client]={items:[]};if(name)nc[client].items.push({code:code||'P000',name});if(cyc)ncy[client]=cyc;});if(!Object.keys(nc).length){toast('読み込めるデータがありませんでした','e');return;}if(!confirm(`${Object.keys(nc).length}件の客先データをインポートします。続けますか？`))return;Object.assign(DB.clients,nc);Object.assign(DB.cycles,ncy);persist();fillSel('csel');fillSel('msel');toast(`${Object.keys(nc).length}件をインポートしました`);}catch(err){toast('CSVの読み込みに失敗しました','e');}e.target.value='';};r.readAsText(file,'UTF-8');}
