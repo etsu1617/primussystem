@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
 <title>Purims 伝票発行システム</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -203,8 +205,8 @@ select.cs:focus{outline:none;border-color:var(--ac)}
 #user-modal.hidden{display:none}
 .user-modal-box{background:#fff;border-radius:12px;padding:28px;width:480px;max-height:80vh;overflow-y:auto}
 .user-modal-title{font-size:16px;font-weight:700;color:var(--nv);margin-bottom:18px}
-#meisai-viewer{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:stretch;justify-content:center;z-index:8500;padding:12px}
-#meisai-viewer.open{display:flex}
+#meisai-viewer{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:stretch;justify-content:center;z-index:8500;padding:12px;pointer-events:none;visibility:hidden}
+#meisai-viewer.open{display:flex;pointer-events:auto;visibility:visible}
 .meisai-viewer-box{background:#fff;border-radius:12px;width:min(1200px,100%);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.25)}
 .meisai-viewer-hd{background:#5c3d1e;color:#fff;padding:12px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex-shrink:0}
 .meisai-viewer-hd h2{font-size:15px;font-weight:700;margin:0}
@@ -265,34 +267,7 @@ select.cs:focus{outline:none;border-color:var(--ac)}
     </div>
     <button class="login-btn" onclick="doLogin()">ログイン</button>
     <div class="login-err" id="login-err"></div>
-  </div>
-</div>
-
-<!-- 請求明細閲覧 -->
-<div id="meisai-viewer">
-  <div class="meisai-viewer-box">
-    <div class="meisai-viewer-hd">
-      <h2>📄 請求明細書</h2>
-      <span id="meisai-viewer-period" style="font-size:13px;opacity:.9"></span>
-      <span id="meisai-viewer-count" style="font-size:12px;background:rgba(255,255,255,.2);padding:2px 10px;border-radius:10px"></span>
-      <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
-        <button type="button" id="meisai-print-btn" onclick="printMeisaiViewerActive()" style="padding:6px 12px;background:#fff;color:#5c3d1e;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer">🖨 印刷</button>
-        <button type="button" id="meisai-csv-btn" onclick="exportMeisaiSummaryCSV()" style="display:none;padding:6px 12px;background:#fff;color:#5c3d1e;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer">📥 CSV</button>
-        <button type="button" onclick="closeMeisaiViewer()" style="padding:6px 12px;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.4);border-radius:6px;font-size:12px;cursor:pointer">閉じる</button>
-      </div>
-    </div>
-    <div class="meisai-viewer-tabs">
-      <button type="button" class="meisai-viewer-tab on" id="meisai-tab-summary" onclick="setMeisaiViewerMode('summary')">請求額一覧</button>
-      <button type="button" class="meisai-viewer-tab" id="meisai-tab-detail" onclick="setMeisaiViewerMode('detail')">客先明細</button>
-    </div>
-    <div class="meisai-summary-wrap on" id="meisai-summary-wrap"></div>
-    <div class="meisai-viewer-body" id="meisai-detail-wrap" style="display:none">
-      <div class="meisai-viewer-side">
-        <input type="search" id="meisai-viewer-search" placeholder="客先を検索…" oninput="renderMeisaiViewerList()">
-        <div class="meisai-viewer-list" id="meisai-viewer-list"></div>
-      </div>
-      <div class="meisai-viewer-main" id="meisai-viewer-main"><div style="color:var(--mu);padding:40px;text-align:center">左の一覧から客先を選んでください</div></div>
-    </div>
+    <div style="margin-top:14px;font-size:11px;opacity:.45;text-align:center">build 2026-08-21c</div>
   </div>
 </div>
 
@@ -771,6 +746,35 @@ select.cs:focus{outline:none;border-color:var(--ac)}
 
 </div><!-- /.main -->
 </div><!-- /#app -->
+
+<!-- 請求明細閲覧 -->
+<div id="meisai-viewer">
+  <div class="meisai-viewer-box">
+    <div class="meisai-viewer-hd">
+      <h2>📄 請求明細書</h2>
+      <span id="meisai-viewer-period" style="font-size:13px;opacity:.9"></span>
+      <span id="meisai-viewer-count" style="font-size:12px;background:rgba(255,255,255,.2);padding:2px 10px;border-radius:10px"></span>
+      <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
+        <button type="button" id="meisai-print-btn" onclick="printMeisaiViewerActive()" style="padding:6px 12px;background:#fff;color:#5c3d1e;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer">🖨 印刷</button>
+        <button type="button" id="meisai-csv-btn" onclick="exportMeisaiSummaryCSV()" style="display:none;padding:6px 12px;background:#fff;color:#5c3d1e;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer">📥 CSV</button>
+        <button type="button" onclick="closeMeisaiViewer()" style="padding:6px 12px;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.4);border-radius:6px;font-size:12px;cursor:pointer">閉じる</button>
+      </div>
+    </div>
+    <div class="meisai-viewer-tabs">
+      <button type="button" class="meisai-viewer-tab on" id="meisai-tab-summary" onclick="setMeisaiViewerMode('summary')">請求額一覧</button>
+      <button type="button" class="meisai-viewer-tab" id="meisai-tab-detail" onclick="setMeisaiViewerMode('detail')">客先明細</button>
+    </div>
+    <div class="meisai-summary-wrap on" id="meisai-summary-wrap"></div>
+    <div class="meisai-viewer-body" id="meisai-detail-wrap" style="display:none">
+      <div class="meisai-viewer-side">
+        <input type="search" id="meisai-viewer-search" placeholder="客先を検索…" oninput="renderMeisaiViewerList()">
+        <div class="meisai-viewer-list" id="meisai-viewer-list"></div>
+      </div>
+      <div class="meisai-viewer-main" id="meisai-viewer-main"><div style="color:var(--mu);padding:40px;text-align:center">左の一覧から客先を選んでください</div></div>
+    </div>
+  </div>
+</div>
+
 <div id="print-area"></div>
 <div class="toast" id="toast"></div>
 
@@ -1783,22 +1787,45 @@ async function getAdminHash(){
 }
 
 async function doLogin(){
-  const pass=document.getElementById('login-pass').value;
-  if(!pass){document.getElementById('login-err').textContent='パスワードを入力してください';return;}
-  const hash=await sha256(pass);
-  const adminHash=await getAdminHash();
-  if(adminHash&&hash===adminHash){
-    currentUser={username:'管理者',role:'admin'};
-    loginSuccess();return;
+  const errEl=document.getElementById('login-err');
+  const btn=document.querySelector('.login-btn');
+  try{
+    if(errEl)errEl.textContent='';
+    const pass=document.getElementById('login-pass')?.value||'';
+    if(!pass){if(errEl)errEl.textContent='パスワードを入力してください';return;}
+    if(!window.crypto||!crypto.subtle){if(errEl)errEl.textContent='このブラウザではログインできません（HTTPSで開いてください）';return;}
+    if(btn){btn.disabled=true;btn.textContent='確認中…';}
+    const hash=await sha256(pass);
+    const localAdmin=localStorage.getItem(ADMIN_HASH_KEY);
+    if(localAdmin&&hash===localAdmin){
+      currentUser={username:'管理者',role:'admin'};
+      loginSuccess();
+      getAdminHash().catch(()=>{});
+      return;
+    }
+    const adminHash=await getAdminHash();
+    if(adminHash&&hash===adminHash){
+      currentUser={username:'管理者',role:'admin'};
+      loginSuccess();return;
+    }
+    if(!firebase.auth().currentUser){
+      try{await firebase.auth().signInAnonymously();}catch(e){console.warn('匿名認証失敗:',e);}
+    }
+    if(!firebase.auth().currentUser){
+      if(errEl)errEl.textContent='クラウドに接続できません。ネット接続を確認してください';
+      return;
+    }
+    const snap=await db.ref('purims/users').once('value');
+    const users=snap.val()||{};
+    const matched=Object.values(users).find(u=>u.hash===hash);
+    if(matched){currentUser={username:matched.username,role:matched.role||'user'};loginSuccess();return;}
+    if(errEl)errEl.textContent='パスワードが違います';
+  }catch(e){
+    console.error(e);
+    if(errEl)errEl.textContent='ログインエラー: '+(e&&e.message?e.message:String(e));
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='ログイン';}
   }
-  if(!firebase.auth().currentUser){
-    try{await firebase.auth().signInAnonymously();}catch(e){console.warn('匿名認証失敗:',e);}
-  }
-  const snap=await db.ref('purims/users').once('value');
-  const users=snap.val()||{};
-  const matched=Object.values(users).find(u=>u.hash===hash);
-  if(matched){currentUser={username:matched.username,role:matched.role||'user'};loginSuccess();return;}
-  document.getElementById('login-err').textContent='パスワードが違います';
 }
 document.getElementById('login-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
 
