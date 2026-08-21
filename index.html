@@ -1251,7 +1251,7 @@ function meisaiBox(ws,r1,c1,r2,c2,inner){
   }
 }
 function setupMeisaiSheet(ws,data){
-  /* 元テンプレ templates/ネクサス明細書.xlsm に合わせる（用紙B5・列幅・余白・数式） */
+  /* 印刷: A4横向き（列が多いため） */
   const font={name:'ＭＳ Ｐゴシック',size:10};
   const fontTitle={name:'ＭＳ Ｐゴシック',size:11};
   const fontCompany={name:'ＭＳ Ｐゴシック',size:12};
@@ -1259,14 +1259,15 @@ function setupMeisaiSheet(ws,data){
   const yen='"¥"#,##0;;';
   const qtyFmt='0;;';
   ws.views=[{showGridLines:false,state:'normal'}];
-  ws.pageSetup.paperSize=13; /* B5（元xlsmと同じ） */
-  ws.pageSetup.orientation='portrait';
+  ws.pageSetup.paperSize=9; /* A4 */
+  ws.pageSetup.orientation='landscape';
   ws.pageSetup.fitToPage=true;
   ws.pageSetup.fitToWidth=1;
   ws.pageSetup.fitToHeight=1;
   ws.pageSetup.horizontalCentered=true;
+  ws.pageSetup.verticalCentered=true;
   ws.pageSetup.printArea='A1:R44';
-  ws.pageSetup.margins={left:0.7,right:0.7,top:0.75,bottom:0.75,header:0.3,footer:0.3};
+  ws.pageSetup.margins={left:0.5,right:0.5,top:0.5,bottom:0.5,header:0.2,footer:0.2};
   ws.columns=[
     {width:20.9},{width:7.1},
     ...Array.from({length:15},()=>({width:6.6})),
@@ -1569,7 +1570,7 @@ function printMeisaiViewerSheet(){
   const sheet=document.getElementById('meisai-sheet-print');
   if(!sheet){toast('表示中の明細がありません','e');return;}
   openMeisaiPrintWindow('請求明細書',`
-    @page{size:B5 portrait;margin:12mm}
+    @page{size:A4 landscape;margin:10mm}
     body{font-family:'ＭＳ Ｐゴシック','MS PGothic','游ゴシック','Yu Gothic',sans-serif;color:#000;margin:8px;font-size:10px}
     .meisai-sheet{padding:0;border:none;max-width:none}
     table.meisai-grid{border-collapse:collapse;width:100%;table-layout:fixed}
