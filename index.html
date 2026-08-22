@@ -24,10 +24,28 @@ h2.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,
 .exit-btn:hover{opacity:.85}
 .admin-pass-modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:9000}
 .admin-pass-box{background:#fff;border-radius:12px;padding:28px;width:360px}
-.tabs{background:var(--nl);display:flex;border-bottom:2px solid var(--ac);flex-shrink:0}
+.tabs{background:var(--nl);display:flex;border-bottom:2px solid var(--ac);flex-shrink:0;align-items:stretch}
 .tab{padding:9px 18px;color:rgba(255,255,255,.6);cursor:pointer;font-size:13px;font-weight:500;border:none;background:none;transition:all .15s}
 .tab:hover{color:#fff;background:rgba(255,255,255,.07)}
 .tab.on{color:var(--al);background:rgba(200,153,42,.12);border-bottom:2px solid var(--al)}
+.tab-updates{margin-left:auto;padding:9px 16px;color:rgba(255,255,255,.75);cursor:pointer;font-size:12px;font-weight:600;border:none;background:none;white-space:nowrap;border-left:1px solid rgba(255,255,255,.12)}
+.tab-updates:hover{color:#fff;background:rgba(255,255,255,.1)}
+#updates-modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:8800;padding:16px}
+#updates-modal.open{display:flex}
+.updates-box{background:#fff;border-radius:12px;width:min(560px,100%);max-height:85vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.25)}
+.updates-hd{background:var(--nv);color:#fff;padding:14px 18px;display:flex;align-items:center;gap:10px;flex-shrink:0}
+.updates-hd h2{font-size:15px;font-weight:700;margin:0}
+.updates-body{overflow-y:auto;padding:16px 18px;flex:1}
+.updates-sec{margin-bottom:18px}
+.updates-sec:last-child{margin-bottom:0}
+.updates-sec h3{font-size:13px;font-weight:700;color:var(--nv);margin:0 0 10px;padding-bottom:6px;border-bottom:2px solid var(--ac)}
+.updates-item{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--bd);font-size:13px;line-height:1.5}
+.updates-item:last-child{border-bottom:none}
+.updates-date{flex-shrink:0;width:72px;font-size:11px;color:var(--mu);font-weight:600;padding-top:2px}
+.updates-tag{flex-shrink:0;font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;margin-top:1px}
+.updates-tag.feat{background:#e8f0fe;color:#185fa5}
+.updates-tag.fix{background:#fdecea;color:#c0392b}
+.updates-text{color:var(--tx);flex:1}
 .main{flex:1;padding:0;max-width:1100px;margin:0 auto;width:100%;display:flex;flex-direction:column;overflow:hidden}
 .panel{display:none;flex:1;overflow:hidden}.panel.on{display:flex;flex-direction:column}
 #panel-slip.on{display:flex!important;flex-direction:column}
@@ -342,8 +360,20 @@ select.cs:focus{outline:none;border-color:var(--ac)}
   <button class="tab" onclick="showPanel('data',this)">データ</button>
   <button class="tab" onclick="showPanel('billing',this)">請求</button>
   <button class="tab" onclick="showPanel('help',this)">使い方・困ったとき</button>
+  <button type="button" class="tab-updates" onclick="openUpdatesModal()">更新情報</button>
 </div>
 <div class="main">
+
+<!-- 更新情報 -->
+<div id="updates-modal" onclick="if(event.target===this)closeUpdatesModal()">
+  <div class="updates-box" role="dialog" aria-labelledby="updates-title">
+    <div class="updates-hd">
+      <h2 id="updates-title">📢 更新情報</h2>
+      <button type="button" onclick="closeUpdatesModal()" style="margin-left:auto;padding:5px 12px;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:6px;font-size:12px;cursor:pointer">閉じる</button>
+    </div>
+    <div class="updates-body" id="updates-body"></div>
+  </div>
+</div>
 
 <!-- BILLING PANEL -->
 <div id="panel-billing" class="panel">
@@ -1605,7 +1635,11 @@ function exportMeisaiSummaryCSV(){
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));a.download=_meisaiViewerSource==='pending'?`purims_billing_summary_pending_${fileDate()}.csv`:`purims_billing_summary_${_meisaiViewerYear}${String(_meisaiViewerMonth).padStart(2,'0')}.csv`;a.click();URL.revokeObjectURL(a.href);
   toast(`${rows.length}店舗の請求額一覧CSVを出力しました`);
 }
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('meisai-viewer')?.classList.contains('open'))closeMeisaiViewer();});
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Escape')return;
+  if(document.getElementById('updates-modal')?.classList.contains('open')){closeUpdatesModal();return;}
+  if(document.getElementById('meisai-viewer')?.classList.contains('open'))closeMeisaiViewer();
+});
 function importCSV(e){const file=e.target.files[0];if(!file)return;const r=new FileReader();r.onload=ev=>{try{const lines=ev.target.result.replace(/\r/g,'').split('\n').filter(l=>l.trim());const nc={};const ncy={};lines.slice(1).forEach(line=>{const cols=line.split(',').map(c=>c.replace(/^"|"$/g,'').replace(/""/g,'"').trim());if(cols.length<3||!cols[0])return;const[client,code,name,cyc]=cols;if(!nc[client])nc[client]={items:[]};if(name)nc[client].items.push({code:code||'P000',name});if(cyc)ncy[client]=cyc;});if(!Object.keys(nc).length){toast('読み込めるデータがありませんでした','e');return;}if(!confirm(`${Object.keys(nc).length}件の客先データをインポートします。続けますか？`))return;Object.assign(DB.clients,nc);Object.assign(DB.cycles,ncy);persist();fillSel('csel');fillSel('msel');toast(`${Object.keys(nc).length}件をインポートしました`);}catch(err){toast('CSVの読み込みに失敗しました','e');}e.target.value='';};r.readAsText(file,'UTF-8');}
 function importJSON(e){const file=e.target.files[0];if(!file)return;const r=new FileReader();r.onload=ev=>{try{const d=JSON.parse(ev.target.result);if(!d.clients){toast('フォーマットが違います','e');return;}if(!confirm('バックアップから全データを復元します。続けますか？'))return;DB.clients=d.clients;DB.cycles=d.cycles||{};if(d.products&&d.products.length)DB.products=d.products;if(d.groups&&d.groups.length)DB.groups=d.groups;if(d.clientGroups)DB.clientGroups=d.clientGroups;if(d.clientOrder)DB.clientOrder=d.clientOrder;if(d.closing)DB.closing=d.closing;if(d.minCharge)DB.minCharge=d.minCharge;if(Array.isArray(d.history)){DB.history=d.history;persistHistoryLocal();if(currentUser){const obj={};DB.history.forEach(h=>{if(h&&h.id!=null)obj[String(h.id)]=h;});db.ref('purims/history').set(obj).catch(e=>toast('履歴の復元に失敗しました: '+e.message,'e'));}}persist();fillSel('csel');fillSel('msel');fillGrpSel('e-grp');fillGrpSel('nc-grp');renderProducts();renderHistory();renderGroups();renderClientGrpList();const pruned=pruneExpiredHistory({quiet:true});const skipped=markOutOfScopeAsBilled();updateBillingPendingBadge();const parts=[];if(pruned)parts.push(`保存期間超過 ${pruned}件削除`);if(skipped)parts.push(`7月以前 ${skipped}件を請求対象外`);toast(parts.length?`${Object.keys(DB.clients).length}件を復元しました（${parts.join('、')}）`:`${Object.keys(DB.clients).length}件を復元しました`);}catch(err){toast('JSONの読み込みに失敗しました','e');}e.target.value='';};r.readAsText(file,'UTF-8');}
 
@@ -2086,6 +2120,42 @@ async function showLoginLog(){
   el.innerHTML=`<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr><th style="background:var(--nv);color:#fff;padding:7px 10px;text-align:left;font-size:11px">日時</th><th style="background:var(--nv);color:#fff;padding:7px 10px;text-align:left;font-size:11px">ユーザー</th></tr></thead><tbody>${entries.map(e=>{const t=new Date(e.time);const ts=`${t.getFullYear()}/${t.getMonth()+1}/${t.getDate()} ${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}`;return`<tr><td style="padding:7px 10px;border-bottom:0.5px solid var(--bd)">${ts}</td><td style="padding:7px 10px;border-bottom:0.5px solid var(--bd);font-weight:600">${e.user||'?'}</td></tr>`;}).join('')}</tbody></table>`;
 }
 function closeLoginLog(){document.getElementById('loginlog-modal').style.display='none';}
+
+/* 更新情報（新しいものを上に追加） type: 'feat'=機能更新 / 'fix'=バグ修正 */
+const APP_UPDATES=[
+  {date:'2026-08-22',type:'feat',text:'請求明細書の印刷を A4 横向きに変更'},
+  {date:'2026-08-22',type:'fix',text:'請求明細書の印刷が真っ白（about:blank）になる不具合を修正'},
+  {date:'2026-08-22',type:'feat',text:'請求明細書のレイアウトを元のネクサス書式に近づけた（アプリ内表示・Excel）'},
+  {date:'2026-08-22',type:'feat',text:'タブ順を「伝票発行→発行履歴→マスタ→データ→請求→使い方」に変更'},
+  {date:'2026-08-22',type:'feat',text:'「請求」タブを追加。アプリ内で請求明細書・請求額一覧・未反映分を閲覧'},
+  {date:'2026-08-21',type:'fix',text:'長い客先名で Excel シート名が衝突して出力できない問題を修正（略称化）'},
+  {date:'2026-08-21',type:'fix',text:'請求月の年月が自動入力されない問題を修正'},
+  {date:'2026-08-21',type:'feat',text:'バックアップ復元後に保存期間整理・7月以前の対象外化・未反映バッジを更新'},
+  {date:'2026-08-21',type:'fix',text:'ログイン画面が開かない／請求閲覧画面が重なる問題を修正'},
+  {date:'2026-08-21',type:'fix',text:'請求印刷ヘルパー内の記述でページ全体が壊れる不具合を修正'},
+  {date:'2026-08-21',type:'feat',text:'発行履歴の保存期間を12か月に（超過分は自動削除）'},
+  {date:'2026-08-21',type:'feat',text:'請求額一覧の表示・印刷・CSV出力を追加'},
+  {date:'2026-08-20',type:'feat',text:'未反映→請求明細Excel／請求月Excel（ネクサス名義・直接xlsx）'},
+  {date:'2026-08-20',type:'feat',text:'納品日2026年8月1日以降のみ請求対象（7月以前は対象外）'},
+  {date:'2026-08-20',type:'feat',text:'客先ごとの最低保証（請求）に対応'},
+  {date:'2026-08-19',type:'feat',text:'発行履歴の日付・客先グループ表示を追加'},
+  {date:'2026-08-12',type:'feat',text:'一括印刷時に客先を1件飛ばして次へ進める機能'},
+  {date:'2026-08-12',type:'fix',text:'複数PC同時発行で履歴が消える問題を修正（ID単位の保存）'},
+  {date:'2026-08-12',type:'fix',text:'発行の二重登録防止・入力に戻る（発行取消）を改善'},
+];
+function openUpdatesModal(){
+  const body=document.getElementById('updates-body');
+  if(!body)return;
+  const feats=APP_UPDATES.filter(u=>u.type==='feat');
+  const fixes=APP_UPDATES.filter(u=>u.type==='fix');
+  const row=(u)=>`<div class="updates-item"><span class="updates-date">${escH(u.date)}</span><span class="updates-tag ${u.type==='fix'?'fix':'feat'}">${u.type==='fix'?'修正':'更新'}</span><span class="updates-text">${escH(u.text)}</span></div>`;
+  body.innerHTML=`
+    <div class="updates-sec"><h3>🔧 機能更新</h3>${feats.map(row).join('')||'<div style="color:var(--mu);font-size:13px">まだありません</div>'}</div>
+    <div class="updates-sec"><h3>🐛 バグ修正</h3>${fixes.map(row).join('')||'<div style="color:var(--mu);font-size:13px">まだありません</div>'}</div>
+    <div style="margin-top:8px;font-size:11px;color:var(--mu)">新しい更新が上に表示されます。</div>`;
+  document.getElementById('updates-modal').classList.add('open');
+}
+function closeUpdatesModal(){document.getElementById('updates-modal')?.classList.remove('open');}
 
 // ===== 【修正⑥】DOMContentLoadedを1か所に統合 =====
 // ===== 【修正①】window.loadでのfbLoad呼び出しを削除 =====
