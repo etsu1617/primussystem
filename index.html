@@ -257,6 +257,7 @@ select.cs:focus{outline:none;border-color:var(--ac)}
 .meisai-sheet .tot{font-weight:700;font-size:12px}
 .meisai-sheet .lbl{text-align:right;white-space:nowrap}
 .meisai-sheet .co{font-size:12px;text-align:center;font-weight:400}
+.meisai-sheet tr.pad td{height:18px}
 @media (max-width:800px){
   .meisai-viewer-body{flex-direction:column}
   .meisai-viewer-side{width:100%;max-height:160px;border-right:none;border-bottom:1px solid var(--bd)}
@@ -1423,10 +1424,11 @@ function meisaiSheetHtml(data){
   const bodyRows=itemRows.length?itemRows.map(r=>{
     const qtyCells=r.qtys.map(q=>`<td class="cen">${q||''}</td>`).join('')+Array.from({length:Math.max(0,14-r.qtys.length)},()=>'<td></td>').join('');
     return`<tr><td class="cen">${escH(r.name)}</td><td class="cen num">${r.price?yenFmt(r.price):''}</td>${qtyCells}<td class="cen">${r.totalQty||''}</td><td class="num">${r.amount?yenFmt(r.amount):''}</td></tr>`;
-  }).join(''):`<tr><td colspan="18" class="cen" style="color:#888;padding:16px">品目がありません</td></tr>`;
-  /* 空行で元テンプレ（行12〜44）に近い高さ感を出す */
-  const padCount=Math.max(0,Math.min(8,20-itemRows.length));
-  const padRows=Array.from({length:padCount},()=>`<tr>${'<td>&nbsp;</td>'.repeat(18)}</tr>`).join('');
+  }).join(''):`<tr><td colspan="18" class="cen" style="color:#888;padding:8px">品目がありません</td></tr>`;
+  /* 元テンプレ同様、空行で表を下まで伸ばして下の余白を減らす */
+  const MEISAI_BODY_ROWS=28;
+  const padCount=Math.max(0,MEISAI_BODY_ROWS-(itemRows.length||0));
+  const padRows=Array.from({length:padCount},()=>`<tr class="pad">${'<td>&nbsp;</td>'.repeat(18)}</tr>`).join('');
   return`<div class="meisai-sheet" id="meisai-sheet-print">
     <table class="meisai-grid">
       <colgroup>
