@@ -248,16 +248,16 @@ select.cs:focus{outline:none;border-color:var(--ac)}
 .meisai-viewer-item:hover{background:#fff}
 .meisai-viewer-item.on{background:#5c3d1e;color:#fff;font-weight:600}
 .meisai-viewer-main{flex:1;overflow:auto;padding:16px;background:#faf8f5}
-.meisai-sheet{background:#fff;border:1px solid #ccc;padding:10px;max-width:980px;margin:0 auto;font-family:'ＭＳ Ｐゴシック','MS PGothic','游ゴシック','Yu Gothic',sans-serif;color:#000;font-size:11px}
+.meisai-sheet{background:#fff;border:1px solid #ccc;padding:14px;max-width:980px;margin:0 auto;font-family:'ＭＳ Ｐゴシック','MS PGothic','游ゴシック','Yu Gothic',sans-serif;color:#000;font-size:12px}
 .meisai-sheet table.meisai-grid{border-collapse:collapse;width:100%;table-layout:fixed}
-.meisai-sheet table.meisai-grid th,.meisai-sheet table.meisai-grid td{border:1px solid #333;padding:2px 3px;vertical-align:middle}
-.meisai-sheet .title{font-size:14px;font-weight:400;text-align:center;padding:6px;border:1px solid #333}
+.meisai-sheet table.meisai-grid th,.meisai-sheet table.meisai-grid td{border:1px solid #333;padding:5px 4px;vertical-align:middle;line-height:1.35}
+.meisai-sheet .title{font-size:16px;font-weight:400;text-align:center;padding:10px;border:1px solid #333}
 .meisai-sheet .num{text-align:right;font-variant-numeric:tabular-nums}
 .meisai-sheet .cen{text-align:center}
-.meisai-sheet .tot{font-weight:700;font-size:12px}
+.meisai-sheet .tot{font-weight:700;font-size:13px}
 .meisai-sheet .lbl{text-align:right;white-space:nowrap}
-.meisai-sheet .co{font-size:12px;text-align:center;font-weight:400}
-.meisai-sheet tr.pad td{height:18px}
+.meisai-sheet .co{font-size:13px;text-align:center;font-weight:400}
+.meisai-sheet tr.pad td{height:26px;padding:6px 4px}
 @media (max-width:800px){
   .meisai-viewer-body{flex-direction:column}
   .meisai-viewer-side{width:100%;max-height:160px;border-right:none;border-bottom:1px solid var(--bd)}
@@ -1425,8 +1425,8 @@ function meisaiSheetHtml(data){
     const qtyCells=r.qtys.map(q=>`<td class="cen">${q||''}</td>`).join('')+Array.from({length:Math.max(0,14-r.qtys.length)},()=>'<td></td>').join('');
     return`<tr><td class="cen">${escH(r.name)}</td><td class="cen num">${r.price?yenFmt(r.price):''}</td>${qtyCells}<td class="cen">${r.totalQty||''}</td><td class="num">${r.amount?yenFmt(r.amount):''}</td></tr>`;
   }).join(''):`<tr><td colspan="18" class="cen" style="color:#888;padding:8px">品目がありません</td></tr>`;
-  /* 元テンプレ同様、空行で表を下まで伸ばして下の余白を減らす */
-  const MEISAI_BODY_ROWS=28;
+  /* 品目行＋少なめの空行でゆったり表示（詰め込みすぎない） */
+  const MEISAI_BODY_ROWS=14;
   const padCount=Math.max(0,MEISAI_BODY_ROWS-(itemRows.length||0));
   const padRows=Array.from({length:padCount},()=>`<tr class="pad">${'<td>&nbsp;</td>'.repeat(18)}</tr>`).join('');
   return`<div class="meisai-sheet" id="meisai-sheet-print">
@@ -1602,19 +1602,16 @@ function printMeisaiViewerSheet(){
   const sheet=document.getElementById('meisai-sheet-print');
   if(!sheet){toast('表示中の明細がありません','e');return;}
   openMeisaiPrintWindow('請求明細書',`
-    @page{size:A4 landscape;margin:8mm}
-    html,body{margin:0;padding:0;height:100%}
-    body{font-family:'ＭＳ Ｐゴシック','MS PGothic','游ゴシック','Yu Gothic',sans-serif;color:#000;font-size:10px}
-    .meisai-sheet{padding:0;border:none;max-width:none;width:100%;height:100%;box-sizing:border-box}
-    table.meisai-grid{border-collapse:collapse;width:100%;height:100%;table-layout:fixed}
-    table.meisai-grid th,table.meisai-grid td{border:1px solid #333;padding:1px 2px;vertical-align:middle;height:3.6mm}
-    table.meisai-grid tr.pad td{height:4.2mm}
-    .title{font-size:14px;font-weight:400;text-align:center;padding:4px;border:1px solid #333;height:auto!important}
-    .num{text-align:right}.cen{text-align:center}.tot{font-weight:700}.lbl{text-align:right}.co{text-align:center;font-size:12px}
-    @media print{
-      body{margin:0}
-      .meisai-sheet,table.meisai-grid{height:auto;min-height:0}
-    }
+    @page{size:A4 landscape;margin:12mm}
+    html,body{margin:0;padding:0}
+    body{font-family:'ＭＳ Ｐゴシック','MS PGothic','游ゴシック','Yu Gothic',sans-serif;color:#000;font-size:11px;padding:4mm}
+    .meisai-sheet{padding:0;border:none;max-width:none;width:100%;box-sizing:border-box}
+    table.meisai-grid{border-collapse:collapse;width:100%;table-layout:fixed}
+    table.meisai-grid th,table.meisai-grid td{border:1px solid #333;padding:4px 3px;vertical-align:middle;line-height:1.4;height:7mm}
+    table.meisai-grid tr.pad td{height:7.5mm}
+    .title{font-size:16px;font-weight:400;text-align:center;padding:8px;border:1px solid #333;height:auto!important}
+    .num{text-align:right}.cen{text-align:center}.tot{font-weight:700;font-size:13px}.lbl{text-align:right}.co{text-align:center;font-size:13px}
+    @media print{body{margin:0;padding:2mm}}
   `,sheet.outerHTML);
   toast('印刷ダイアログで「用紙の向き＝横」になっているか確認してください');
 }
@@ -2131,6 +2128,7 @@ function closeLoginLog(){document.getElementById('loginlog-modal').style.display
 
 /* 更新情報（新しいものを上に追加） type: 'feat'=機能更新 / 'fix'=バグ修正 */
 const APP_UPDATES=[
+  {date:'2026-08-22',type:'feat',text:'請求明細書の表示・印刷をゆったりに（品目空行を減らし、行高・余白を拡大）'},
   {date:'2026-08-22',type:'fix',text:'請求明細書印刷で下の余白が大きく空く問題を改善（空行で帳票を伸ばす・A4横の案内）'},
   {date:'2026-08-22',type:'feat',text:'請求明細書の印刷を A4 横向きに変更'},
   {date:'2026-08-22',type:'fix',text:'請求明細書の印刷が真っ白（about:blank）になる不具合を修正'},
