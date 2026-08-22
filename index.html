@@ -769,15 +769,16 @@ select.cs:focus{outline:none;border-color:var(--ac)}
   <div class="help-section" id="help-daily">
     <div class="help-section-hd" onclick="toggleHelp('daily')">🗓 日常の運用（1日の流れ）<span class="help-toggle" id="help-toggle-daily">▼</span></div>
     <div class="help-section-body">
-      <p>伝票は<strong>プリームス</strong>名義、請求明細は<strong>ネクサス</strong>名義です。Excel テンプレートの取り込みは<strong>不要</strong>（Purims が .xlsx を直接作成します）。</p>
+      <p>伝票は<strong>プリームス</strong>名義、請求明細は<strong>ネクサス</strong>名義です。Excel テンプレート（.xlsm）の取り込みは<strong>不要</strong>（Purims が .xlsx を直接作成します）。</p>
+      <p style="margin-top:8px;font-size:12px;color:var(--mu)">画面上部タブの順番 … <span class="help-tag">伝票発行</span> → <span class="help-tag">発行履歴</span> → <span class="help-tag">マスタ管理</span> → <span class="help-tag">データ</span> → <span class="help-tag">請求</span> → <span class="help-tag">使い方</span>（右端の <span class="help-tag">更新情報</span> で変更履歴を確認できます）</p>
       <div class="help-step"><div class="help-step-num">朝〜夕</div><div class="help-step-body"><div class="help-step-title">伝票を発行する</div>客先を選び数量を入力 → <span class="help-tag">伝票発行</span>。出さない店は <span class="help-tag">⏭ 飛ばす</span>。一括印刷モードなら最後に <span class="help-tag">まとめて印刷</span>。</div></div>
-      <div class="help-step"><div class="help-step-num">終了時</div><div class="help-step-body"><div class="help-step-title">請求明細 Excel を出力</div><span class="help-tag">未反映→請求明細Excel</span> を押す → <code>purims_meisai_YYYYMMDD.xlsx</code> がダウンロード。客先ごとにシート自動作成。</div></div>
-      <div class="help-step"><div class="help-step-num">必要なら</div><div class="help-step-body"><div class="help-step-title">確認・印刷・保存</div>ダウンロードした .xlsx を Excel で開く（取り込み操作なし）。印刷または所定フォルダに保存。</div></div>
+      <div class="help-step"><div class="help-step-num">終了前</div><div class="help-step-body"><div class="help-step-title">請求明細をアプリ内で確認（任意）</div><span class="help-tag">請求</span> タブ → 請求月を指定 → <span class="help-tag">請求明細書を見る</span>。左の客先一覧で切り替え、<span class="help-tag">この客先を印刷</span> で印刷プレビューを確認できます（Excel なしで OK）。</div></div>
+      <div class="help-step"><div class="help-step-num">終了時</div><div class="help-step-body"><div class="help-step-title">請求明細 Excel を出力</div><span class="help-tag">請求</span> または <span class="help-tag">データ</span> タブの <span class="help-tag">未反映→請求明細Excel</span> を押す → <code>purims_meisai_YYYYMMDD.xlsx</code> がダウンロード。客先ごとにシート自動作成。</div></div>
+      <div class="help-step"><div class="help-step-num">必要なら</div><div class="help-step-body"><div class="help-step-title">Excel で保存・印刷</div>ダウンロードした .xlsx を Excel で開く（取り込み操作なし）。印刷または所定フォルダに保存。</div></div>
       <div class="help-note">💡 <strong>未反映: N件</strong> と表示されている間は、まだ請求明細に載せていない伝票があります（本日以前の分も含む）。ボタンを押すと反映済みになり、同じ伝票は二重に出力されません。件数は <strong>2026年8月1日以降の納品</strong> のみです。7月以前は初回読み込み時に反映済み扱いになります。</div>
-      <div class="help-note">💡 <strong>押し忘れた場合</strong> … 翌日（または後日）に <span class="help-tag">未反映→請求明細Excel</span> を押せば、未反映分を含む<strong>その請求月の全伝票</strong>がシートに載ります（前回分も消えない）。反映済みフラグは今回の未反映分にだけ付きます。または <span class="help-tag">データ</span> タブ → 請求月を指定 → <span class="help-tag">請求月Excel出力</span> でも再出力できます。</div>
-      <div class="help-note">💡 <strong>アプリ内で確認</strong> … 上部タブ <span class="help-tag">請求</span> → 請求月を指定 → <span class="help-tag">請求明細書を見る</span> または <span class="help-tag">請求額一覧を見る</span>。<span class="help-tag">未反映分を見る</span> でまだExcel出力していない分も確認できます。行クリックで明細へ移動。印刷・CSVも可能です。</div>
+      <div class="help-note">💡 <strong>押し忘れた場合</strong> … 翌日（または後日）に <span class="help-tag">未反映→請求明細Excel</span> を押せば、未反映分を含む<strong>その請求月の全伝票</strong>がシートに載ります（前回分も消えない）。反映済みフラグは今回の未反映分にだけ付きます。<span class="help-tag">請求</span> タブの <span class="help-tag">請求月Excel出力</span> でも再出力できます。</div>
+      <div class="help-note">💡 <strong>請求額一覧</strong> … <span class="help-tag">請求</span> → <span class="help-tag">請求額一覧を見る</span> で店舗ごとの小計・税・合計を一覧表示。行クリックで明細へ。CSV 出力も可能です。</div>
       <div class="help-note">💡 毎回<strong>新しい Excel ファイル</strong>が作成されます。前日保存したファイルを Purims が自動更新することはありません。</div>
-      <div class="help-note">💡 印刷の見た目を確認したいときは、<span class="help-tag">データ</span> タブの <span class="help-tag">印刷見本を出力</span>（実データは使いません）。</div>
     </div>
   </div>
   <div class="help-section help-collapsed" id="help-basic">
@@ -795,9 +796,14 @@ select.cs:focus{outline:none;border-color:var(--ac)}
   <div class="help-section help-collapsed" id="help-print">
     <div class="help-section-hd" onclick="toggleHelp('print')">📄 印刷がうまくいかないとき<span class="help-toggle" id="help-toggle-print">▶</span></div>
     <div class="help-section-body">
+      <div style="font-weight:600;margin-bottom:8px;color:var(--nv)">納品伝票（プリームス）</div>
       <div style="margin-bottom:14px"><div style="font-weight:600;margin-bottom:4px">🔸 伝票が小さく印刷される</div><p>印刷ダイアログの「倍率」を <strong>100%</strong> に設定してください。</p></div>
-      <div style="margin-bottom:14px"><div style="font-weight:600;margin-bottom:4px">🔸 余白が大きすぎる</div><p>印刷ダイアログで「余白」を <strong>「なし」または「最小」</strong> に設定してください。</p></div>
-      <div class="help-note">💡 Chromeブラウザでの印刷が最も安定しています。</div>
+      <div style="margin-bottom:14px"><div style="font-weight:600;margin-bottom:4px">🔸 余白が大きすぎる</div><p>印刷ダイアログで「余白」を <strong>「なし」または「最小」</strong> に設定してください。用紙は <strong>B5 横向き</strong> です。</p></div>
+      <div style="font-weight:600;margin:16px 0 8px;color:#5c3d1e">請求明細書（ネクサス）</div>
+      <div style="margin-bottom:14px"><div style="font-weight:600;margin-bottom:4px">🔸 レイアウトが崩れる・小さくなる</div><p>用紙の向きを <strong>A4 横向き</strong>、倍率を <strong>100%</strong> にしてください。<span class="help-tag">請求</span> → 明細表示 → <span class="help-tag">この客先を印刷</span> から開くと、プゥル・ヴー伝票と同じ書式で印刷されます。</p></div>
+      <div style="margin-bottom:14px"><div style="font-weight:600;margin-bottom:4px">🔸 印刷画面が真っ白</div><p>ポップアップブロックを解除してください。Chrome での印刷が最も安定しています。</p></div>
+      <div style="margin-bottom:14px"><div style="font-weight:600;margin-bottom:4px">🔸 品目が1枚に収まらない</div><p>1ページあたり最大 <strong>20品目</strong> です。超える場合は自動で2枚目以降に分割され、<strong>ご請求金額は最終ページ</strong>に表示されます。</p></div>
+      <div class="help-note">💡 請求明細の見本データで Excel を試す場合は、<span class="help-tag">データ</span> タブの <span class="help-tag">印刷見本Excelを出力</span>（実データではありません）。</div>
     </div>
   </div>
   <div class="help-section help-collapsed" id="help-master">
@@ -805,19 +811,24 @@ select.cs:focus{outline:none;border-color:var(--ac)}
     <div class="help-section-body">
       <p><span class="help-tag">マスタ管理</span> → 客先編集 で、客先ごとに次を設定します。</p>
       <div class="help-step"><div class="help-step-num">1</div><div class="help-step-body"><div class="help-step-title">締め日</div>20日〆・25日〆・末日〆から選択。請求月の判定に使います（客先ごとに異なってOK）。</div></div>
-      <div class="help-step"><div class="help-step-num">2</div><div class="help-step-body"><div class="help-step-title">請求単価</div>各品目の「請求単価」列に入力。<strong>伝票には表示されません。</strong> 請求明細 Excel だけに使います。</div></div>
+      <div class="help-step"><div class="help-step-num">2</div><div class="help-step-body"><div class="help-step-title">請求単価</div>各品目の「請求単価」列に入力。<strong>伝票には表示されません。</strong> 請求明細の画面表示・印刷・Excel に使います。</div></div>
+      <div class="help-step"><div class="help-step-num">3</div><div class="help-step-body"><div class="help-step-title">品目・納品サイクル</div>品目名と納品曜日（月〜日）を客先ごとに登録。マスタ品目から追加もできます。</div></div>
       <div class="help-step"><div class="help-step-num">4</div><div class="help-step-body"><div class="help-step-title">最低保証（必要な客先のみ）</div>月額の税抜最低保証円を入力。請求明細の小計がこれを下回るときは、保証額で請求します（消費税はその上に10%）。空欄は保証なし。</div></div>
       <div class="help-warn">⚠️ 請求単価が未設定の品目は、請求明細で 0 円になり警告が出ます。</div>
     </div>
   </div>
   <div class="help-section help-collapsed" id="help-billing">
-    <div class="help-section-hd" onclick="toggleHelp('billing')">📄 請求明細 Excel の出力<span class="help-toggle" id="help-toggle-billing">▶</span></div>
+    <div class="help-section-hd" onclick="toggleHelp('billing')">📄 請求明細書（確認・Excel・印刷）<span class="help-toggle" id="help-toggle-billing">▶</span></div>
     <div class="help-section-body">
-      <p>Purims がブラウザ内で請求明細書（.xlsx）を<strong>直接生成</strong>します。運用 PC に Excel テンプレート（.xlsm）を置く必要はありません。</p>
+      <p>Purims がブラウザ内で請求明細書を<strong>直接表示・印刷・Excel出力</strong>します。運用 PC に Excel テンプレート（.xlsm）を置く必要はありません。印刷レイアウトは<strong>プゥル・ヴー伝票アプリと同じ書式</strong>です（ネクサス名義）。</p>
+      <div class="help-step"><div class="help-step-num">確認</div><div class="help-step-body"><div class="help-step-title">アプリ内で見る</div><span class="help-tag">請求</span> タブ → 請求月を指定 → <span class="help-tag">請求明細書を見る</span>。左の客先一覧で切り替え。<span class="help-tag">未反映分を見る</span> で Excel 出力前の分も確認できます。</div></div>
+      <div class="help-step"><div class="help-step-num">印刷</div><div class="help-step-body"><div class="help-step-title">この客先を印刷</div>明細表示中に <span class="help-tag">🖨 この客先を印刷</span> → 用紙 <strong>A4 横向き</strong>・倍率 <strong>100%</strong>。左上に客先名＋様、右上に小計・消費税・ご請求金額、下に品名・単価・納品日別数量の表（1ページ20行）です。</div></div>
       <div class="help-step"><div class="help-step-num">日次</div><div class="help-step-body"><div class="help-step-title">未反映→請求明細Excel</div>未反映の伝票（押し忘れ分を含む）を対象に、該当客先・請求月のシートを含む Excel を出力。ファイル名例: <code>purims_meisai_20250818.xlsx</code></div></div>
-      <div class="help-step"><div class="help-step-num">月次</div><div class="help-step-body"><div class="help-step-title">請求月Excel出力</div><span class="help-tag">データ</span> タブで年月を指定して再出力。ファイル名例: <code>purims_meisai_202508.xlsx</code></div></div>
-      <div class="help-step"><div class="help-step-num">内容</div><div class="help-step-body"><div class="help-step-title">シート構成</div>シート名は <code>客先名_YYYY年M月</code>。品名・単価・日別数量・小計・消費税10%・ご請求金額を含みます。</div></div>
+      <div class="help-step"><div class="help-step-num">月次</div><div class="help-step-body"><div class="help-step-title">請求月Excel出力</div><span class="help-tag">請求</span> または <span class="help-tag">データ</span> タブで年月を指定して再出力。ファイル名例: <code>purims_meisai_202508.xlsx</code></div></div>
+      <div class="help-step"><div class="help-step-num">内容</div><div class="help-step-body"><div class="help-step-title">シート構成</div>シート名は <code>客先名_YYYY年M月</code>。品名・単価・日別数量（最大14日分）・合計数・合計金額・小計・消費税10%・ご請求金額を含みます。</div></div>
       <div class="help-note">💡 週2回程度の発行なら1店舗14伝票以内で問題ありません。14枚を超える客先は警告が出ます。</div>
+      <div class="help-note">💡 品目が20行を超える客先は、画面・印刷とも2枚目以降に分割されます。合計金額は<strong>最終ページ</strong>に表示されます。</div>
+      <div class="help-note">💡 対象は<strong>納品日 2026年8月1日以降</strong>の伝票のみです（7月以前は請求明細に載せません）。</div>
       <div class="help-note">💡 旧方式（JSON → ネクサス明細書.xlsm 取り込み）も <span class="help-tag">データ</span> タブの「JSON（旧xlsm用）」から利用できます。</div>
     </div>
   </div>
@@ -2257,7 +2268,7 @@ function closeLoginLog(){document.getElementById('loginlog-modal').style.display
 
 /* 更新情報（新しいものを上に追加） type: 'feat'=機能更新 / 'fix'=バグ修正 */
 const APP_UPDATES=[
-  {date:'2026-08-22',type:'fix',text:'請求明細書の印刷レイアウトをプゥル・ヴー伝票アプリと同じHTML/CSSに統一'},
+  {date:'2026-08-22',type:'feat',text:'使い方タブを更新（請求タブ・画面確認・印刷レイアウト・A4横の説明を追加）'},
   {date:'2026-08-22',type:'feat',text:'請求明細書のレイアウトをプゥル・ヴー書式に合わせた（客先名・締め日左上、合計金額右上）'},
   {date:'2026-08-22',type:'fix',text:'請求明細書の下余白を帳票の空行で埋め、1枚に収まる行数までに制限（空行だけで2枚目にしない）'},
   {date:'2026-08-22',type:'fix',text:'請求明細書の空行で2枚目になる問題を修正（実データが溢れたときだけ次ページ）'},
