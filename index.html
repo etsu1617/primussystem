@@ -249,17 +249,25 @@ select.cs:focus{outline:none;border-color:var(--ac)}
 .meisai-viewer-item.on{background:#5c3d1e;color:#fff;font-weight:600}
 .meisai-viewer-main{flex:1;overflow:auto;padding:16px;background:#faf8f5}
 .meisai-sheet{background:#fff;border:1px solid #ccc;padding:14px;max-width:980px;margin:0 auto 20px;font-family:'ＭＳ Ｐゴシック','MS PGothic','游ゴシック','Yu Gothic',sans-serif;color:#000;font-size:12px}
-.meisai-sheet table.meisai-grid{border-collapse:collapse;width:100%;table-layout:fixed}
-.meisai-sheet table.meisai-grid th,.meisai-sheet table.meisai-grid td{border:1px solid #333;padding:5px 4px;vertical-align:middle;line-height:1.35}
-.meisai-sheet .title{font-size:16px;font-weight:400;text-align:center;padding:10px;border:1px solid #333}
+.meisai-doc-title{text-align:center;font-size:16px;font-weight:400;padding:10px 8px;border:1px solid #333;letter-spacing:.35em}
+.meisai-doc-header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-top:0}
+.meisai-doc-left{flex:1;min-width:0;max-width:58%}
+.meisai-doc-right{flex:0 0 210px;max-width:42%}
+.meisai-doc-customer{border:1px solid #333;padding:14px 12px;text-align:center;font-size:14px;min-height:50px;display:flex;align-items:center;justify-content:center;line-height:1.4}
+.meisai-doc-closing{border-collapse:collapse;margin-top:0}
+.meisai-doc-closing td{border:1px solid #333;padding:5px 14px;text-align:center;vertical-align:middle}
+.meisai-doc-period{text-align:center;padding:2px 4px 8px;font-size:13px}
+.meisai-doc-totals{border-collapse:collapse;width:100%;table-layout:fixed}
+.meisai-doc-totals td{border:1px solid #333;padding:6px 8px;vertical-align:middle}
+.meisai-doc-totals td:first-child{text-align:right;white-space:nowrap;width:46%}
+.meisai-doc-totals td:last-child{text-align:center}
+.meisai-doc-totals tr:last-child td{font-weight:700;font-size:13px}
+.meisai-doc-note{font-size:10px;color:#854f0b;margin:4px 0 6px;min-height:14px}
+.meisai-sheet table.meisai-grid{border-collapse:collapse;width:100%;table-layout:fixed;margin-top:2px}
+.meisai-sheet table.meisai-grid td{border:1px solid #333;padding:5px 4px;vertical-align:middle;line-height:1.35}
 .meisai-sheet .num{text-align:right;font-variant-numeric:tabular-nums}
 .meisai-sheet .cen{text-align:center}
 .meisai-sheet .tot{font-weight:700;font-size:13px}
-.meisai-sheet .lbl{text-align:right;white-space:nowrap}
-.meisai-sheet .co{font-size:13px;text-align:center;font-weight:400}
-.meisai-sheet .hdr-co{font-size:14px;padding:14px 8px;min-height:52px;vertical-align:middle}
-.meisai-sheet .hdr-period{font-size:13px;padding:6px 4px}
-.meisai-sheet .hdr-total td{border:1px solid #333}
 .meisai-sheet tr.pad td{height:22px;padding:6px 4px}
 .meisai-page-label{font-size:11px;color:#666;text-align:right;margin-bottom:6px}
 #meisai-sheet-print{max-width:980px;margin:0 auto}
@@ -1489,13 +1497,42 @@ function buildMeisaiSummaryRows(){
     return{idx:i,customer:d.customer,closing,slipCount:r.slipCount,sum:r.sum,min:r.min,subtotal:r.subtotal,tax:r.tax,total:r.total,minApplied:r.minApplied};
   });
 }
+function meisaiPrintStyles(){
+  return`
+    @page{size:A4 landscape;margin:10mm}
+    html,body{margin:0;padding:0;height:190mm}
+    body{font-family:'ＭＳ Ｐゴシック','MS PGothic','游ゴシック','Yu Gothic',sans-serif;color:#000;font-size:12px}
+    #meisai-sheet-print{height:100%;display:flex;flex-direction:column}
+    .meisai-sheet{padding:0;border:none;width:100%;height:190mm;box-sizing:border-box;display:flex;flex-direction:column;page-break-after:always;break-after:page}
+    .meisai-sheet:last-child{page-break-after:auto;break-after:auto}
+    .meisai-page-label{font-size:10px;color:#666;text-align:right;margin-bottom:4px;flex-shrink:0}
+    .meisai-doc-title{flex-shrink:0;text-align:center;font-size:16px;padding:8px;border:1px solid #333;letter-spacing:.35em}
+    .meisai-doc-header{flex-shrink:0;display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+    .meisai-doc-left{flex:1;max-width:58%}
+    .meisai-doc-right{flex:0 0 210px}
+    .meisai-doc-customer{border:1px solid #333;padding:12px;text-align:center;font-size:14px;min-height:48px;display:flex;align-items:center;justify-content:center}
+    .meisai-doc-closing{border-collapse:collapse}
+    .meisai-doc-closing td{border:1px solid #333;padding:5px 14px;text-align:center}
+    .meisai-doc-period{text-align:center;padding:2px 4px 8px;font-size:13px}
+    .meisai-doc-totals{border-collapse:collapse;width:100%;table-layout:fixed}
+    .meisai-doc-totals td{border:1px solid #333;padding:6px 8px}
+    .meisai-doc-totals td:first-child{text-align:right}
+    .meisai-doc-totals td:last-child{text-align:center}
+    .meisai-doc-totals tr:last-child td{font-weight:700;font-size:13px}
+    .meisai-doc-note{font-size:10px;color:#854f0b;margin:4px 0 6px;flex-shrink:0;min-height:14px}
+    table.meisai-grid{border-collapse:collapse;width:100%;table-layout:fixed;flex:1}
+    table.meisai-grid td{border:1px solid #333;padding:5px 4px;vertical-align:middle;line-height:1.35}
+    table.meisai-grid tr.pad td{height:auto}
+    .num{text-align:right}.cen{text-align:center}.tot{font-weight:700;font-size:13px}
+    @media print{html,body,.meisai-sheet{height:190mm}}`;
+}
 function meisaiSheetHtml(data){
   const built=buildMeisaiRows(data);
   const {invoices,itemRows,sum,min,subtotal,tax,total}=built;
   const closingLabel=data.closingDay===99?'末':(data.closingDay?String(data.closingDay):'末');
   const emptyDate=Array.from({length:Math.max(0,14-invoices.length)},()=>'<td class="cen"></td>').join('');
   const dateHeaders=invoices.map(inv=>`<td class="cen" style="font-size:10px">${escH(formatDeliveryDateMD(inv.deliveryDate))}</td>`).join('')+emptyDate;
-  const MEISAI_PAGE_ROWS=20;
+  const MEISAI_PAGE_ROWS=10;
   const items=itemRows&&itemRows.length?itemRows:[];
   const pageCount=Math.max(1,Math.ceil((items.length||1)/MEISAI_PAGE_ROWS));
   const pages=[];
@@ -1506,41 +1543,25 @@ function meisaiSheetHtml(data){
     return`<tr><td class="cen">${escH(r.name)}</td><td class="cen num">${r.price?yenFmt(r.price):''}</td>${qtyCells}<td class="cen">${r.totalQty||''}</td><td class="num">${r.amount?yenFmt(r.amount):''}</td></tr>`;
   };
 
-  const totalsBlock=(isLast)=>isLast?`
-        <td class="lbl" colspan="2">小計金額</td>
-        <td class="num tot" colspan="4">${yenFmt(subtotal)}</td>
-      </tr>
-      <tr class="hdr-total">
-        <td class="cen">締め日</td>
-        <td colspan="2" class="cen">${escH(closingLabel)}</td>
-        <td class="cen">日</td>
-        <td colspan="4"></td>
-        <td colspan="4"></td>
-        <td class="lbl" colspan="2">消費税</td>
-        <td class="num" colspan="4">${yenFmt(tax)}</td>
-      </tr>
-      <tr class="hdr-total">
-        <td colspan="12" style="font-size:10px;color:#854f0b;text-align:left">${min>0?`※最低保証 ${yenFmt(min)}（税抜）`+(sum<min?`　品目合計 ${yenFmt(sum)} → 適用`:''):''}${pageCount>1?'　※全ページ合計':''}</td>
-        <td class="lbl" colspan="2">ご請求金額</td>
-        <td class="num tot" colspan="4" style="font-size:13px">${yenFmt(total)}</td>
-      </tr>`:`
-        <td class="lbl" colspan="2">小計金額</td>
-        <td class="cen" colspan="4" style="color:#666;font-size:11px">（次ページへ）</td>
-      </tr>
-      <tr class="hdr-total">
-        <td class="cen">締め日</td>
-        <td colspan="2" class="cen">${escH(closingLabel)}</td>
-        <td class="cen">日</td>
-        <td colspan="4"></td>
-        <td colspan="4"></td>
-        <td class="lbl" colspan="2">消費税</td>
-        <td class="cen" colspan="4" style="color:#666;font-size:11px">（次ページへ）</td>
-      </tr>
-      <tr class="hdr-total">
-        <td colspan="12" style="font-size:11px;color:#666;text-align:left">※品目が続くため、ご請求金額は最終ページに記載します</td>
-        <td class="lbl" colspan="2">ご請求金額</td>
-        <td class="cen" colspan="4" style="color:#666;font-size:11px">（次ページへ）</td>
-      </tr>`;
+  const totalsTable=(isLast)=>isLast?`
+      <table class="meisai-doc-totals">
+        <tr><td>小計金額</td><td class="num tot">${yenFmt(subtotal)}</td></tr>
+        <tr><td>消費税</td><td class="num">${yenFmt(tax)}</td></tr>
+        <tr><td>ご請求金額</td><td class="num tot">${yenFmt(total)}</td></tr>
+      </table>`:`
+      <table class="meisai-doc-totals">
+        <tr><td>小計金額</td><td class="cen" style="color:#666;font-size:11px">（次ページへ）</td></tr>
+        <tr><td>消費税</td><td class="cen" style="color:#666;font-size:11px">（次ページへ）</td></tr>
+        <tr><td>ご請求金額</td><td class="cen" style="color:#666;font-size:11px">（次ページへ）</td></tr>
+      </table>`;
+
+  const noteHtml=(isLast)=>{
+    if(isLast){
+      if(min>0)return`※最低保証 ${yenFmt(min)}（税抜）`+(sum<min?`　品目合計 ${yenFmt(sum)} → 適用`:'' )+(pageCount>1?'　※全ページ合計':'');
+      return pageCount>1?'※全ページ合計':'';
+    }
+    return'※品目が続くため、ご請求金額は最終ページに記載します';
+  };
 
   const pagesHtml=pages.map((pageItems,pageIdx)=>{
     const isLast=pageIdx===pageCount-1;
@@ -1548,24 +1569,28 @@ function meisaiSheetHtml(data){
     const padCount=Math.max(0,MEISAI_PAGE_ROWS-(pageItems.length||(pageIdx===0?1:0)));
     const padRows=Array.from({length:padCount},()=>`<tr class="pad">${'<td>&nbsp;</td>'.repeat(18)}</tr>`).join('');
     const pageLabel=pageCount>1?`<div class="meisai-page-label">${pageIdx+1} / ${pageCount} ページ</div>`:'';
+    const titleExtra=pageCount>1?`（${pageIdx+1}/${pageCount}）`:'';
+    const note=noteHtml(isLast);
     return`<div class="meisai-sheet meisai-page"${pageIdx===0?' id="meisai-sheet-first"':''}>
     ${pageLabel}
+    <div class="meisai-doc-title">請　求　明　細　書${titleExtra}</div>
+    <div class="meisai-doc-header">
+      <div class="meisai-doc-left">
+        <div class="meisai-doc-customer">${escH(data.customer)}　様</div>
+        <table class="meisai-doc-closing"><tr><td>締め日</td><td>${escH(closingLabel)}</td><td>日</td></tr></table>
+      </div>
+      <div class="meisai-doc-right">
+        <div class="meisai-doc-period">${data.year}　年　${data.month}　月分</div>
+        ${totalsTable(isLast)}
+      </div>
+    </div>
+    ${note?`<div class="meisai-doc-note">${note}</div>`:'<div class="meisai-doc-note"></div>'}
     <table class="meisai-grid">
       <colgroup>
         <col style="width:18%"><col style="width:7%">
         ${Array.from({length:14},()=>'<col style="width:4.2%">').join('')}
         <col style="width:6%"><col style="width:8%">
       </colgroup>
-      <tr><td colspan="18" class="title">請　求　明　細　書${pageCount>1?`（${pageIdx+1}/${pageCount}）`:''}</td></tr>
-      <tr>
-        <td colspan="8" rowspan="2" class="co hdr-co">${escH(data.customer)}　様</td>
-        <td colspan="4"></td>
-        <td class="cen hdr-period" colspan="6">${data.year}　年　${data.month}　月分</td>
-      </tr>
-      <tr class="hdr-total">
-        <td colspan="4"></td>
-        ${totalsBlock(isLast)}
-      </tr>
       <tr><td></td><td></td><td colspan="14" class="cen" style="font-weight:700;font-size:11px">納　　品　　日</td><td></td><td></td></tr>
       <tr>
         <td class="cen">品名</td><td class="cen">単価</td>${dateHeaders}<td class="cen">合計数</td><td class="cen">合計金額</td>
@@ -1704,23 +1729,7 @@ function openMeisaiPrintWindow(title,styles,bodyHtml){
 function printMeisaiViewerSheet(){
   const sheet=document.getElementById('meisai-sheet-print');
   if(!sheet){toast('表示中の明細がありません','e');return;}
-  openMeisaiPrintWindow('請求明細書',`
-    @page{size:A4 landscape;margin:10mm}
-    html,body{margin:0;padding:0;height:190mm}
-    body{font-family:'ＭＳ Ｐゴシック','MS PGothic','游ゴシック','Yu Gothic',sans-serif;color:#000;font-size:12px}
-    #meisai-sheet-print{height:100%}
-    .meisai-sheet{padding:0;border:none;max-width:none;width:100%;height:190mm;box-sizing:border-box;display:flex;flex-direction:column;page-break-after:always;break-after:page}
-    .meisai-sheet:last-child{page-break-after:auto;break-after:auto}
-    .meisai-page-label{font-size:10px;color:#666;text-align:right;margin-bottom:4px;flex-shrink:0}
-    table.meisai-grid{border-collapse:collapse;width:100%;table-layout:fixed;flex:1;height:100%}
-    table.meisai-grid th,table.meisai-grid td{border:1px solid #333;padding:6px 5px;vertical-align:middle;line-height:1.4}
-    table.meisai-grid tr.pad td{height:auto}
-    .title{font-size:16px;font-weight:400;text-align:center;padding:8px;border:1px solid #333}
-    .hdr-co{font-size:14px;padding:14px 8px;min-height:52px}
-    .hdr-period{font-size:13px}
-    .num{text-align:right}.cen{text-align:center}.tot{font-weight:700;font-size:13px}.lbl{text-align:right}.co{text-align:center;font-size:13px}
-    @media print{html,body,.meisai-sheet{height:190mm}}
-  `,sheet.innerHTML);
+  openMeisaiPrintWindow('請求明細書',meisaiPrintStyles(),sheet.innerHTML);
   toast('印刷ダイアログで「用紙の向き＝横」になっているか確認してください');
 }
 function printMeisaiSummary(){
@@ -2236,7 +2245,7 @@ function closeLoginLog(){document.getElementById('loginlog-modal').style.display
 
 /* 更新情報（新しいものを上に追加） type: 'feat'=機能更新 / 'fix'=バグ修正 */
 const APP_UPDATES=[
-  {date:'2026-08-22',type:'fix',text:'請求明細書をプゥル・ヴーPDF書式に再調整（客先名枠・右上合計・20行）'},
+  {date:'2026-08-22',type:'fix',text:'請求明細書の印刷レイアウトを分離（ヘッダー＋品目表）しプゥル・ヴー書式に合わせた'},
   {date:'2026-08-22',type:'feat',text:'請求明細書のレイアウトをプゥル・ヴー書式に合わせた（客先名・締め日左上、合計金額右上）'},
   {date:'2026-08-22',type:'fix',text:'請求明細書の下余白を帳票の空行で埋め、1枚に収まる行数までに制限（空行だけで2枚目にしない）'},
   {date:'2026-08-22',type:'fix',text:'請求明細書の空行で2枚目になる問題を修正（実データが溢れたときだけ次ページ）'},
