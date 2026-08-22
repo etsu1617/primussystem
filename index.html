@@ -1600,15 +1600,21 @@ function printMeisaiViewerSheet(){
   const sheet=document.getElementById('meisai-sheet-print');
   if(!sheet){toast('表示中の明細がありません','e');return;}
   openMeisaiPrintWindow('請求明細書',`
-    @page{size:A4 landscape;margin:10mm}
-    body{font-family:'ＭＳ Ｐゴシック','MS PGothic','游ゴシック','Yu Gothic',sans-serif;color:#000;margin:8px;font-size:10px}
-    .meisai-sheet{padding:0;border:none;max-width:none}
-    table.meisai-grid{border-collapse:collapse;width:100%;table-layout:fixed}
-    th,td{border:1px solid #333;padding:2px 2px;vertical-align:middle}
-    .title{font-size:14px;font-weight:400;text-align:center;padding:5px;border:1px solid #333}
+    @page{size:A4 landscape;margin:8mm}
+    html,body{margin:0;padding:0;height:100%}
+    body{font-family:'ＭＳ Ｐゴシック','MS PGothic','游ゴシック','Yu Gothic',sans-serif;color:#000;font-size:10px}
+    .meisai-sheet{padding:0;border:none;max-width:none;width:100%;height:100%;box-sizing:border-box}
+    table.meisai-grid{border-collapse:collapse;width:100%;height:100%;table-layout:fixed}
+    table.meisai-grid th,table.meisai-grid td{border:1px solid #333;padding:1px 2px;vertical-align:middle;height:3.6mm}
+    table.meisai-grid tr.pad td{height:4.2mm}
+    .title{font-size:14px;font-weight:400;text-align:center;padding:4px;border:1px solid #333;height:auto!important}
     .num{text-align:right}.cen{text-align:center}.tot{font-weight:700}.lbl{text-align:right}.co{text-align:center;font-size:12px}
-    @media print{body{margin:0}}
+    @media print{
+      body{margin:0}
+      .meisai-sheet,table.meisai-grid{height:auto;min-height:0}
+    }
   `,sheet.outerHTML);
+  toast('印刷ダイアログで「用紙の向き＝横」になっているか確認してください');
 }
 function printMeisaiSummary(){
   const sheet=document.getElementById('meisai-summary-print');
@@ -2123,6 +2129,7 @@ function closeLoginLog(){document.getElementById('loginlog-modal').style.display
 
 /* 更新情報（新しいものを上に追加） type: 'feat'=機能更新 / 'fix'=バグ修正 */
 const APP_UPDATES=[
+  {date:'2026-08-22',type:'fix',text:'請求明細書印刷で下の余白が大きく空く問題を改善（空行で帳票を伸ばす・A4横の案内）'},
   {date:'2026-08-22',type:'feat',text:'請求明細書の印刷を A4 横向きに変更'},
   {date:'2026-08-22',type:'fix',text:'請求明細書の印刷が真っ白（about:blank）になる不具合を修正'},
   {date:'2026-08-22',type:'feat',text:'請求明細書のレイアウトを元のネクサス書式に近づけた（アプリ内表示・Excel）'},
