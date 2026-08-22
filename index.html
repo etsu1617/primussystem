@@ -1509,8 +1509,7 @@ function meisaiSheetHtml(data){
   const pagesHtml=pages.map((pageItems,pageIdx)=>{
     const isLast=pageIdx===pageCount-1;
     const bodyRows=pageItems.length?pageItems.map(renderItemRow).join(''):(pageIdx===0?`<tr><td colspan="18" class="cen" style="color:#888;padding:8px">品目がありません</td></tr>`:'');
-    const padCount=Math.max(0,MEISAI_PAGE_ROWS-(pageItems.length||0));
-    const padRows=Array.from({length:padCount},()=>`<tr class="pad">${'<td>&nbsp;</td>'.repeat(18)}</tr>`).join('');
+    /* 空行で2枚目が出ないよう、実データ以外の埋めはしない */
     const pageLabel=pageCount>1?`<div class="meisai-page-label">${pageIdx+1} / ${pageCount} ページ</div>`:'';
     const totalsRight=isLast?`
         <td class="lbl" colspan="2">小計金額</td>
@@ -1571,7 +1570,7 @@ function meisaiSheetHtml(data){
       <tr>
         <td class="cen">品名</td><td class="cen">単価</td>${dateHeaders}<td class="cen">合計数</td><td class="cen">合計金額</td>
       </tr>
-      ${bodyRows}${padRows}
+      ${bodyRows}
     </table>
   </div>`;
   }).join('');
@@ -1713,9 +1712,8 @@ function printMeisaiViewerSheet(){
     .meisai-sheet:last-child{page-break-after:auto;break-after:auto}
     .meisai-page-label{font-size:10px;color:#666;text-align:right;margin-bottom:4px}
     table.meisai-grid{border-collapse:collapse;width:100%;table-layout:fixed}
-    table.meisai-grid th,table.meisai-grid td{border:1px solid #333;padding:4px 3px;vertical-align:middle;line-height:1.4;height:7mm}
-    table.meisai-grid tr.pad td{height:7.5mm}
-    .title{font-size:16px;font-weight:400;text-align:center;padding:8px;border:1px solid #333;height:auto!important}
+    table.meisai-grid th,table.meisai-grid td{border:1px solid #333;padding:5px 4px;vertical-align:middle;line-height:1.45}
+    .title{font-size:16px;font-weight:400;text-align:center;padding:8px;border:1px solid #333}
     .num{text-align:right}.cen{text-align:center}.tot{font-weight:700;font-size:13px}.lbl{text-align:right}.co{text-align:center;font-size:13px}
     @media print{body{margin:0;padding:2mm}}
   `,sheet.outerHTML);
@@ -2234,6 +2232,7 @@ function closeLoginLog(){document.getElementById('loginlog-modal').style.display
 
 /* 更新情報（新しいものを上に追加） type: 'feat'=機能更新 / 'fix'=バグ修正 */
 const APP_UPDATES=[
+  {date:'2026-08-22',type:'fix',text:'請求明細書の空行で2枚目になる問題を修正（実データが溢れたときだけ次ページ）'},
   {date:'2026-08-22',type:'feat',text:'請求明細書が品目で収まらないとき2枚目以降に分割（合計金額は最終ページ）'},
   {date:'2026-08-22',type:'feat',text:'請求明細書の表示・印刷をゆったりに（品目空行を減らし、行高・余白を拡大）'},
   {date:'2026-08-22',type:'fix',text:'請求明細書印刷で下の余白が大きく空く問題を改善（空行で帳票を伸ばす・A4横の案内）'},
