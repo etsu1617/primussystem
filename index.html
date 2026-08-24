@@ -865,6 +865,9 @@ select.cs:focus{outline:none;border-color:var(--ac)}
         URL: <code>https://pv-dn.github.io/primussystem/nexus.html</code><br>パスワード: 設定したもの（例: <code>nexus1234</code>）
       </div></div>
       <div class="help-note">💡 閲覧専用ユーザーがログインしても、自社のデータが書き換わることはありません（読み取り専用の動作）。</div>
+      <div class="help-step"><div class="help-step-num">ｲﾝｽﾄ</div><div class="help-step-body"><div class="help-step-title">アプリとしてインストール</div>
+        ネクサス用URLを Chrome / Edge で開く → アドレスバー右の <strong>インストール</strong>（または ⋮ →「アプリをインストール」）。ショートカット名は「ネクサス請求」、アイコンは薄いピンクのプゥル・ヴーロゴです。
+      </div></div>
       <div class="help-note">💡 ネクサス専用URLでは、ログイン後30日間は再入力なしで利用できます（ログアウトすると再入力が必要です）。ブラウザのタブアイコンはプゥル・ヴーロゴ＋薄いピンク背景で、自社用と見分けられます。</div>
       <div class="help-note">💡 パスワードはいつでもユーザー管理から削除できます。</div>
     </div>
@@ -2370,6 +2373,7 @@ function closeLoginLog(){document.getElementById('loginlog-modal').style.display
 
 /* 更新情報（新しいものを上に追加） type: 'feat'=機能更新 / 'fix'=バグ修正 */
 const APP_UPDATES=[
+  {date:'2026-08-24',type:'feat',text:'ネクサス専用URLをChrome/Edgeでアプリとしてインストール可能に'},
   {date:'2026-08-24',type:'feat',text:'ネクサス専用アイコンをプゥル・ヴーロゴ＋薄いピンク背景に変更'},
   {date:'2026-08-24',type:'feat',text:'ネクサス専用URLのタブアイコン・アプリ名を自社用と分けた'},
   {date:'2026-08-24',type:'feat',text:'ネクサス専用の請求タブから「未反映分を見る」を非表示に'},
@@ -2435,6 +2439,9 @@ function applyNexusChrome(){
   let theme=document.querySelector('meta[name="theme-color"]');
   if(!theme){theme=document.createElement('meta');theme.name='theme-color';document.head.appendChild(theme);}
   theme.content='#FFE4EC';
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('./nexus-sw.js').catch(e=>console.warn('SW登録失敗',e));
+  }
 }
 
 document.addEventListener('DOMContentLoaded',()=>{
