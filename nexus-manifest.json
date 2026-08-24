@@ -1,0 +1,25 @@
+{
+  "name": "Purims ネクサス請求閲覧",
+  "short_name": "ネクサス請求",
+  "description": "ネクサス向け 請求明細書・請求額一覧の閲覧",
+  "start_url": "/primussystem/nexus.html",
+  "scope": "/primussystem/",
+  "display": "standalone",
+  "background_color": "#FFE4EC",
+  "theme_color": "#FFE4EC",
+  "orientation": "landscape",
+  "icons": [
+    {
+      "src": "nexus-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "nexus-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

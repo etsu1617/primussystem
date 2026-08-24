@@ -6,6 +6,12 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <title>Purims 伝票発行システム</title>
+<script>
+if(new URLSearchParams(location.search).get('mode')==='nexus'){
+  document.title='Purims ネクサス請求閲覧';
+  const i=document.createElement('link');i.rel='icon';i.type='image/png';i.sizes='192x192';i.href='nexus-icon-192.png';document.head.appendChild(i);
+}
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -859,7 +865,7 @@ select.cs:focus{outline:none;border-color:var(--ac)}
         URL: <code>https://pv-dn.github.io/primussystem/nexus.html</code><br>パスワード: 設定したもの（例: <code>nexus1234</code>）
       </div></div>
       <div class="help-note">💡 閲覧専用ユーザーがログインしても、自社のデータが書き換わることはありません（読み取り専用の動作）。</div>
-      <div class="help-note">💡 ネクサス専用URLでは、ログイン後30日間は再入力なしで利用できます（ログアウトすると再入力が必要です）。</div>
+      <div class="help-note">💡 ネクサス専用URLでは、ログイン後30日間は再入力なしで利用できます（ログアウトすると再入力が必要です）。ブラウザのタブアイコンはプゥル・ヴーロゴ＋薄いピンク背景で、自社用と見分けられます。</div>
       <div class="help-note">💡 パスワードはいつでもユーザー管理から削除できます。</div>
     </div>
   </div>
@@ -2364,6 +2370,8 @@ function closeLoginLog(){document.getElementById('loginlog-modal').style.display
 
 /* 更新情報（新しいものを上に追加） type: 'feat'=機能更新 / 'fix'=バグ修正 */
 const APP_UPDATES=[
+  {date:'2026-08-24',type:'feat',text:'ネクサス専用アイコンをプゥル・ヴーロゴ＋薄いピンク背景に変更'},
+  {date:'2026-08-24',type:'feat',text:'ネクサス専用URLのタブアイコン・アプリ名を自社用と分けた'},
   {date:'2026-08-24',type:'feat',text:'ネクサス専用の請求タブから「未反映分を見る」を非表示に'},
   {date:'2026-08-24',type:'feat',text:'ネクサス専用画面から使い方タブを外し、請求のみ表示に変更'},
   {date:'2026-08-24',type:'feat',text:'ネクサス専用URL（nexus.html）を追加。閲覧専用ログインは30日保持に対応'},
@@ -2411,11 +2419,26 @@ function closeUpdatesModal(){document.getElementById('updates-modal')?.classList
 
 // ===== 【修正⑥】DOMContentLoadedを1か所に統合 =====
 // ===== 【修正①】window.loadでのfbLoad呼び出しを削除 =====
+function applyNexusChrome(){
+  if(!isNexusMode())return;
+  document.title='Purims ネクサス請求閲覧';
+  const loginTitle=document.querySelector('.login-title');
+  if(loginTitle)loginTitle.textContent='ネクサス 請求閲覧';
+  const setLink=(rel,href,type)=>{
+    let el=[...document.querySelectorAll(`link[rel="${rel}"]`)].find(n=>!type||n.getAttribute('type')===type);
+    if(!el){el=document.createElement('link');el.rel=rel;if(type)el.type=type;document.head.appendChild(el);}
+    el.href=href;
+  };
+  setLink('icon','nexus-icon-192.png','image/png');
+  setLink('apple-touch-icon','nexus-apple-touch-icon.png');
+  setLink('manifest','nexus-manifest.json');
+  let theme=document.querySelector('meta[name="theme-color"]');
+  if(!theme){theme=document.createElement('meta');theme.name='theme-color';document.head.appendChild(theme);}
+  theme.content='#FFE4EC';
+}
+
 document.addEventListener('DOMContentLoaded',()=>{
-  if(isNexusMode()){
-    document.querySelector('.login-title').textContent='ネクサス 請求閲覧';
-    document.title='Purims ネクサス請求閲覧';
-  }
+  if(isNexusMode())applyNexusChrome();
   load();
   const now=new Date();
   document.getElementById('hdr-d').innerHTML=`${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日<br>${WD[now.getDay()]}曜日`;
