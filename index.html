@@ -325,7 +325,7 @@ select.cs:focus{outline:none;border-color:var(--ac)}
       <label style="font-size:13px;font-weight:600;color:var(--mu)">ロール</label>
       <select id="new-urole" style="padding:8px 10px;border:1.5px solid var(--bd);border-radius:7px;font-size:13px">
         <option value="user">一般（全機能）</option>
-        <option value="viewer">閲覧専用（請求・使い方のみ）</option>
+        <option value="viewer">閲覧専用（請求のみ）</option>
         <option value="admin">管理者</option>
       </select>
       <button onclick="addUser()" style="padding:9px;background:var(--nv);color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer">追加</button>
@@ -850,10 +850,10 @@ select.cs:focus{outline:none;border-color:var(--ac)}
     <div class="help-section-body">
       <p>ネクサス担当者に<strong>専用URLとパスワード（閲覧専用）</strong>を伝えるだけで、請求明細書・請求額一覧を自分で確認・印刷してもらえます。Excelファイルのメール添付は不要になります。</p>
       <div class="help-step"><div class="help-step-num">特徴</div><div class="help-step-body"><div class="help-step-title">閲覧専用アカウントでできること</div>
-        <span class="help-tag">請求</span> タブ・<span class="help-tag">使い方</span> タブのみ表示。伝票発行・マスタ管理・データなどの操作タブは非表示。Excel出力ボタンも表示されません。
+        <span class="help-tag">請求</span> タブのみ表示（請求明細書・請求額一覧）。使い方・伝票発行・マスタ管理・データは非表示。Excel出力ボタンも表示されません。
       </div></div>
       <div class="help-step"><div class="help-step-num">設定</div><div class="help-step-body"><div class="help-step-title">アカウントの追加方法</div>
-        管理者でログイン → ヘッダー右上の <span class="help-tag">👥 ユーザー管理</span> → ユーザー名・パスワードを入力し、ロールを「<strong>閲覧専用（請求・使い方のみ）</strong>」に選択 → <span class="help-tag">追加</span>
+        管理者でログイン → ヘッダー右上の <span class="help-tag">👥 ユーザー管理</span> → ユーザー名・パスワードを入力し、ロールを「<strong>閲覧専用（請求のみ）</strong>」に選択 → <span class="help-tag">追加</span>
       </div></div>
       <div class="help-step"><div class="help-step-num">共有</div><div class="help-step-body"><div class="help-step-title">ネクサスへ伝える内容</div>
         URL: <code>https://e--yo.github.io/primussystem/nexus.html</code><br>パスワード: 設定したもの（例: <code>nexus1234</code>）
@@ -1814,7 +1814,7 @@ function importJSON(e){const file=e.target.files[0];if(!file)return;const r=new 
 
 // ===== マスタ管理 =====
 function showPanel(id,btn){
-  if((((currentUser&&currentUser.role==='viewer')||isNexusMode()))&&!['billing','help'].includes(id))return;
+  if((((currentUser&&currentUser.role==='viewer')||isNexusMode()))&&id!=='billing')return;
   document.querySelectorAll('.panel').forEach(p=>{p.classList.remove('on');p.style.height='';});document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));const panel=document.getElementById('panel-'+id);panel.classList.add('on');const scrollPanels=['master','history','data','help','billing'];if(scrollPanels.includes(id)){const hdrH=document.querySelector('.hdr').offsetHeight;const tabH=document.querySelector('.tabs').offsetHeight;panel.style.height=(window.innerHeight-hdrH-tabH)+'px';}if(btn&&btn.classList)btn.classList.add('on');else{const tabs=[...document.querySelectorAll('.tabs .tab')];const map={slip:0,history:1,master:2,data:3,billing:4,help:5};if(map[id]!=null&&tabs[map[id]])tabs[map[id]].classList.add('on');}}
 function showCTab(id,btn){document.querySelectorAll('#m-panel-client .m-panel').forEach(p=>p.classList.remove('on'));document.querySelectorAll('#m-panel-client .m-tab').forEach(t=>t.classList.remove('on'));document.getElementById('c-panel-'+id).classList.add('on');if(btn)btn.classList.add('on');if(id==='new')renderCycBtns('nc-cyc-btns','nc-cyc','');}
 function showMTab(id,btn){document.querySelectorAll('.m-panel').forEach(p=>p.classList.remove('on'));document.querySelectorAll('.m-tab').forEach(t=>t.classList.remove('on'));document.getElementById('m-panel-'+id).classList.add('on');btn.classList.add('on');if(id==='product'){renderProducts();setNPCode();}if(id==='group'){renderGroups();renderClientGrpList();}if(id==='client')setNC2();}
@@ -2135,7 +2135,7 @@ function resetRoleUi(){
   document.getElementById('tab-loginlog').style.display='none';
 }
 function applyViewerUi(){
-  ['tab-slip','tab-history','tab-master','tab-data'].forEach(id=>{
+  ['tab-slip','tab-history','tab-master','tab-data','tab-help'].forEach(id=>{
     const el=document.getElementById(id);
     if(el)el.style.display='none';
   });
@@ -2356,6 +2356,7 @@ function closeLoginLog(){document.getElementById('loginlog-modal').style.display
 
 /* 更新情報（新しいものを上に追加） type: 'feat'=機能更新 / 'fix'=バグ修正 */
 const APP_UPDATES=[
+  {date:'2026-08-24',type:'feat',text:'ネクサス専用画面から使い方タブを外し、請求のみ表示に変更'},
   {date:'2026-08-24',type:'feat',text:'ネクサス専用URL（nexus.html）を追加。閲覧専用ログインは30日保持に対応'},
   {date:'2026-08-24',type:'feat',text:'閲覧専用ロール（viewer）を追加。請求・使い方タブのみ表示、Excel出力ボタン非表示。ネクサス共有用アカウントとして利用可能'},
   {date:'2026-08-22',type:'feat',text:'使い方タブを更新（請求タブ・画面確認・印刷レイアウト・A4横の説明を追加）'},
