@@ -285,6 +285,7 @@ select.cs:focus{outline:none;border-color:var(--ac)}
 .user-row-name{flex:1;font-size:13px;font-weight:600}
 .user-row-role{font-size:11px;padding:2px 8px;border-radius:10px;background:#e8f0fe;color:#185fa5}
 .user-row-role.admin{background:#faeeda;color:#854f0b}
+.user-row-role.viewer{background:#e8f5e9;color:#2e7d32}
 .user-del-btn{padding:4px 10px;background:var(--ng);color:#fff;border:none;border-radius:5px;font-size:12px;cursor:pointer}
 @media print{
   html,body{margin:0;padding:0;background:#fff;overflow:visible!important;height:auto!important}
@@ -321,7 +322,12 @@ select.cs:focus{outline:none;border-color:var(--ac)}
     <div style="display:flex;flex-direction:column;gap:8px">
       <input type="text" id="new-uname" placeholder="ユーザー名" style="padding:8px 10px;border:1.5px solid var(--bd);border-radius:7px;font-size:13px">
       <input type="password" id="new-upass" placeholder="パスワード" style="padding:8px 10px;border:1.5px solid var(--bd);border-radius:7px;font-size:13px">
-      <label style="font-size:13px"><input type="checkbox" id="new-uadmin" style="margin-right:4px">管理者権限を付与</label>
+      <label style="font-size:13px;font-weight:600;color:var(--mu)">ロール</label>
+      <select id="new-urole" style="padding:8px 10px;border:1.5px solid var(--bd);border-radius:7px;font-size:13px">
+        <option value="user">一般（全機能）</option>
+        <option value="viewer">閲覧専用（請求・使い方のみ）</option>
+        <option value="admin">管理者</option>
+      </select>
       <button onclick="addUser()" style="padding:9px;background:var(--nv);color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer">追加</button>
       <div class="login-err" id="user-err"></div>
     </div>
@@ -416,7 +422,7 @@ select.cs:focus{outline:none;border-color:var(--ac)}
       <div style="margin-top:12px;font-size:12px;color:var(--mu)">一覧の行をクリックすると、その客先の請求明細書に切り替わります。画面上で印刷もできます。</div>
     </div>
   </div>
-  <div style="background:var(--w);border:0.5px solid var(--b2);border-radius:10px;overflow:hidden">
+  <div id="billing-excel-section" style="background:var(--w);border:0.5px solid var(--b2);border-radius:10px;overflow:hidden">
     <div class="ch">Excel出力（ファイルが必要なとき）</div>
     <div style="padding:14px 16px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
       <button type="button" onclick="exportMeisaiMonthXlsx()" style="padding:8px 16px;background:#5c3d1e;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">📥 請求月Excel出力</button>
@@ -837,6 +843,23 @@ select.cs:focus{outline:none;border-color:var(--ac)}
     <div class="help-section-body">
       <p><span class="help-tag">データ</span> タブ →「⬇️ 今すぐ読み込む」を押してください。クラウドから復元できる場合がほとんどです。</p>
       <div class="help-warn">⚠️ それでも解決しない場合はJSONバックアップから復元してください。</div>
+    </div>
+  </div>
+  <div class="help-section help-collapsed" id="help-nexus">
+    <div class="help-section-hd" onclick="toggleHelp('nexus')">🔗 ネクサスへの閲覧URL共有<span class="help-toggle" id="help-toggle-nexus">▶</span></div>
+    <div class="help-section-body">
+      <p>ネクサス担当者に<strong>同じURLとパスワード（閲覧専用）</strong>を伝えるだけで、請求明細書・請求額一覧を自分で確認・印刷してもらえます。Excelファイルのメール添付は不要になります。</p>
+      <div class="help-step"><div class="help-step-num">特徴</div><div class="help-step-body"><div class="help-step-title">閲覧専用アカウントでできること</div>
+        <span class="help-tag">請求</span> タブ・<span class="help-tag">使い方</span> タブのみ表示。伝票発行・マスタ管理・データなどの操作タブは非表示。Excel出力ボタンも表示されません。
+      </div></div>
+      <div class="help-step"><div class="help-step-num">設定</div><div class="help-step-body"><div class="help-step-title">アカウントの追加方法</div>
+        管理者でログイン → ヘッダー右上の <span class="help-tag">👥 ユーザー管理</span> → ユーザー名・パスワードを入力し、ロールを「<strong>閲覧専用（請求・使い方のみ）</strong>」に選択 → <span class="help-tag">追加</span>
+      </div></div>
+      <div class="help-step"><div class="help-step-num">共有</div><div class="help-step-body"><div class="help-step-title">ネクサスへ伝える内容</div>
+        URL: <code>https://e--yo.github.io/primussystem/</code><br>パスワード: 設定したもの（初期値は別途連絡）
+      </div></div>
+      <div class="help-note">💡 閲覧専用ユーザーがログインしても、自社のデータが書き換わることはありません（読み取り専用の動作）。</div>
+      <div class="help-note">💡 パスワードはいつでもユーザー管理から削除できます。</div>
     </div>
   </div>
 </div>
@@ -1789,7 +1812,9 @@ function importCSV(e){const file=e.target.files[0];if(!file)return;const r=new F
 function importJSON(e){const file=e.target.files[0];if(!file)return;const r=new FileReader();r.onload=ev=>{try{const d=JSON.parse(ev.target.result);if(!d.clients){toast('フォーマットが違います','e');return;}if(!confirm('バックアップから全データを復元します。続けますか？'))return;DB.clients=d.clients;DB.cycles=d.cycles||{};if(d.products&&d.products.length)DB.products=d.products;if(d.groups&&d.groups.length)DB.groups=d.groups;if(d.clientGroups)DB.clientGroups=d.clientGroups;if(d.clientOrder)DB.clientOrder=d.clientOrder;if(d.closing)DB.closing=d.closing;if(d.minCharge)DB.minCharge=d.minCharge;if(Array.isArray(d.history)){DB.history=d.history;persistHistoryLocal();if(currentUser){const obj={};DB.history.forEach(h=>{if(h&&h.id!=null)obj[String(h.id)]=h;});db.ref('purims/history').set(obj).catch(e=>toast('履歴の復元に失敗しました: '+e.message,'e'));}}persist();fillSel('csel');fillSel('msel');fillGrpSel('e-grp');fillGrpSel('nc-grp');renderProducts();renderHistory();renderGroups();renderClientGrpList();const pruned=pruneExpiredHistory({quiet:true});const skipped=markOutOfScopeAsBilled();updateBillingPendingBadge();const parts=[];if(pruned)parts.push(`保存期間超過 ${pruned}件削除`);if(skipped)parts.push(`7月以前 ${skipped}件を請求対象外`);toast(parts.length?`${Object.keys(DB.clients).length}件を復元しました（${parts.join('、')}）`:`${Object.keys(DB.clients).length}件を復元しました`);}catch(err){toast('JSONの読み込みに失敗しました','e');}e.target.value='';};r.readAsText(file,'UTF-8');}
 
 // ===== マスタ管理 =====
-function showPanel(id,btn){document.querySelectorAll('.panel').forEach(p=>{p.classList.remove('on');p.style.height='';});document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));const panel=document.getElementById('panel-'+id);panel.classList.add('on');const scrollPanels=['master','history','data','help','billing'];if(scrollPanels.includes(id)){const hdrH=document.querySelector('.hdr').offsetHeight;const tabH=document.querySelector('.tabs').offsetHeight;panel.style.height=(window.innerHeight-hdrH-tabH)+'px';}if(btn&&btn.classList)btn.classList.add('on');else{const tabs=[...document.querySelectorAll('.tabs .tab')];const map={slip:0,history:1,master:2,data:3,billing:4,help:5};if(map[id]!=null&&tabs[map[id]])tabs[map[id]].classList.add('on');}}
+function showPanel(id,btn){
+  if(currentUser&&currentUser.role==='viewer'&&!['billing','help'].includes(id))return;
+  document.querySelectorAll('.panel').forEach(p=>{p.classList.remove('on');p.style.height='';});document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));const panel=document.getElementById('panel-'+id);panel.classList.add('on');const scrollPanels=['master','history','data','help','billing'];if(scrollPanels.includes(id)){const hdrH=document.querySelector('.hdr').offsetHeight;const tabH=document.querySelector('.tabs').offsetHeight;panel.style.height=(window.innerHeight-hdrH-tabH)+'px';}if(btn&&btn.classList)btn.classList.add('on');else{const tabs=[...document.querySelectorAll('.tabs .tab')];const map={slip:0,history:1,master:2,data:3,billing:4,help:5};if(map[id]!=null&&tabs[map[id]])tabs[map[id]].classList.add('on');}}
 function showCTab(id,btn){document.querySelectorAll('#m-panel-client .m-panel').forEach(p=>p.classList.remove('on'));document.querySelectorAll('#m-panel-client .m-tab').forEach(t=>t.classList.remove('on'));document.getElementById('c-panel-'+id).classList.add('on');if(btn)btn.classList.add('on');if(id==='new')renderCycBtns('nc-cyc-btns','nc-cyc','');}
 function showMTab(id,btn){document.querySelectorAll('.m-panel').forEach(p=>p.classList.remove('on'));document.querySelectorAll('.m-tab').forEach(t=>t.classList.remove('on'));document.getElementById('m-panel-'+id).classList.add('on');btn.classList.add('on');if(id==='product'){renderProducts();setNPCode();}if(id==='group'){renderGroups();renderClientGrpList();}if(id==='client')setNC2();}
 const CYC_DAYS=['月','火','水','木','金','土','日'];
@@ -2141,6 +2166,18 @@ function loginSuccess(){
     document.getElementById('user-mgr-btn').style.display='inline-block';
     document.getElementById('tab-loginlog').style.display='inline-block';
   }
+  if(currentUser.role==='viewer'){
+    // viewer: 請求・使い方タブ以外を隠す
+    const tabNames=['伝票発行','発行履歴','マスタ管理','データ'];
+    document.querySelectorAll('.tabs .tab').forEach(t=>{
+      if(tabNames.includes(t.textContent.trim()))t.style.display='none';
+    });
+    document.getElementById('user-mgr-btn').style.display='none';
+    const excelSec=document.getElementById('billing-excel-section');
+    if(excelSec)excelSec.style.display='none';
+    // 請求タブを初期表示
+    showPanel('billing');
+  }
   // Firebase匿名認証してからfbLoad
   if(firebase.auth().currentUser){
     db.ref('purims/adminHash').once('value').then(snap=>{const h=snap.val();if(h)localStorage.setItem(ADMIN_HASH_KEY,h);});
@@ -2221,16 +2258,16 @@ async function renderUserList(){
   const el=document.getElementById('user-list');
   const entries=Object.entries(users);
   if(!entries.length){el.innerHTML='<div style="font-size:13px;color:var(--mu);margin-bottom:8px">登録ユーザーがいません</div>';return;}
-  el.innerHTML=entries.map(([key,u])=>`<div class="user-row"><span class="user-row-name">${u.username}</span><span class="user-row-role${u.role==='admin'?' admin':''}">${u.role==='admin'?'管理者':'一般'}</span><button class="user-del-btn" onclick="delUser('${key}')">削除</button></div>`).join('');
+  el.innerHTML=entries.map(([key,u])=>`<div class="user-row"><span class="user-row-name">${u.username}</span><span class="user-row-role${u.role==='admin'?' admin':u.role==='viewer'?' viewer':''}">${u.role==='admin'?'管理者':u.role==='viewer'?'閲覧専用':'一般'}</span><button class="user-del-btn" onclick="delUser('${key}')">削除</button></div>`).join('');
 }
 async function addUser(){
   const uname=document.getElementById('new-uname').value.trim();
   const upass=document.getElementById('new-upass').value;
-  const isAdmin=document.getElementById('new-uadmin').checked;
+  const role=document.getElementById('new-urole').value;
   if(!uname||!upass){document.getElementById('user-err').textContent='ユーザー名とパスワードを入力してください';return;}
   const hash=await sha256(upass);
-  await db.ref('purims/users').push({username:uname,hash,role:isAdmin?'admin':'user'});
-  document.getElementById('new-uname').value='';document.getElementById('new-upass').value='';document.getElementById('new-uadmin').checked=false;
+  await db.ref('purims/users').push({username:uname,hash,role});
+  document.getElementById('new-uname').value='';document.getElementById('new-upass').value='';document.getElementById('new-urole').value='user';
   document.getElementById('user-err').textContent='';
   renderUserList();toast('ユーザーを追加しました');
 }
@@ -2268,6 +2305,7 @@ function closeLoginLog(){document.getElementById('loginlog-modal').style.display
 
 /* 更新情報（新しいものを上に追加） type: 'feat'=機能更新 / 'fix'=バグ修正 */
 const APP_UPDATES=[
+  {date:'2026-08-24',type:'feat',text:'閲覧専用ロール（viewer）を追加。請求・使い方タブのみ表示、Excel出力ボタン非表示。ネクサス共有用アカウントとして利用可能'},
   {date:'2026-08-22',type:'feat',text:'使い方タブを更新（請求タブ・画面確認・印刷レイアウト・A4横の説明を追加）'},
   {date:'2026-08-22',type:'feat',text:'請求明細書のレイアウトをプゥル・ヴー書式に合わせた（客先名・締め日左上、合計金額右上）'},
   {date:'2026-08-22',type:'fix',text:'請求明細書の下余白を帳票の空行で埋め、1枚に収まる行数までに制限（空行だけで2枚目にしない）'},
