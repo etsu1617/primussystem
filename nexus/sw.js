@@ -1,12 +1,12 @@
-/* Purims ネクサス請求閲覧 — インストール用（最小） */
-const CACHE = 'purims-nexus-v1';
+/* ネクサス専用PWA（スコープ: /primussystem/nexus/ ） */
+const CACHE = 'purims-nexus-dir-v1';
 const ASSETS = [
-  './nexus.html',
+  './',
   './index.html',
-  './nexus-manifest.json',
-  './nexus-icon-192.png',
-  './nexus-icon-512.png',
-  './nexus-apple-touch-icon.png'
+  './manifest.json',
+  '../nexus-icon-192.png',
+  '../nexus-icon-512.png',
+  '../nexus-apple-touch-icon.png'
 ];
 
 self.addEventListener('install', event => {

@@ -5,17 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Purims ネクサス請求閲覧</title>
   <link rel="icon" href="nexus-icon-192.png" type="image/png" sizes="192x192">
-  <link rel="apple-touch-icon" href="nexus-apple-touch-icon.png">
-  <link rel="manifest" href="nexus-manifest.json">
-  <meta name="theme-color" content="#FFE4EC">
-  <meta http-equiv="refresh" content="0; url=./index.html?mode=nexus">
-  <script>
-  if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('./nexus-sw.js').catch(function(){});
-  }
-  </script>
+  <meta http-equiv="refresh" content="0; url=./nexus/">
+  <script>location.replace('./nexus/');</script>
 </head>
 <body>
-  <p>読み込み中です。自動で移動しない場合は <a href="./index.html?mode=nexus">こちら</a> を押してください。</p>
+  <p>移動中… <a href="./nexus/">こちら</a></p>
 </body>
 </html>

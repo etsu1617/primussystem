@@ -862,11 +862,11 @@ select.cs:focus{outline:none;border-color:var(--ac)}
         管理者でログイン → ヘッダー右上の <span class="help-tag">👥 ユーザー管理</span> → ユーザー名・パスワードを入力し、ロールを「<strong>閲覧専用（請求のみ）</strong>」に選択 → <span class="help-tag">追加</span>
       </div></div>
       <div class="help-step"><div class="help-step-num">共有</div><div class="help-step-body"><div class="help-step-title">ネクサスへ伝える内容</div>
-        URL: <code>https://pv-dn.github.io/primussystem/nexus.html</code><br>パスワード: 設定したもの（例: <code>nexus1234</code>）
+        URL: <code>https://pv-dn.github.io/primussystem/nexus/</code><br>パスワード: 設定したもの（例: <code>nexus1234</code>）
       </div></div>
       <div class="help-note">💡 閲覧専用ユーザーがログインしても、自社のデータが書き換わることはありません（読み取り専用の動作）。</div>
       <div class="help-step"><div class="help-step-num">ｲﾝｽﾄ</div><div class="help-step-body"><div class="help-step-title">アプリとしてインストール</div>
-        ネクサス用URLを Chrome / Edge で開く → アドレスバー右の <strong>インストール</strong>（または ⋮ →「アプリをインストール」）。ショートカット名は「ネクサス請求」、アイコンは薄いピンクのプゥル・ヴーロゴです。
+        上記の <strong>/nexus/</strong> URL を Chrome / Edge で開く → アドレスバー右の <strong>インストール</strong>（または ⋮ →「アプリをインストール」）。ショートカット名は「ネクサス請求」。アドレスバーに「アプリで開く」とだけ出る場合は、自社用など別アプリが既に入っているので、必ずこの専用URL（末尾が <code>/nexus/</code>）を開いてください。
       </div></div>
       <div class="help-note">💡 ネクサス専用URLでは、ログイン後30日間は再入力なしで利用できます（ログアウトすると再入力が必要です）。ブラウザのタブアイコンはプゥル・ヴーロゴ＋薄いピンク背景で、自社用と見分けられます。</div>
       <div class="help-note">💡 パスワードはいつでもユーザー管理から削除できます。</div>
@@ -2373,6 +2373,7 @@ function closeLoginLog(){document.getElementById('loginlog-modal').style.display
 
 /* 更新情報（新しいものを上に追加） type: 'feat'=機能更新 / 'fix'=バグ修正 */
 const APP_UPDATES=[
+  {date:'2026-08-24',type:'fix',text:'ネクサス専用を /nexus/ に分離し、自社アプリと別々にインストールできるようにした'},
   {date:'2026-08-24',type:'feat',text:'ネクサス専用URLをChrome/Edgeでアプリとしてインストール可能に'},
   {date:'2026-08-24',type:'feat',text:'ネクサス専用アイコンをプゥル・ヴーロゴ＋薄いピンク背景に変更'},
   {date:'2026-08-24',type:'feat',text:'ネクサス専用URLのタブアイコン・アプリ名を自社用と分けた'},
@@ -2435,12 +2436,18 @@ function applyNexusChrome(){
   };
   setLink('icon','nexus-icon-192.png','image/png');
   setLink('apple-touch-icon','nexus-apple-touch-icon.png');
-  setLink('manifest','nexus-manifest.json');
+  // インストール用マニフェストは /nexus/ 側のみ（自社アプリとスコープ衝突しない）
   let theme=document.querySelector('meta[name="theme-color"]');
   if(!theme){theme=document.createElement('meta');theme.name='theme-color';document.head.appendChild(theme);}
   theme.content='#FFE4EC';
+  // 旧ルートSW（スコープが自社と衝突）は外す
   if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('./nexus-sw.js').catch(e=>console.warn('SW登録失敗',e));
+    navigator.serviceWorker.getRegistrations().then(regs=>{
+      regs.forEach(reg=>{
+        const url=(reg.active&&reg.active.scriptURL)||(reg.installing&&reg.installing.scriptURL)||'';
+        if(url.includes('nexus-sw.js'))reg.unregister();
+      });
+    }).catch(()=>{});
   }
 }
 
