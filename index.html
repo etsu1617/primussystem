@@ -380,12 +380,12 @@ select.cs:focus{outline:none;border-color:var(--ac)}
   <button class="exit-btn" onclick="exitApp()">💾 保存して終了</button>
 </div>
 <div class="tabs">
-  <button class="tab on" onclick="showPanel('slip',this)">伝票発行</button>
-  <button class="tab" onclick="showPanel('history',this)">発行履歴</button>
-  <button class="tab" onclick="showPanel('master',this)">マスタ管理</button>
-  <button class="tab" onclick="showPanel('data',this)">データ</button>
-  <button class="tab" onclick="showPanel('billing',this)">請求</button>
-  <button class="tab" onclick="showPanel('help',this)">使い方・困ったとき</button>
+  <button id="tab-slip" class="tab on" onclick="showPanel('slip',this)">伝票発行</button>
+  <button id="tab-history" class="tab" onclick="showPanel('history',this)">発行履歴</button>
+  <button id="tab-master" class="tab" onclick="showPanel('master',this)">マスタ管理</button>
+  <button id="tab-data" class="tab" onclick="showPanel('data',this)">データ</button>
+  <button id="tab-billing" class="tab" onclick="showPanel('billing',this)">請求</button>
+  <button id="tab-help" class="tab" onclick="showPanel('help',this)">使い方・困ったとき</button>
   <button type="button" class="tab-updates" onclick="openUpdatesModal()">更新情報</button>
 </div>
 <div class="main">
@@ -848,7 +848,7 @@ select.cs:focus{outline:none;border-color:var(--ac)}
   <div class="help-section help-collapsed" id="help-nexus">
     <div class="help-section-hd" onclick="toggleHelp('nexus')">🔗 ネクサスへの閲覧URL共有<span class="help-toggle" id="help-toggle-nexus">▶</span></div>
     <div class="help-section-body">
-      <p>ネクサス担当者に<strong>同じURLとパスワード（閲覧専用）</strong>を伝えるだけで、請求明細書・請求額一覧を自分で確認・印刷してもらえます。Excelファイルのメール添付は不要になります。</p>
+      <p>ネクサス担当者に<strong>専用URLとパスワード（閲覧専用）</strong>を伝えるだけで、請求明細書・請求額一覧を自分で確認・印刷してもらえます。Excelファイルのメール添付は不要になります。</p>
       <div class="help-step"><div class="help-step-num">特徴</div><div class="help-step-body"><div class="help-step-title">閲覧専用アカウントでできること</div>
         <span class="help-tag">請求</span> タブ・<span class="help-tag">使い方</span> タブのみ表示。伝票発行・マスタ管理・データなどの操作タブは非表示。Excel出力ボタンも表示されません。
       </div></div>
@@ -856,9 +856,10 @@ select.cs:focus{outline:none;border-color:var(--ac)}
         管理者でログイン → ヘッダー右上の <span class="help-tag">👥 ユーザー管理</span> → ユーザー名・パスワードを入力し、ロールを「<strong>閲覧専用（請求・使い方のみ）</strong>」に選択 → <span class="help-tag">追加</span>
       </div></div>
       <div class="help-step"><div class="help-step-num">共有</div><div class="help-step-body"><div class="help-step-title">ネクサスへ伝える内容</div>
-        URL: <code>https://e--yo.github.io/primussystem/</code><br>パスワード: 設定したもの（初期値は別途連絡）
+        URL: <code>https://e--yo.github.io/primussystem/nexus.html</code><br>パスワード: 設定したもの（例: <code>nexus1234</code>）
       </div></div>
       <div class="help-note">💡 閲覧専用ユーザーがログインしても、自社のデータが書き換わることはありません（読み取り専用の動作）。</div>
+      <div class="help-note">💡 ネクサス専用URLでは、ログイン後30日間は再入力なしで利用できます（ログアウトすると再入力が必要です）。</div>
       <div class="help-note">💡 パスワードはいつでもユーザー管理から削除できます。</div>
     </div>
   </div>
@@ -1813,7 +1814,7 @@ function importJSON(e){const file=e.target.files[0];if(!file)return;const r=new 
 
 // ===== マスタ管理 =====
 function showPanel(id,btn){
-  if(currentUser&&currentUser.role==='viewer'&&!['billing','help'].includes(id))return;
+  if((((currentUser&&currentUser.role==='viewer')||isNexusMode()))&&!['billing','help'].includes(id))return;
   document.querySelectorAll('.panel').forEach(p=>{p.classList.remove('on');p.style.height='';});document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));const panel=document.getElementById('panel-'+id);panel.classList.add('on');const scrollPanels=['master','history','data','help','billing'];if(scrollPanels.includes(id)){const hdrH=document.querySelector('.hdr').offsetHeight;const tabH=document.querySelector('.tabs').offsetHeight;panel.style.height=(window.innerHeight-hdrH-tabH)+'px';}if(btn&&btn.classList)btn.classList.add('on');else{const tabs=[...document.querySelectorAll('.tabs .tab')];const map={slip:0,history:1,master:2,data:3,billing:4,help:5};if(map[id]!=null&&tabs[map[id]])tabs[map[id]].classList.add('on');}}
 function showCTab(id,btn){document.querySelectorAll('#m-panel-client .m-panel').forEach(p=>p.classList.remove('on'));document.querySelectorAll('#m-panel-client .m-tab').forEach(t=>t.classList.remove('on'));document.getElementById('c-panel-'+id).classList.add('on');if(btn)btn.classList.add('on');if(id==='new')renderCycBtns('nc-cyc-btns','nc-cyc','');}
 function showMTab(id,btn){document.querySelectorAll('.m-panel').forEach(p=>p.classList.remove('on'));document.querySelectorAll('.m-tab').forEach(t=>t.classList.remove('on'));document.getElementById('m-panel-'+id).classList.add('on');btn.classList.add('on');if(id==='product'){renderProducts();setNPCode();}if(id==='group'){renderGroups();renderClientGrpList();}if(id==='client')setNC2();}
@@ -2098,6 +2099,49 @@ function fbStopListeners(){
 // ===== 認証・ユーザー管理 =====
 let currentUser=null;
 const ADMIN_HASH_KEY='purims_admin_hash';
+const APP_MODE=new URLSearchParams(location.search).get('mode')==='nexus'?'nexus':'default';
+const NEXUS_SESSION_KEY='purims_nexus_session_v1';
+const NEXUS_SESSION_DAYS=30;
+
+function isNexusMode(){return APP_MODE==='nexus';}
+function clearNexusSession(){localStorage.removeItem(NEXUS_SESSION_KEY);}
+function saveNexusSession(user){
+  if(!isNexusMode()||!user)return;
+  const expiresAt=Date.now()+(NEXUS_SESSION_DAYS*24*60*60*1000);
+  localStorage.setItem(NEXUS_SESSION_KEY,JSON.stringify({username:user.username,role:user.role,expiresAt}));
+}
+function loadNexusSession(){
+  if(!isNexusMode())return null;
+  try{
+    const raw=localStorage.getItem(NEXUS_SESSION_KEY);
+    if(!raw)return null;
+    const parsed=JSON.parse(raw);
+    if(!parsed||parsed.role!=='viewer'||!parsed.expiresAt)return null;
+    if(Date.now()>parsed.expiresAt){clearNexusSession();return null;}
+    return {username:parsed.username||'ネクサス',role:'viewer'};
+  }catch(e){
+    clearNexusSession();
+    return null;
+  }
+}
+function resetRoleUi(){
+  ['tab-slip','tab-history','tab-master','tab-data','tab-billing','tab-help'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)el.style.display='';
+  });
+  const excelSec=document.getElementById('billing-excel-section');
+  if(excelSec)excelSec.style.display='';
+  document.getElementById('user-mgr-btn').style.display='none';
+  document.getElementById('tab-loginlog').style.display='none';
+}
+function applyViewerUi(){
+  ['tab-slip','tab-history','tab-master','tab-data'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)el.style.display='none';
+  });
+  const excelSec=document.getElementById('billing-excel-section');
+  if(excelSec)excelSec.style.display='none';
+}
 
 async function sha256(str){
   const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(str));
@@ -2128,6 +2172,7 @@ async function doLogin(){
     const hash=await sha256(pass);
     const localAdmin=localStorage.getItem(ADMIN_HASH_KEY);
     if(localAdmin&&hash===localAdmin){
+      if(isNexusMode()){if(errEl)errEl.textContent='この画面は閲覧専用アカウントのみログインできます';return;}
       currentUser={username:'管理者',role:'admin'};
       loginSuccess();
       getAdminHash().catch(()=>{});
@@ -2135,6 +2180,7 @@ async function doLogin(){
     }
     const adminHash=await getAdminHash();
     if(adminHash&&hash===adminHash){
+      if(isNexusMode()){if(errEl)errEl.textContent='この画面は閲覧専用アカウントのみログインできます';return;}
       currentUser={username:'管理者',role:'admin'};
       loginSuccess();return;
     }
@@ -2148,7 +2194,16 @@ async function doLogin(){
     const snap=await db.ref('purims/users').once('value');
     const users=snap.val()||{};
     const matched=Object.values(users).find(u=>u.hash===hash);
-    if(matched){currentUser={username:matched.username,role:matched.role||'user'};loginSuccess();return;}
+    if(matched){
+      const role=matched.role||'user';
+      if(isNexusMode()&&role!=='viewer'){
+        if(errEl)errEl.textContent='この画面は閲覧専用アカウントのみログインできます';
+        return;
+      }
+      currentUser={username:matched.username,role};
+      loginSuccess();
+      return;
+    }
     if(errEl)errEl.textContent='パスワードが違います';
   }catch(e){
     console.error(e);
@@ -2160,22 +2215,16 @@ async function doLogin(){
 document.getElementById('login-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
 
 function loginSuccess(){
+  resetRoleUi();
   document.getElementById('login-screen').classList.add('hidden');
   document.getElementById('current-user-display').textContent=currentUser.username+'さん';
   if(currentUser.role==='admin'){
     document.getElementById('user-mgr-btn').style.display='inline-block';
     document.getElementById('tab-loginlog').style.display='inline-block';
   }
-  if(currentUser.role==='viewer'){
-    // viewer: 請求・使い方タブ以外を隠す
-    const tabNames=['伝票発行','発行履歴','マスタ管理','データ'];
-    document.querySelectorAll('.tabs .tab').forEach(t=>{
-      if(tabNames.includes(t.textContent.trim()))t.style.display='none';
-    });
-    document.getElementById('user-mgr-btn').style.display='none';
-    const excelSec=document.getElementById('billing-excel-section');
-    if(excelSec)excelSec.style.display='none';
-    // 請求タブを初期表示
+  if(currentUser.role==='viewer'||isNexusMode()){
+    applyViewerUi();
+    saveNexusSession(currentUser);
     showPanel('billing');
   }
   // Firebase匿名認証してからfbLoad
@@ -2208,6 +2257,8 @@ function doLogout(){
   if(!confirm('ログアウトしますか？'))return;
   fbStopListeners();
   firebase.auth().signOut().catch(()=>{});
+  clearNexusSession();
+  resetRoleUi();
   currentUser=null;
   DB.history=[];
   document.getElementById('login-screen').classList.remove('hidden');
@@ -2305,6 +2356,7 @@ function closeLoginLog(){document.getElementById('loginlog-modal').style.display
 
 /* 更新情報（新しいものを上に追加） type: 'feat'=機能更新 / 'fix'=バグ修正 */
 const APP_UPDATES=[
+  {date:'2026-08-24',type:'feat',text:'ネクサス専用URL（nexus.html）を追加。閲覧専用ログインは30日保持に対応'},
   {date:'2026-08-24',type:'feat',text:'閲覧専用ロール（viewer）を追加。請求・使い方タブのみ表示、Excel出力ボタン非表示。ネクサス共有用アカウントとして利用可能'},
   {date:'2026-08-22',type:'feat',text:'使い方タブを更新（請求タブ・画面確認・印刷レイアウト・A4横の説明を追加）'},
   {date:'2026-08-22',type:'feat',text:'請求明細書のレイアウトをプゥル・ヴー書式に合わせた（客先名・締め日左上、合計金額右上）'},
@@ -2350,6 +2402,10 @@ function closeUpdatesModal(){document.getElementById('updates-modal')?.classList
 // ===== 【修正⑥】DOMContentLoadedを1か所に統合 =====
 // ===== 【修正①】window.loadでのfbLoad呼び出しを削除 =====
 document.addEventListener('DOMContentLoaded',()=>{
+  if(isNexusMode()){
+    document.querySelector('.login-title').textContent='ネクサス 請求閲覧';
+    document.title='Purims ネクサス請求閲覧';
+  }
   load();
   const now=new Date();
   document.getElementById('hdr-d').innerHTML=`${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日<br>${WD[now.getDay()]}曜日`;
@@ -2375,6 +2431,11 @@ document.addEventListener('DOMContentLoaded',()=>{
       e.preventDefault();e.returnValue='';
     }
   });
+  const remembered=loadNexusSession();
+  if(remembered){
+    currentUser=remembered;
+    loginSuccess();
+  }
 });
 </script>
 </body>
