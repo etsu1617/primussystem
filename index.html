@@ -695,6 +695,11 @@ select.cs:focus{outline:none;border-color:var(--ac)}
     <button class="m-tab" id="hist-tab-client" onclick="setHistView('client')">🏢 客先別</button>
   </div>
   <input class="search-box" type="text" id="hist-search" placeholder="客先名・品目・日付で検索..." oninput="renderHistory()">
+  <div id="hist-print-bar" style="display:none;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap;padding:10px 12px;background:#f0f4fa;border:1px solid #ccd6e8;border-radius:8px">
+    <button type="button" class="btn pri" style="font-size:12px;padding:7px 14px" onclick="printSelectedHist()">🖨 選択した伝票をまとめて印刷（<span id="hist-sel-count">0</span>件）</button>
+    <button type="button" class="btn" style="font-size:12px;padding:7px 12px" onclick="selectAllVisibleHist()">表示中をすべて選択</button>
+    <button type="button" class="btn" style="font-size:12px;padding:7px 12px" onclick="clearHistSelection()">選択解除</button>
+  </div>
   <div style="font-size:12px;color:var(--mu);margin-bottom:10px" id="hist-hint">発行日ごとにまとまっています。フォルダをクリックして開きます。履歴の保存期間は<strong>12か月</strong>（納品日基準）です。</div>
   <div id="hlist"></div>
 </div>
@@ -801,6 +806,7 @@ select.cs:focus{outline:none;border-color:var(--ac)}
       <div class="help-step"><div class="help-step-num">3</div><div class="help-step-body"><div class="help-step-title">数量を入力して伝票発行</div>品目一覧に数量を入力し、<span class="help-tag">伝票発行</span>ボタンを押します。発行しない客先は <span class="help-tag">⏭ 飛ばす</span> で次の客先へ進めます（リストから選び直す必要はありません）。</div></div>
       <div class="help-step"><div class="help-step-num">4</div><div class="help-step-body"><div class="help-step-title">次の客先へ</div>発行後は <span class="help-tag">▶ 客先名</span> で次へ。<span class="help-tag">客先選択に戻る</span> はリストの先頭からやり直すとき。</div></div>
       <div class="help-step"><div class="help-step-num">5</div><div class="help-step-body"><div class="help-step-title">間違えたとき</div>完了画面の <span class="help-tag">入力に戻る（発行取消）</span> で履歴から取り消せます。</div></div>
+      <div class="help-step"><div class="help-step-num">履歴</div><div class="help-step-body"><div class="help-step-title">まとめて再印刷</div><span class="help-tag">発行履歴</span> で伝票左のチェックを入れ → <span class="help-tag">選択した伝票をまとめて印刷</span>。1件だけなら明細内の <span class="help-tag">伝票印刷</span> でも再発行できます。</div></div>
       <div class="help-note">💡 データはクラウド（Firebase）に自動保存されます。別のPCで開いても同じデータが表示されます。</div>
       <div class="help-note">💡 <strong>発行履歴の保存期間は12か月</strong>です（納品日基準）。12か月を超えた伝票はアプリ起動・クラウド読み込み時に自動削除されます。必要な分は事前にCSV/請求Excelで保存してください。</div>
     </div>
@@ -1911,6 +1917,41 @@ function addProduct(){const code=document.getElementById('np-code').value.trim()
 // ===== 発行履歴 =====
 let histFolderCollapsed={};
 let histViewMode='date';
+let histSelectedIds=new Set();
+function updateHistSelCount(){
+  const el=document.getElementById('hist-sel-count');
+  if(el)el.textContent=histSelectedIds.size;
+}
+function toggleHistSelect(id,checked){
+  if(checked)histSelectedIds.add(id);
+  else histSelectedIds.delete(id);
+  updateHistSelCount();
+}
+function clearHistSelection(){
+  if(!histSelectedIds.size){toast('選択されている伝票はありません');return;}
+  histSelectedIds.clear();
+  renderHistory();
+  toast('選択を解除しました');
+}
+function selectAllVisibleHist(){
+  const recs=histFiltered();
+  recs.forEach(h=>{if(h.id!=null)histSelectedIds.add(h.id);});
+  renderHistory();
+  toast(recs.length+'件を選択しました');
+}
+function printSelectedHist(){
+  if(!histSelectedIds.size){toast('伝票を選択してください','e');return;}
+  const items=[...histSelectedIds].map(id=>DB.history.find(h=>h.id===id)).filter(Boolean);
+  if(!items.length){toast('印刷できる伝票がありません','e');return;}
+  items.sort((a,b)=>parseYMD(b.deliveryDate||b.date)-parseYMD(a.deliveryDate||a.date)||(a.client||'').localeCompare(b.client||'','ja')||(Number(b.id)-Number(a.id)));
+  const htmlParts=items.map(h=>buildSlipHTML(h.items||[],h.client,h.deliveryDate));
+  const combined=htmlParts.map((html,idx)=>{
+    if(idx<htmlParts.length-1)return html.replace(/slip-page-wrap:last-child[^}]*}/g,'').replace(/break-after:avoid/g,'break-after:page');
+    return html;
+  }).join('');
+  openPrintWindow(combined);
+  toast(items.length+'件をまとめて印刷しました');
+}
 function escH(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function setHistView(mode){histViewMode=mode==='client'?'client':'date';const d=document.getElementById('hist-tab-date'),c=document.getElementById('hist-tab-client');if(d)d.classList.toggle('on',histViewMode==='date');if(c)c.classList.toggle('on',histViewMode==='client');renderHistory();}
 function toggleHistFolder(encKey){const key=decodeURIComponent(encKey);histFolderCollapsed[key]=!histFolderCollapsed[key];renderHistory();}
@@ -1918,17 +1959,23 @@ function histSlipHtml(h,byClient){
   const open=openHistId===h.id;
   const title=byClient?escH(h.date||''):escH(h.client||'');
   const sub=byClient?('納品: '+escH(h.deliveryDate||'')+'　｜　'+(h.items||[]).length+'品目'+(h.issuedBy?'　｜　発行者: '+escH(h.issuedBy):'')):('納品: '+escH(h.deliveryDate||'')+'　｜　'+(h.items||[]).length+'品目'+(h.issuedBy?'　｜　発行者: '+escH(h.issuedBy):''));
-  return `<div style="background:var(--w);border-bottom:0.5px solid var(--bd)"><div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;cursor:pointer;background:${open?'var(--s)':'var(--w)'}" onclick="toggleHist(${h.id})"><div><div style="font-weight:600;font-size:14px">${title}</div><div style="font-size:11px;color:var(--mu);margin-top:2px">${sub}</div></div><div style="display:flex;align-items:center;gap:10px"><span style="background:var(--nv);color:#fff;padding:3px 10px;border-radius:10px;font-size:12px;font-weight:600">合計 ${h.total}点</span><span style="font-size:14px;color:var(--mu);display:inline-block;transform:rotate(${open?'180':'0'}deg)">▼</span></div></div><div style="display:${open?'block':'none'};padding:14px 16px;background:var(--s);border-top:0.5px solid var(--bd)"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px"><div style="font-size:12px;color:var(--mu);line-height:1.8"><strong style="color:var(--tx);font-size:13px">${escH(h.client)}</strong><br>発行日: ${escH(h.date)}　｜　納品日: ${escH(h.deliveryDate)}${h.issuedBy?'　｜　発行者: <strong style="color:var(--nv);">'+escH(h.issuedBy)+'</strong>':''}</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" style="font-size:12px;padding:6px 12px" onclick="event.stopPropagation();dlHistCSV(${h.id})">CSV出力</button><button class="btn pri" style="font-size:12px;padding:6px 12px" onclick="event.stopPropagation();printHist(${h.id})">伝票印刷</button><button class="btn ng" style="font-size:12px;padding:6px 12px" onclick="event.stopPropagation();delHist(${h.id})">削除</button></div></div><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr><th style="background:var(--nv);color:#fff;padding:7px 10px;font-size:11px;text-align:left;font-weight:500;width:18%">品番</th><th style="background:var(--nv);color:#fff;padding:7px 10px;font-size:11px;text-align:left;font-weight:500">品目名</th><th style="background:var(--nv);color:#fff;padding:7px 10px;font-size:11px;text-align:right;font-weight:500;width:80px">数量</th></tr></thead><tbody>${(h.items||[]).map(it=>`<tr><td style="padding:7px 10px;border-bottom:0.5px solid var(--bd)"><span class="cbdg">${escH(it.code)}</span></td><td style="padding:7px 10px;border-bottom:0.5px solid var(--bd)">${escH(it.name)}</td><td style="padding:7px 10px;border-bottom:0.5px solid var(--bd);text-align:right;font-weight:700">${it.qty}</td></tr>`).join('')}</tbody><tfoot><tr><td colspan="2" style="background:var(--w);padding:8px 10px;font-weight:700;border-top:2px solid var(--b2)">合計</td><td style="background:var(--w);padding:8px 10px;font-weight:700;text-align:right;border-top:2px solid var(--b2);font-size:15px;color:var(--nv)">${h.total}点</td></tr></tfoot></table></div></div>`;
+  return `<div style="background:var(--w);border-bottom:0.5px solid var(--bd)"><div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;cursor:pointer;background:${open?'var(--s)':'var(--w)'}" onclick="toggleHist(${h.id})"><label style="display:flex;align-items:center;flex-shrink:0;margin-right:4px;cursor:pointer" onclick="event.stopPropagation()"><input type="checkbox" ${histSelectedIds.has(h.id)?'checked':''} onchange="toggleHistSelect(${h.id},this.checked)" style="width:16px;height:16px;cursor:pointer" aria-label="印刷対象に選択"></label><div style="flex:1;min-width:0"><div style="font-weight:600;font-size:14px">${title}</div><div style="font-size:11px;color:var(--mu);margin-top:2px">${sub}</div></div><div style="display:flex;align-items:center;gap:10px"><span style="background:var(--nv);color:#fff;padding:3px 10px;border-radius:10px;font-size:12px;font-weight:600">合計 ${h.total}点</span><span style="font-size:14px;color:var(--mu);display:inline-block;transform:rotate(${open?'180':'0'}deg)">▼</span></div></div><div style="display:${open?'block':'none'};padding:14px 16px;background:var(--s);border-top:0.5px solid var(--bd)"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px"><div style="font-size:12px;color:var(--mu);line-height:1.8"><strong style="color:var(--tx);font-size:13px">${escH(h.client)}</strong><br>発行日: ${escH(h.date)}　｜　納品日: ${escH(h.deliveryDate)}${h.issuedBy?'　｜　発行者: <strong style="color:var(--nv);">'+escH(h.issuedBy)+'</strong>':''}</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" style="font-size:12px;padding:6px 12px" onclick="event.stopPropagation();dlHistCSV(${h.id})">CSV出力</button><button class="btn pri" style="font-size:12px;padding:6px 12px" onclick="event.stopPropagation();printHist(${h.id})">伝票印刷</button><button class="btn ng" style="font-size:12px;padding:6px 12px" onclick="event.stopPropagation();delHist(${h.id})">削除</button></div></div><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr><th style="background:var(--nv);color:#fff;padding:7px 10px;font-size:11px;text-align:left;font-weight:500;width:18%">品番</th><th style="background:var(--nv);color:#fff;padding:7px 10px;font-size:11px;text-align:left;font-weight:500">品目名</th><th style="background:var(--nv);color:#fff;padding:7px 10px;font-size:11px;text-align:right;font-weight:500;width:80px">数量</th></tr></thead><tbody>${(h.items||[]).map(it=>`<tr><td style="padding:7px 10px;border-bottom:0.5px solid var(--bd)"><span class="cbdg">${escH(it.code)}</span></td><td style="padding:7px 10px;border-bottom:0.5px solid var(--bd)">${escH(it.name)}</td><td style="padding:7px 10px;border-bottom:0.5px solid var(--bd);text-align:right;font-weight:700">${it.qty}</td></tr>`).join('')}</tbody><tfoot><tr><td colspan="2" style="background:var(--w);padding:8px 10px;font-weight:700;border-top:2px solid var(--b2)">合計</td><td style="background:var(--w);padding:8px 10px;font-weight:700;text-align:right;border-top:2px solid var(--b2);font-size:15px;color:var(--nv)">${h.total}点</td></tr></tfoot></table></div></div>`;
 }
 function histFiltered(){const q=(document.getElementById('hist-search')?.value||'').trim().toLowerCase();if(!q)return DB.history||[];return (DB.history||[]).filter(h=>[h.client,h.date,h.deliveryDate,h.issuedBy,...((h.items||[]).flatMap(it=>[it.code,it.name]))].some(v=>String(v||'').toLowerCase().includes(q)));}
 function renderHistory(){
   const el=document.getElementById('hlist');if(!el)return;
   const hint=document.getElementById('hist-hint');
+  const bar=document.getElementById('hist-print-bar');
   const recs=histFiltered();
-  if(!(DB.history||[]).length){el.innerHTML='<div class="emp">発行履歴はありません</div>';if(hint)hint.textContent='';return;}
+  updateHistSelCount();
+  if(!(DB.history||[]).length){
+    if(bar)bar.style.display='none';
+    el.innerHTML='<div class="emp">発行履歴はありません</div>';if(hint)hint.textContent='';return;
+  }
+  if(bar)bar.style.display='flex';
   if(!recs.length){el.innerHTML='<div class="emp">該当する履歴がありません</div>';if(hint)hint.textContent='検索条件に一致する伝票はありません。';return;}
   const byClient=histViewMode==='client';
-  if(hint)hint.textContent=(byClient?'客先ごとにまとまっています。フォルダをクリックして開きます。':'発行日ごとにまとまっています。フォルダをクリックして開きます。')+' 履歴の保存期間は12か月（納品日基準）です。';
+  if(hint)hint.textContent=(byClient?'客先ごとにまとまっています。フォルダをクリックして開きます。':'発行日ごとにまとまっています。フォルダをクリックして開きます。')+' チェックを入れた伝票だけまとめて再印刷できます。履歴の保存期間は12か月（納品日基準）です。';
   const groups={};
   recs.forEach(h=>{const k=byClient?(h.client||'（客先なし）'):(h.date||'不明');if(!groups[k])groups[k]=[];groups[k].push(h);});
   const keys=Object.keys(groups).sort((a,b)=>byClient?a.localeCompare(b,'ja'):parseYMD(b)-parseYMD(a));
@@ -1943,9 +1990,9 @@ function renderHistory(){
   }).join('');
 }
 function toggleHist(id){openHistId=openHistId===id?null:id;renderHistory();}
-function delHist(id){if(!confirm('この履歴を削除しますか？'))return;DB.history=DB.history.filter(h=>h.id!==id);persistHistoryLocal();if(openHistId===id)openHistId=null;renderHistory();fbDeleteHistoryEntry(id);toast('削除しました');}
+function delHist(id){if(!confirm('この履歴を削除しますか？'))return;DB.history=DB.history.filter(h=>h.id!==id);histSelectedIds.delete(id);persistHistoryLocal();if(openHistId===id)openHistId=null;renderHistory();fbDeleteHistoryEntry(id);toast('削除しました');}
 function dlHistCSV(id){const h=DB.history.find(r=>r.id===id);if(!h)return;let rows=[['客先名','納品日','品番','品目名','数量']];h.items.forEach(it=>rows.push([h.client,h.deliveryDate,it.code,it.name,it.qty]));dlFile(rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n'),`purims_${h.client}_${h.date.replace(/\//g,'-')}.csv`,'text/csv');toast('CSVをダウンロードしました');}
-function clearHist(){if(!confirm('全履歴を削除しますか？'))return;DB.history=[];openHistId=null;persistHistoryLocal();renderHistory();fbClearHistory();toast('履歴を削除しました');}
+function clearHist(){if(!confirm('全履歴を削除しますか？'))return;DB.history=[];openHistId=null;histSelectedIds.clear();persistHistoryLocal();renderHistory();fbClearHistory();toast('履歴を削除しました');}
 
 // ===== ヘルプ =====
 function toggleHelp(id){const sec=document.getElementById('help-'+id);const tog=document.getElementById('help-toggle-'+id);if(!sec)return;const collapsed=sec.classList.toggle('help-collapsed');if(tog)tog.textContent=collapsed?'▶':'▼';}
@@ -2374,6 +2421,7 @@ function closeLoginLog(){document.getElementById('loginlog-modal').style.display
 
 /* 更新情報（新しいものを上に追加） type: 'feat'=機能更新 / 'fix'=バグ修正 */
 const APP_UPDATES=[
+  {date:'2026-09-02',type:'feat',text:'発行履歴で伝票をチェック選択し、まとめて再印刷できるようにした'},
   {date:'2026-08-24',type:'fix',text:'ネクサス閲覧を別サイト（pv-dn.github.io/purims-nexus）に分離し、自社アプリと独立してインストールできるようにした'},
   {date:'2026-08-24',type:'fix',text:'自社用PWAの範囲を狭め、ネクサス（/nexus/）を別アプリとしてインストールできるようにした'},
   {date:'2026-08-24',type:'fix',text:'ネクサス専用を /nexus/ に分離し、自社アプリと別々にインストールできるようにした'},
