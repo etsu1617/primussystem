@@ -293,6 +293,7 @@ select.cs:focus{outline:none;border-color:var(--ac)}
 .user-row-role.admin{background:#faeeda;color:#854f0b}
 .user-row-role.viewer{background:#e8f5e9;color:#2e7d32}
 .user-del-btn{padding:4px 10px;background:var(--ng);color:#fff;border:none;border-radius:5px;font-size:12px;cursor:pointer}
+.user-pass-btn{padding:4px 10px;background:var(--nv);color:#fff;border:none;border-radius:5px;font-size:12px;cursor:pointer;white-space:nowrap}
 @media print{
   html,body{margin:0;padding:0;background:#fff;overflow:visible!important;height:auto!important}
   #app{display:none!important}
@@ -876,7 +877,7 @@ select.cs:focus{outline:none;border-color:var(--ac)}
         自社用（primussystem）とは別サイトなので、自社アプリが入っていてもインストールできます。
       </div></div>
       <div class="help-note">💡 ネクサス専用URLでは、ログイン後30日間は再入力なしで利用できます（ログアウトすると再入力が必要です）。ブラウザのタブアイコンはプゥル・ヴーロゴ＋薄いピンク背景で、自社用と見分けられます。</div>
-      <div class="help-note">💡 パスワードはいつでもユーザー管理から削除できます。</div>
+      <div class="help-note">💡 パスワードはユーザー管理で変更・削除できます（各ユーザーの <span class="help-tag">パスワード変更</span>）。</div>
     </div>
   </div>
 </div>
@@ -2344,6 +2345,7 @@ function exitApp(){
 }
 
 // ===== ユーザー管理モーダル =====
+let userPassEditKey=null;
 function showUserModal(){openAdminPassModal();}
 function openAdminPassModal(){
   document.getElementById('admin-pass-modal').style.display='flex';
@@ -2365,16 +2367,49 @@ function openUserModal(){
   document.getElementById('user-modal').classList.remove('hidden');
   document.getElementById('user-err').textContent='';
   document.getElementById('admin-pass-change-err').textContent='';
+  userPassEditKey=null;
   renderUserList();
 }
-function closeUserModal(){document.getElementById('user-modal').classList.add('hidden');}
+function closeUserModal(){document.getElementById('user-modal').classList.add('hidden');userPassEditKey=null;}
+function showUserPassEdit(key){
+  userPassEditKey=key;
+  renderUserList();
+  const keyId=String(key).replace(/[^a-zA-Z0-9_-]/g,'_');
+  setTimeout(()=>document.getElementById('user-new-pass-'+keyId)?.focus(),50);
+}
+function cancelUserPassEdit(){userPassEditKey=null;renderUserList();}
+async function saveUserPass(key){
+  const keyId=String(key).replace(/[^a-zA-Z0-9_-]/g,'_');
+  const np=document.getElementById('user-new-pass-'+keyId)?.value||'';
+  const nc=document.getElementById('user-new-pass-c-'+keyId)?.value||'';
+  const errEl=document.getElementById('user-pass-err-'+keyId);
+  if(!np||!nc){if(errEl)errEl.textContent='新しいパスワードを入力してください';return;}
+  if(np!==nc){if(errEl)errEl.textContent='パスワードが一致しません';return;}
+  if(np.length<4){if(errEl)errEl.textContent='4文字以上にしてください';return;}
+  const snap=await db.ref('purims/users/'+key).once('value');
+  const u=snap.val();
+  if(!u){toast('ユーザーが見つかりません','e');return;}
+  const hash=await sha256(np);
+  await db.ref('purims/users/'+key).update({hash});
+  userPassEditKey=null;
+  renderUserList();
+  toast(`「${u.username}」のパスワードを変更しました`);
+}
 async function renderUserList(){
   const snap=await db.ref('purims/users').once('value');
   const users=snap.val()||{};
   const el=document.getElementById('user-list');
   const entries=Object.entries(users);
   if(!entries.length){el.innerHTML='<div style="font-size:13px;color:var(--mu);margin-bottom:8px">登録ユーザーがいません</div>';return;}
-  el.innerHTML=entries.map(([key,u])=>`<div class="user-row"><span class="user-row-name">${u.username}</span><span class="user-row-role${u.role==='admin'?' admin':u.role==='viewer'?' viewer':''}">${u.role==='admin'?'管理者':u.role==='viewer'?'閲覧専用':'一般'}</span><button class="user-del-btn" onclick="delUser('${key}')">削除</button></div>`).join('');
+  el.innerHTML=entries.map(([key,u])=>{
+    const roleCls=u.role==='admin'?' admin':u.role==='viewer'?' viewer':'';
+    const roleLabel=u.role==='admin'?'管理者':u.role==='viewer'?'閲覧専用':'一般';
+    const editing=userPassEditKey===key;
+    const keyJs=String(key).replace(/\\/g,'\\\\').replace(/'/g,'\\\'');
+    const keyId=String(key).replace(/[^a-zA-Z0-9_-]/g,'_');
+    const editBlock=editing?`<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--bd)"><input type="password" id="user-new-pass-${keyId}" placeholder="新しいパスワード" style="width:100%;padding:6px 8px;margin-bottom:6px;border:1.5px solid var(--bd);border-radius:6px;font-size:12px"><input type="password" id="user-new-pass-c-${keyId}" placeholder="確認（もう一度）" style="width:100%;padding:6px 8px;margin-bottom:6px;border:1.5px solid var(--bd);border-radius:6px;font-size:12px" onkeydown="if(event.key==='Enter')saveUserPass('${keyJs}')"><div id="user-pass-err-${keyId}" style="color:var(--ng);font-size:11px;min-height:14px;margin-bottom:4px"></div><div style="display:flex;gap:6px"><button type="button" onclick="saveUserPass('${keyJs}')" style="flex:1;padding:6px;background:var(--nv);color:#fff;border:none;border-radius:5px;font-size:12px;cursor:pointer">保存</button><button type="button" onclick="cancelUserPassEdit()" style="flex:1;padding:6px;background:var(--bg);border:1px solid var(--bd);border-radius:5px;font-size:12px;cursor:pointer">キャンセル</button></div></div>`:'';
+    return `<div class="user-row" style="flex-direction:column;align-items:stretch"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span class="user-row-name">${escH(u.username)}</span><span class="user-row-role${roleCls}">${roleLabel}</span><button type="button" class="user-pass-btn" onclick="showUserPassEdit('${keyJs}')">パスワード変更</button><button type="button" class="user-del-btn" onclick="delUser('${keyJs}')">削除</button></div>${editBlock}</div>`;
+  }).join('');
 }
 async function addUser(){
   const uname=document.getElementById('new-uname').value.trim();
@@ -2421,6 +2456,7 @@ function closeLoginLog(){document.getElementById('loginlog-modal').style.display
 
 /* 更新情報（新しいものを上に追加） type: 'feat'=機能更新 / 'fix'=バグ修正 */
 const APP_UPDATES=[
+  {date:'2026-09-02',type:'feat',text:'ユーザー管理で各ユーザーのパスワードを変更できるようにした'},
   {date:'2026-09-02',type:'feat',text:'発行履歴で伝票をチェック選択し、まとめて再印刷できるようにした'},
   {date:'2026-08-24',type:'fix',text:'ネクサス閲覧を別サイト（pv-dn.github.io/purims-nexus）に分離し、自社アプリと独立してインストールできるようにした'},
   {date:'2026-08-24',type:'fix',text:'自社用PWAの範囲を狭め、ネクサス（/nexus/）を別アプリとしてインストールできるようにした'},
