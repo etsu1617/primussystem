@@ -490,10 +490,6 @@ select.cs:focus{outline:none;border-color:var(--ac)}
           <span id="zoom-label" style="font-size:12px;font-weight:600;color:var(--nv);min-width:36px;text-align:center">100%</span>
           <button onclick="changeZoom(1)" style="width:26px;height:26px;border:1px solid #ccd6e8;border-radius:4px;background:#f0f4fa;cursor:pointer;font-size:15px;font-weight:bold;line-height:1">＋</button>
         </div>
-        <button onclick="exportMasterCSV()" style="background:#185fa5;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;cursor:pointer;font-weight:bold;white-space:nowrap">📋 Excelマスター出力</button>
-        <button onclick="exportCSV()" style="background:#1a6e3c;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;cursor:pointer;font-weight:bold;white-space:nowrap">📥 Excel用CSV出力</button>
-        <button onclick="exportTodayBilling()" id="billing-today-btn" style="background:#854f0b;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;cursor:pointer;font-weight:bold;white-space:nowrap">📄 未反映→請求明細Excel</button>
-        <span id="billing-pending-badge" style="display:none;background:#854f0b;color:#fff;border-radius:12px;padding:2px 10px;font-size:12px;font-weight:bold"></span>
       </div>
     </div>
     <div class="card" style="display:flex;flex-direction:column;flex:1;overflow:hidden;margin-bottom:0">
@@ -850,7 +846,7 @@ select.cs:focus{outline:none;border-color:var(--ac)}
       <div class="help-step"><div class="help-step-num">終了前</div><div class="help-step-body"><div class="help-step-title">請求明細をアプリ内で確認（任意）</div><span class="help-tag">請求</span> タブ → 請求月を指定 → <span class="help-tag">請求明細書を見る</span>。左の客先一覧で切り替え、<span class="help-tag">この客先を印刷</span> で印刷プレビューを確認できます（Excel なしで OK）。</div></div>
       <div class="help-step"><div class="help-step-num">終了時</div><div class="help-step-body"><div class="help-step-title">請求明細 Excel を出力</div><span class="help-tag">請求</span> または <span class="help-tag">データ</span> タブの <span class="help-tag">未反映→請求明細Excel</span> を押す → <code>purims_meisai_YYYYMMDD.xlsx</code> がダウンロード。客先ごとにシート自動作成。</div></div>
       <div class="help-step"><div class="help-step-num">必要なら</div><div class="help-step-body"><div class="help-step-title">Excel で保存・印刷</div>ダウンロードした .xlsx を Excel で開く（取り込み操作なし）。印刷または所定フォルダに保存。</div></div>
-      <div class="help-note">💡 <strong>未反映: N件</strong> と表示されている間は、まだ請求明細に載せていない伝票があります（本日以前の分も含む）。ボタンを押すと反映済みになり、同じ伝票は二重に出力されません。件数は <strong>2026年8月1日以降の納品</strong> のみです。7月以前は初回読み込み時に反映済み扱いになります。</div>
+      <div class="help-note">💡 <strong>未反映の伝票</strong> … <span class="help-tag">請求</span> タブの <span class="help-tag">未反映分を見る</span> や <span class="help-tag">未反映→請求明細Excel</span> で扱います（本日以前の分も含む）。Excel出力すると反映済みになり、同じ伝票は二重に出力されません。件数は <strong>2026年8月1日以降の納品</strong> のみです。7月以前は初回読み込み時に反映済み扱いになります。</div>
       <div class="help-note">💡 <strong>押し忘れた場合</strong> … 翌日（または後日）に <span class="help-tag">未反映→請求明細Excel</span> を押せば、未反映分を含む<strong>その請求月の全伝票</strong>がシートに載ります（前回分も消えない）。反映済みフラグは今回の未反映分にだけ付きます。<span class="help-tag">請求</span> タブの <span class="help-tag">請求月Excel出力</span> でも再出力できます。</div>
       <div class="help-note">💡 <strong>請求額一覧</strong> … <span class="help-tag">請求</span> → <span class="help-tag">請求額一覧を見る</span> で店舗ごとの小計・税・合計を一覧表示。並びは <strong>20日〆 → 25日〆 → 末日〆</strong>、同じ締めの中は客先名の番号が若い順（番号なしは先頭）。行クリックで明細へ。CSV 出力も可能です。</div>
       <div class="help-note">💡 毎回<strong>新しい Excel ファイル</strong>が作成されます。前日保存したファイルを Purims が自動更新することはありません。</div>
@@ -2680,6 +2676,7 @@ function closeLoginLog(){document.getElementById('loginlog-modal').style.display
 
 /* 更新情報（新しいものを上に追加） type: 'feat'=機能更新 / 'fix'=バグ修正 */
 const APP_UPDATES=[
+  {date:'2026-09-07',type:'fix',text:'伝票発行タブからExcel出力ボタン類を外し、印刷モードと表示倍率だけにした'},
   {date:'2026-09-07',type:'fix',text:'駐車場代入力から点数列を削除（金額のみ）'},
   {date:'2026-09-07',type:'fix',text:'駐車場代入力を客先選択方式に変更'},
   {date:'2026-09-07',type:'feat',text:'駐車場代ありの客先は請求タブで金額入力し、「客先名 駐車場代」として別明細に分割'},
