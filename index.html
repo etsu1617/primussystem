@@ -802,7 +802,7 @@ select.cs:focus{outline:none;border-color:var(--ac)}
       <div class="help-step"><div class="help-step-num">必要なら</div><div class="help-step-body"><div class="help-step-title">Excel で保存・印刷</div>ダウンロードした .xlsx を Excel で開く（取り込み操作なし）。印刷または所定フォルダに保存。</div></div>
       <div class="help-note">💡 <strong>未反映: N件</strong> と表示されている間は、まだ請求明細に載せていない伝票があります（本日以前の分も含む）。ボタンを押すと反映済みになり、同じ伝票は二重に出力されません。件数は <strong>2026年8月1日以降の納品</strong> のみです。7月以前は初回読み込み時に反映済み扱いになります。</div>
       <div class="help-note">💡 <strong>押し忘れた場合</strong> … 翌日（または後日）に <span class="help-tag">未反映→請求明細Excel</span> を押せば、未反映分を含む<strong>その請求月の全伝票</strong>がシートに載ります（前回分も消えない）。反映済みフラグは今回の未反映分にだけ付きます。<span class="help-tag">請求</span> タブの <span class="help-tag">請求月Excel出力</span> でも再出力できます。</div>
-      <div class="help-note">💡 <strong>請求額一覧</strong> … <span class="help-tag">請求</span> → <span class="help-tag">請求額一覧を見る</span> で店舗ごとの小計・税・合計を一覧表示。行クリックで明細へ。CSV 出力も可能です。</div>
+      <div class="help-note">💡 <strong>請求額一覧</strong> … <span class="help-tag">請求</span> → <span class="help-tag">請求額一覧を見る</span> で店舗ごとの小計・税・合計を一覧表示。並びは <strong>20日〆 → 25日〆 → 末日〆</strong>、同じ締めの中は客先名の番号が若い順（番号なしは先頭）。行クリックで明細へ。CSV 出力も可能です。</div>
       <div class="help-note">💡 毎回<strong>新しい Excel ファイル</strong>が作成されます。前日保存したファイルを Purims が自動更新することはありません。</div>
     </div>
   </div>
@@ -1228,6 +1228,36 @@ function dlJSON(){const td=fileDate();dlFile(JSON.stringify({clients:DB.clients,
 localStorage.setItem('purims_backed_up','1');toast('JSONバックアップをダウンロードしました');}
 
 function parseClosingDay(s){if(!s)return 0;if(String(s).includes('20'))return 20;if(String(s).includes('25'))return 25;if(String(s).includes('末'))return 99;return 0;}
+/** 請求一覧の締め日順: 20日 → 25日 → 末日（未設定含む） */
+function closingSortRank(day){
+  if(day===20)return 1;
+  if(day===25)return 2;
+  if(day===99||!day)return 3;
+  return 4;
+}
+/** 客先名先頭の番号。番号なしは先、番号ありは若い順 */
+function clientNameSortKey(name){
+  const s=String(name||'');
+  const m=s.match(/^[\s　]*(\d+)/);
+  if(!m)return{hasNum:false,num:0,name:s};
+  return{hasNum:true,num:parseInt(m[1],10)||0,name:s};
+}
+function compareClientName(a,b){
+  const ka=clientNameSortKey(a),kb=clientNameSortKey(b);
+  if(ka.hasNum!==kb.hasNum)return ka.hasNum?1:-1;
+  if(ka.hasNum&&ka.num!==kb.num)return ka.num-kb.num;
+  return ka.name.localeCompare(kb.name,'ja');
+}
+function sortMeisaiData(meisaiData){
+  (meisaiData||[]).sort((a,b)=>{
+    const cr=closingSortRank(a.closingDay)-closingSortRank(b.closingDay);
+    if(cr)return cr;
+    const cn=compareClientName(a.customer,b.customer);
+    if(cn)return cn;
+    return (a.year-b.year)||(a.month-b.month);
+  });
+  return meisaiData;
+}
 function getMinCharge(customer){const n=Number(DB.minCharge&&DB.minCharge[customer]);return n>0?n:0;}
 function toHalfWidthDigits(s){return String(s).replace(/[０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0));}
 function parseDeliveryDate(str){if(str==null||str===''||str==='—')return null;const s=toHalfWidthDigits(String(str).trim());let m=s.match(/(\d{4})年(\d{1,2})月(\d{1,2})日?/);if(m)return{y:+m[1],m:+m[2],d:+m[3]};m=s.match(/^(\d{4})[\/.\-](\d{1,2})[\/.\-](\d{1,2})$/);if(m)return{y:+m[1],m:+m[2],d:+m[3]};const p=s.split(/[\/.\-]/).map(Number);if(p.length>=3&&!isNaN(p[0])&&p[0]>1900)return{y:p[0],m:p[1],d:p[2]};return null;}
@@ -1350,7 +1380,7 @@ function xlCol(n){let s='';while(n>0){const r=(n-1)%26;s=String.fromCharCode(65+
 function initMeisaiMonth(){const y=document.getElementById('meisai-year'),m=document.getElementById('meisai-month');if(!y||!m)return;const now=new Date();y.value=now.getFullYear();m.value=now.getMonth()+1;}
 function updateBillingPendingBadge(){const el=document.getElementById('billing-pending-badge');if(!el)return;const pending=(DB.history||[]).filter(h=>!h.billingExportedAt);const n=pending.filter(isExportableHist).length;el.style.display=n?'inline':'none';el.textContent='未反映: '+n+'件';}
 function buildInvoicesFromRecs(recs,customer,warnings){if(recs.length>14)warnings.push(`${customer}（${recs.length}枚・14枚まで）`);let zeroPrice=0;const invoices=recs.slice(0,14).map((h,idx)=>({invoiceNo:String(idx+1),deliveryDate:historyDeliveryDate(h),items:(h.items||[]).filter(it=>it.qty>0).map(it=>{const price=getBillingPrice(customer,it.code,it.name);if(!price)zeroPrice++;return{name:it.name,price,qty:it.qty};})}));if(zeroPrice)warnings.push(`${customer} 単価未設定${zeroPrice}行`);return invoices;}
-function collectMeisaiData(opts){const warnings=[];const mode=opts?.mode||'month';if(mode==='today'){const toMark=(DB.history||[]).filter(h=>!h.billingExportedAt&&isExportableHist(h));if(!toMark.length){const raw=(DB.history||[]).filter(h=>!h.billingExportedAt).length;if(raw)return{error:`未反映 ${raw}件ありますが、7月以前・納品日不明などで出力対象がありません`};return{error:'未反映の伝票がありません'};}const sheetKeys=new Map();toMark.forEach(h=>{const closingDay=parseClosingDay(DB.closing[h.client]||'');const bm=getBillingMonth(parseHistDeliveryDate(h),closingDay);if(!bm)return;const k=`${h.client}\0${bm.y}\0${bm.m}`;if(!sheetKeys.has(k))sheetKeys.set(k,{customer:h.client,year:bm.y,month:bm.m,closingDay});});const meisaiData=[];sheetKeys.forEach(({customer,year,month,closingDay})=>{const recs=(DB.history||[]).filter(h=>{if(h.client!==customer)return false;const d=parseHistDeliveryDate(h);if(!isBillingDeliveryInScope(d))return false;return belongsToBillingMonth(d,year,month,closingDay);}).sort(sortHistoryRecs);if(!recs.length)return;meisaiData.push({customer,year,month,closingDay,minCharge:getMinCharge(customer),invoices:buildInvoicesFromRecs(recs,customer,warnings)});});meisaiData.sort((a,b)=>a.customer.localeCompare(b.customer,'ja')||a.year-b.year||a.month-b.month);if(!meisaiData.length)return{error:'請求データを作成できませんでした（締め日・納品日の組み合わせを確認してください）'};assignUniqueSheetNames(meisaiData);return{meisaiData,toMark,warnings};}const year=parseInt(opts?.year,10),month=parseInt(opts?.month,10);if(!year||!month||month<1||month>12)return{error:'請求月（年月）を指定してください'};if(year<BILLING_DELIVERY_MIN.y||(year===BILLING_DELIVERY_MIN.y&&month<BILLING_DELIVERY_MIN.m))return{error:`${year}年${month}月は請求対象外です（${BILLING_DELIVERY_MIN.y}年${BILLING_DELIVERY_MIN.m}月以降の納品のみ）`};if(!isBillingMonthWithinRetention(year,month))return{error:`${year}年${month}月は保存期間（${HISTORY_KEEP_MONTHS}か月）外です`};const meisaiData=[];Object.keys(DB.clients||{}).sort((a,b)=>a.localeCompare(b,'ja')).forEach(customer=>{const closingDay=parseClosingDay(DB.closing[customer]||'');const recs=(DB.history||[]).filter(h=>{if(h.client!==customer)return false;if(!isBillingDeliveryInScope(parseHistDeliveryDate(h)))return false;return belongsToBillingMonth(parseHistDeliveryDate(h),year,month,closingDay);}).sort(sortHistoryRecs);if(!recs.length)return;meisaiData.push({customer,year,month,closingDay,minCharge:getMinCharge(customer),invoices:buildInvoicesFromRecs(recs,customer,warnings)});});if(!meisaiData.length)return{error:`${year}年${month}月の請求データがありません`};assignUniqueSheetNames(meisaiData);return{meisaiData,warnings};}
+function collectMeisaiData(opts){const warnings=[];const mode=opts?.mode||'month';if(mode==='today'){const toMark=(DB.history||[]).filter(h=>!h.billingExportedAt&&isExportableHist(h));if(!toMark.length){const raw=(DB.history||[]).filter(h=>!h.billingExportedAt).length;if(raw)return{error:`未反映 ${raw}件ありますが、7月以前・納品日不明などで出力対象がありません`};return{error:'未反映の伝票がありません'};}const sheetKeys=new Map();toMark.forEach(h=>{const closingDay=parseClosingDay(DB.closing[h.client]||'');const bm=getBillingMonth(parseHistDeliveryDate(h),closingDay);if(!bm)return;const k=`${h.client}\0${bm.y}\0${bm.m}`;if(!sheetKeys.has(k))sheetKeys.set(k,{customer:h.client,year:bm.y,month:bm.m,closingDay});});const meisaiData=[];sheetKeys.forEach(({customer,year,month,closingDay})=>{const recs=(DB.history||[]).filter(h=>{if(h.client!==customer)return false;const d=parseHistDeliveryDate(h);if(!isBillingDeliveryInScope(d))return false;return belongsToBillingMonth(d,year,month,closingDay);}).sort(sortHistoryRecs);if(!recs.length)return;meisaiData.push({customer,year,month,closingDay,minCharge:getMinCharge(customer),invoices:buildInvoicesFromRecs(recs,customer,warnings)});});sortMeisaiData(meisaiData);if(!meisaiData.length)return{error:'請求データを作成できませんでした（締め日・納品日の組み合わせを確認してください）'};assignUniqueSheetNames(meisaiData);return{meisaiData,toMark,warnings};}const year=parseInt(opts?.year,10),month=parseInt(opts?.month,10);if(!year||!month||month<1||month>12)return{error:'請求月（年月）を指定してください'};if(year<BILLING_DELIVERY_MIN.y||(year===BILLING_DELIVERY_MIN.y&&month<BILLING_DELIVERY_MIN.m))return{error:`${year}年${month}月は請求対象外です（${BILLING_DELIVERY_MIN.y}年${BILLING_DELIVERY_MIN.m}月以降の納品のみ）`};if(!isBillingMonthWithinRetention(year,month))return{error:`${year}年${month}月は保存期間（${HISTORY_KEEP_MONTHS}か月）外です`};const meisaiData=[];Object.keys(DB.clients||{}).forEach(customer=>{const closingDay=parseClosingDay(DB.closing[customer]||'');const recs=(DB.history||[]).filter(h=>{if(h.client!==customer)return false;if(!isBillingDeliveryInScope(parseHistDeliveryDate(h)))return false;return belongsToBillingMonth(parseHistDeliveryDate(h),year,month,closingDay);}).sort(sortHistoryRecs);if(!recs.length)return;meisaiData.push({customer,year,month,closingDay,minCharge:getMinCharge(customer),invoices:buildInvoicesFromRecs(recs,customer,warnings)});});if(!meisaiData.length)return{error:`${year}年${month}月の請求データがありません`};sortMeisaiData(meisaiData);assignUniqueSheetNames(meisaiData);return{meisaiData,warnings};}
 function meisaiThin(){return{style:'thin',color:{argb:'FF000000'}};}
 function meisaiBox(ws,r1,c1,r2,c2,inner){
   const t=meisaiThin();
@@ -2515,6 +2545,7 @@ function closeLoginLog(){document.getElementById('loginlog-modal').style.display
 
 /* 更新情報（新しいものを上に追加） type: 'feat'=機能更新 / 'fix'=バグ修正 */
 const APP_UPDATES=[
+  {date:'2026-09-07',type:'feat',text:'請求額一覧の並びを締め日順（20→25→末）＋客先番号順に変更'},
   {date:'2026-09-07',type:'feat',text:'請求単価はまとめて入力してから「保存」1回でクラウド反映できるようにした'},
   {date:'2026-09-07',type:'fix',text:'請求単価の入力がクラウドに保存されない不具合を修正'},
   {date:'2026-09-02',type:'feat',text:'ユーザー管理で各ユーザーのパスワードを変更できるようにした'},
