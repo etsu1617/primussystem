@@ -432,7 +432,13 @@ select.cs:focus{outline:none;border-color:var(--ac)}
   <div id="parking-fee-section" style="background:var(--w);border:0.5px solid var(--b2);border-radius:10px;overflow:hidden;margin-bottom:14px">
     <div class="ch" style="background:#3d5a40">🅿️ 駐車場代入力</div>
     <div style="padding:14px 16px;font-size:13px;color:var(--mu);line-height:1.7">
-      マスタで「駐車場代あり」の客先について、領収書を見て金額を入力します。<strong style="color:var(--tx)">伝票には出ません。</strong> 空欄＝その回なし。上の請求月と同じ年月の伝票を表示します。
+      マスタで「駐車場代あり」の客先を選び、領収書を見て金額を入力します。<strong style="color:var(--tx)">伝票には出ません。</strong> 空欄＝その回なし。上の請求月と同じ年月の伝票を表示します。
+      <div style="display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap">
+        <label style="font-size:12px;color:var(--tx);font-weight:600">客先</label>
+        <select id="parking-fee-client" onchange="renderParkingFeeCorner()" style="min-width:220px;padding:8px 10px;border:1.5px solid var(--b2);border-radius:6px;font-size:14px;background:var(--w);color:var(--tx)">
+          <option value="">— 客先を選択 —</option>
+        </select>
+      </div>
       <div id="parking-fee-list" style="margin-top:12px"></div>
       <div style="margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
         <button type="button" class="btn pri" onclick="saveAllParkingFees()" style="padding:8px 16px">駐車場代を保存</button>
@@ -886,7 +892,7 @@ select.cs:focus{outline:none;border-color:var(--ac)}
       <div class="help-step"><div class="help-step-num">4</div><div class="help-step-body"><div class="help-step-title">最低保証（必要な客先のみ）</div>月額の税抜最低保証円を入力。請求明細の小計がこれを下回るときは、保証額で請求します（消費税はその上に10%）。空欄は保証なし。</div></div>
       <div class="help-step"><div class="help-step-num">5</div><div class="help-step-body"><div class="help-step-title">配送費（必要な客先のみ）</div>1回あたりの税抜配送費を入力。請求明細書では<strong>伝票1枚につき1回</strong>「配送費」行が自動加算されます。<strong>伝票の印刷・画面には出ません。</strong> 空欄は加算なし。</div></div>
       <div class="help-step"><div class="help-step-num">6</div><div class="help-step-body"><div class="help-step-title">包装料（必要な客先のみ）</div>1点あたりの税抜包装料を入力。請求明細書では<strong>その納品の総点数×単価</strong>で「包装料」行が自動加算されます。<strong>伝票の印刷・画面には出ません。</strong> 空欄は加算なし。</div></div>
-      <div class="help-step"><div class="help-step-num">7</div><div class="help-step-body"><div class="help-step-title">駐車場代（必要な客先のみ）</div>「あり」にすると、請求タブの<strong>駐車場代入力</strong>にその客先の伝票が出ます。領収書を見て金額を入力（空＝その回なし）。請求では<strong>客先名 駐車場代</strong>として別明細になります。<strong>伝票には出ません。</strong></div></div>
+      <div class="help-step"><div class="help-step-num">7</div><div class="help-step-body"><div class="help-step-title">駐車場代（必要な客先のみ）</div>「あり」にすると、請求タブの<strong>駐車場代入力</strong>でその客先を選べます。領収書を見て金額を入力（空＝その回なし）。請求では<strong>客先名 駐車場代</strong>として別明細になります。<strong>伝票には出ません。</strong></div></div>
       <div class="help-warn">⚠️ 請求単価が未設定の品目は、請求明細で 0 円になり警告が出ます。</div>
     </div>
   </div>
@@ -894,7 +900,7 @@ select.cs:focus{outline:none;border-color:var(--ac)}
     <div class="help-section-hd" onclick="toggleHelp('billing')">📄 請求明細書（確認・Excel・印刷）<span class="help-toggle" id="help-toggle-billing">▶</span></div>
     <div class="help-section-body">
       <p>Purims がブラウザ内で請求明細書を<strong>直接表示・印刷・Excel出力</strong>します。運用 PC に Excel テンプレート（.xlsm）を置く必要はありません。印刷レイアウトは<strong>プゥル・ヴー伝票アプリと同じ書式</strong>です（ネクサス名義）。</p>
-      <div class="help-step"><div class="help-step-num">駐車場</div><div class="help-step-body"><div class="help-step-title">駐車場代を入力</div>マスタで「駐車場代あり」にした客先は、<span class="help-tag">請求</span> タブの <span class="help-tag">駐車場代入力</span> に伝票一覧が出ます。領収書を見て金額を入力 → <span class="help-tag">駐車場代を保存</span>。請求明細では「客先名 駐車場代」として分かれます。</div></div>
+      <div class="help-step"><div class="help-step-num">駐車場</div><div class="help-step-body"><div class="help-step-title">駐車場代を入力</div>マスタで「駐車場代あり」にした客先は、<span class="help-tag">請求</span> タブの <span class="help-tag">駐車場代入力</span> で客先を選び、領収書を見て金額を入力 → <span class="help-tag">駐車場代を保存</span>。請求明細では「客先名 駐車場代」として分かれます。</div></div>
       <div class="help-step"><div class="help-step-num">確認</div><div class="help-step-body"><div class="help-step-title">アプリ内で見る</div><span class="help-tag">請求</span> タブ → 請求月を指定 → <span class="help-tag">請求明細書を見る</span>。左の客先一覧で切り替え。<span class="help-tag">未反映分を見る</span> で Excel 出力前の分も確認できます。</div></div>
       <div class="help-step"><div class="help-step-num">印刷</div><div class="help-step-body"><div class="help-step-title">この客先を印刷</div>明細表示中に <span class="help-tag">🖨 この客先を印刷</span> → 用紙 <strong>A4 横向き</strong>・倍率 <strong>100%</strong>。左上に客先名＋様、右上に小計・消費税・ご請求金額、下に品名・単価・納品日別数量の表（1ページ20行）です。</div></div>
       <div class="help-step"><div class="help-step-num">日次</div><div class="help-step-body"><div class="help-step-title">未反映→請求明細Excel</div>未反映の伝票（押し忘れ分を含む）を対象に、該当客先・請求月のシートを含む Excel を出力。ファイル名例: <code>purims_meisai_20250818.xlsx</code></div></div>
@@ -1436,40 +1442,47 @@ function assignUniqueSheetNames(meisaiData){
 function xlCol(n){let s='';while(n>0){const r=(n-1)%26;s=String.fromCharCode(65+r)+s;n=Math.floor((n-1)/26);}return s;}
 function initMeisaiMonth(){const y=document.getElementById('meisai-year'),m=document.getElementById('meisai-month');if(!y||!m)return;const now=new Date();y.value=now.getFullYear();m.value=now.getMonth()+1;if(typeof renderParkingFeeCorner==='function')renderParkingFeeCorner();}
 function updateBillingPendingBadge(){const el=document.getElementById('billing-pending-badge');if(!el)return;const pending=(DB.history||[]).filter(h=>!h.billingExportedAt);const n=pending.filter(isExportableHist).length;el.style.display=n?'inline':'none';el.textContent='未反映: '+n+'件';}
+function fillParkingFeeClientSel(){
+  const sel=document.getElementById('parking-fee-client');
+  if(!sel)return;
+  const prev=sel.value;
+  const enabled=Object.keys(DB.clients||{}).filter(isParkingEnabled).sort((a,b)=>a.localeCompare(b,'ja'));
+  sel.innerHTML='<option value="">— 客先を選択 —</option>'+enabled.map(c=>'<option value="'+c.replace(/"/g,'&quot;')+'">'+c+'</option>').join('');
+  if(prev&&enabled.includes(prev))sel.value=prev;
+  else sel.value='';
+}
 function renderParkingFeeCorner(){
   const list=document.getElementById('parking-fee-list');
   const hint=document.getElementById('parking-fee-hint');
+  const sel=document.getElementById('parking-fee-client');
   if(!list)return;
   if((currentUser&&currentUser.role==='viewer')||(typeof isNexusMode==='function'&&isNexusMode())){list.innerHTML='';return;}
+  fillParkingFeeClientSel();
   const year=parseInt(document.getElementById('meisai-year')?.value,10);
   const month=parseInt(document.getElementById('meisai-month')?.value,10);
-  if(!year||!month){list.innerHTML='<div style="color:var(--mu);font-size:12px">請求月を指定してください</div>';if(hint)hint.textContent='';return;}
-  const enabled=Object.keys(DB.clients||{}).filter(isParkingEnabled).sort((a,b)=>a.localeCompare(b,'ja'));
+  const customer=sel?sel.value:'';
+  const enabled=Object.keys(DB.clients||{}).filter(isParkingEnabled);
   if(!enabled.length){list.innerHTML='<div style="color:var(--mu);font-size:12px">マスタで「駐車場代あり」の客先がありません</div>';if(hint)hint.textContent='';return;}
-  const rows=[];
-  enabled.forEach(customer=>{
-    const closingDay=parseClosingDay(DB.closing[customer]||'');
-    const recs=(DB.history||[]).filter(h=>{
-      if(h.client!==customer)return false;
-      const d=parseHistDeliveryDate(h);
-      if(!isBillingDeliveryInScope(d))return false;
-      return belongsToBillingMonth(d,year,month,closingDay);
-    }).sort(sortHistoryRecs);
-    recs.forEach(h=>{
-      const fee=Number(h.parkingFee)>0?Number(h.parkingFee):'';
-      const dd=h.deliveryDate||historyDeliveryDate(h)||'';
-      const pts=h.total!=null?h.total:(h.items||[]).reduce((s,it)=>s+(Number(it.qty)||0),0);
-      rows.push({id:h.id,customer,dd,pts,fee});
-    });
-  });
-  if(!rows.length){list.innerHTML='<div style="color:var(--mu);font-size:12px">この請求月の対象伝票がありません</div>';if(hint)hint.textContent=enabled.length+'客先が駐車場代あり';return;}
-  let html='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:var(--s);text-align:left"><th style="padding:8px;border-bottom:1px solid var(--bd)">客先</th><th style="padding:8px;border-bottom:1px solid var(--bd)">納品日</th><th style="padding:8px;border-bottom:1px solid var(--bd)">点数</th><th style="padding:8px;border-bottom:1px solid var(--bd)">駐車場代（円）</th></tr></thead><tbody>';
-  rows.forEach(r=>{
-    html+=`<tr><td style="padding:8px;border-bottom:1px solid var(--bd)">${r.customer}</td><td style="padding:8px;border-bottom:1px solid var(--bd)">${r.dd}</td><td style="padding:8px;border-bottom:1px solid var(--bd)">${r.pts}</td><td style="padding:8px;border-bottom:1px solid var(--bd)"><input type="number" min="0" step="1" data-parking-id="${r.id}" value="${r.fee}" placeholder="なし" style="width:120px;padding:6px 8px;border:1.5px solid var(--b2);border-radius:6px;font-size:13px"></td></tr>`;
+  if(!customer){list.innerHTML='<div style="color:var(--mu);font-size:12px">客先を選択してください</div>';if(hint)hint.textContent=enabled.length+'客先が駐車場代あり';return;}
+  if(!year||!month){list.innerHTML='<div style="color:var(--mu);font-size:12px">請求月を指定してください</div>';if(hint)hint.textContent='';return;}
+  const closingDay=parseClosingDay(DB.closing[customer]||'');
+  const recs=(DB.history||[]).filter(h=>{
+    if(h.client!==customer)return false;
+    const d=parseHistDeliveryDate(h);
+    if(!isBillingDeliveryInScope(d))return false;
+    return belongsToBillingMonth(d,year,month,closingDay);
+  }).sort(sortHistoryRecs);
+  if(!recs.length){list.innerHTML='<div style="color:var(--mu);font-size:12px">この請求月の対象伝票がありません</div>';if(hint)hint.textContent=customer;return;}
+  let html='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:var(--s);text-align:left"><th style="padding:8px;border-bottom:1px solid var(--bd)">納品日</th><th style="padding:8px;border-bottom:1px solid var(--bd)">点数</th><th style="padding:8px;border-bottom:1px solid var(--bd)">駐車場代（円）</th></tr></thead><tbody>';
+  recs.forEach(h=>{
+    const fee=Number(h.parkingFee)>0?Number(h.parkingFee):'';
+    const dd=h.deliveryDate||historyDeliveryDate(h)||'';
+    const pts=h.total!=null?h.total:(h.items||[]).reduce((s,it)=>s+(Number(it.qty)||0),0);
+    html+='<tr><td style="padding:8px;border-bottom:1px solid var(--bd)">'+dd+'</td><td style="padding:8px;border-bottom:1px solid var(--bd)">'+pts+'</td><td style="padding:8px;border-bottom:1px solid var(--bd)"><input type="number" min="0" step="1" data-parking-id="'+h.id+'" value="'+fee+'" placeholder="なし" style="width:120px;padding:6px 8px;border:1.5px solid var(--b2);border-radius:6px;font-size:13px"></td></tr>';
   });
   html+='</tbody></table></div>';
   list.innerHTML=html;
-  if(hint)hint.textContent=`${rows.length}件（${enabled.length}客先）`;
+  if(hint)hint.textContent=customer+'：'+recs.length+'件';
 }
 function saveAllParkingFees(){
   const inputs=[...document.querySelectorAll('#parking-fee-list input[data-parking-id]')];
@@ -2668,6 +2681,7 @@ function closeLoginLog(){document.getElementById('loginlog-modal').style.display
 
 /* 更新情報（新しいものを上に追加） type: 'feat'=機能更新 / 'fix'=バグ修正 */
 const APP_UPDATES=[
+  {date:'2026-09-07',type:'fix',text:'駐車場代入力を客先選択方式に変更'},
   {date:'2026-09-07',type:'feat',text:'駐車場代ありの客先は請求タブで金額入力し、「客先名 駐車場代」として別明細に分割'},
   {date:'2026-09-07',type:'feat',text:'客先ごとの包装料を追加（納品の総点数×単価を請求明細へ・伝票面には非表示）'},
   {date:'2026-09-07',type:'feat',text:'客先ごとの配送費を追加（伝票1枚につき請求明細へ自動加算・伝票面には非表示）'},
