@@ -830,7 +830,7 @@ select.cs:focus{outline:none;border-color:var(--ac)}
     <div class="help-section-body">
       <p><span class="help-tag">マスタ管理</span> → 客先編集 で、客先ごとに次を設定します。</p>
       <div class="help-step"><div class="help-step-num">1</div><div class="help-step-body"><div class="help-step-title">締め日</div>20日〆・25日〆・末日〆から選択。請求月の判定に使います（客先ごとに異なってOK）。</div></div>
-      <div class="help-step"><div class="help-step-num">2</div><div class="help-step-body"><div class="help-step-title">請求単価</div>各品目の「請求単価」列に入力。<strong>伝票には表示されません。</strong> 請求明細の画面表示・印刷・Excel に使います。</div></div>
+      <div class="help-step"><div class="help-step-num">2</div><div class="help-step-body"><div class="help-step-title">請求単価</div>各品目の「請求単価」列に入力して欄外をクリック（フォーカスを外す）すると保存されます。<strong>伝票には表示されません。</strong> 請求明細の画面表示・印刷・Excel に使います。「クラウドに保存しました」と出れば反映済みです。</div></div>
       <div class="help-step"><div class="help-step-num">3</div><div class="help-step-body"><div class="help-step-title">品目・納品サイクル</div>品目名と納品曜日（月〜日）を客先ごとに登録。マスタ品目から追加もできます。</div></div>
       <div class="help-step"><div class="help-step-num">4</div><div class="help-step-body"><div class="help-step-title">最低保証（必要な客先のみ）</div>月額の税抜最低保証円を入力。請求明細の小計がこれを下回るときは、保証額で請求します（消費税はその上に10%）。空欄は保証なし。</div></div>
       <div class="help-warn">⚠️ 請求単価が未設定の品目は、請求明細で 0 円になり警告が出ます。</div>
@@ -1853,7 +1853,15 @@ function initMItemsDrag(){const tbody=document.getElementById('mitems-body');if(
 function saveBasic(){if(!editC)return;const newN=document.getElementById('e-name').value.trim();const newC=document.getElementById('e-cyc').value.trim();const newG=document.getElementById('e-grp').value;const newCL=document.getElementById('e-closing').value;if(!newN){toast('客先名を入力してください','e');return;}if(newN!==editC){if(DB.clients[newN]){toast('同名の客先が既に存在します','e');return;}const oldName=editC;DB.clients[newN]=DB.clients[editC];delete DB.clients[editC];if(DB.cycles[editC]){DB.cycles[newN]=DB.cycles[editC];delete DB.cycles[editC];}if(DB.closing[editC]){DB.closing[newN]=DB.closing[editC];delete DB.closing[editC];}if(DB.minCharge&&DB.minCharge[editC]){DB.minCharge[newN]=DB.minCharge[editC];delete DB.minCharge[editC];}if(DB.clientGroups[editC]){DB.clientGroups[newN]=DB.clientGroups[editC];delete DB.clientGroups[editC];}Object.keys(DB.clientOrder||{}).forEach(gid=>{const ord=DB.clientOrder[gid];if(!Array.isArray(ord))return;const i=ord.indexOf(oldName);if(i>=0)ord[i]=newN;});if(curC===editC)curC=newN;editC=newN;}DB.cycles[editC]=newC;if(newCL)DB.closing[editC]=newCL;else delete DB.closing[editC];if(!DB.minCharge)DB.minCharge={};const minv=parseInt(document.getElementById('e-mincharge')?.value,10);if(!isNaN(minv)&&minv>0)DB.minCharge[editC]=minv;else delete DB.minCharge[editC];if(newG)DB.clientGroups[editC]=newG;else delete DB.clientGroups[editC];persist();fillSel('csel',curC);fillSel('msel',editC);if(curC)updateChips();renderGroups();renderClientGrpList();toast('変更を保存しました');}
 function delClient(){if(!editC){toast('客先を選択してください','e');return;}if(!confirm(`「${editC}」を削除しますか？`))return;const name=editC;delete DB.clients[name];delete DB.cycles[name];delete DB.clientGroups[name];delete DB.closing[name];if(DB.minCharge)delete DB.minCharge[name];Object.keys(DB.clientOrder||{}).forEach(gid=>{if(Array.isArray(DB.clientOrder[gid]))DB.clientOrder[gid]=DB.clientOrder[gid].filter(c=>c!==name);});persist();if(curC===name){curC=null;document.getElementById('csel').value='';onCC();}editC=null;document.getElementById('msel').value='';document.getElementById('medit').style.display='none';fillSel('csel');fillSel('msel');renderGroups();renderClientGrpList();toast('削除しました');}
 function upd(i,f,v){if(DB.clients[editC]?.items[i])DB.clients[editC].items[i][f]=v.trim();persistLocal();}
-function updPrice(i,v){if(DB.clients[editC]?.items[i]){const n=parseInt(v,10);DB.clients[editC].items[i].price=isNaN(n)||n<=0?undefined:n;}persistLocal();}
+function updPrice(i,v){
+  const it=DB.clients[editC]?.items[i];
+  if(!it)return;
+  const n=parseInt(String(v).trim(),10);
+  // undefined をプロパティに残すと Firebase 保存が失敗するため delete する
+  if(isNaN(n)||n<=0)delete it.price;
+  else it.price=n;
+  persistLocal();
+}
 function delItem(i){DB.clients[editC]?.items.splice(i,1);persist();renderMItems();setNC2();if(curC===editC){renderItems();updateChips();}}
 function addItem(){if(!editC){toast('客先を選択してください','e');return;}const code=document.getElementById('ni-code').value.trim()||nextPCode();const name=document.getElementById('ni-name').value.trim();if(!name){toast('品目名を入力してください','e');return;}if(!DB.clients[editC])DB.clients[editC]={items:[]};const pv=parseInt(document.getElementById('ni-price').value,10);DB.clients[editC].items.push({code,name,...(!isNaN(pv)&&pv>0?{price:pv}:{})});document.getElementById('ni-name').value='';const pip=document.getElementById('ni-price');if(pip)pip.value='';persist();renderMItems();setNC2();if(curC===editC){renderItems();updateChips();}toast(`「${name}」（${code}）を追加しました`);}
 function addClient(){const name=document.getElementById('nc-name').value.trim();const cyc=document.getElementById('nc-cyc').value.trim();const gid=document.getElementById('nc-grp').value;const cl=document.getElementById('nc-closing').value;const minv=parseInt(document.getElementById('nc-mincharge')?.value,10);if(!name){toast('客先名を入力してください','e');return;}if(DB.clients[name]){toast('同名の客先が既に存在します','e');return;}DB.clients[name]={items:[]};if(cyc)DB.cycles[name]=cyc;if(cl)DB.closing[name]=cl;if(!isNaN(minv)&&minv>0){if(!DB.minCharge)DB.minCharge={};DB.minCharge[name]=minv;}if(gid)DB.clientGroups[name]=gid;document.getElementById('nc-name').value='';renderCycBtns('nc-cyc-btns','nc-cyc','');document.getElementById('nc-closing').value='';const nmc=document.getElementById('nc-mincharge');if(nmc)nmc.value='';persist();fillSel('csel');fillSel('msel');renderGroups();renderClientGrpList();showCTab('edit',document.getElementById('ctab-edit'));document.getElementById('msel').value=name;onMC();toast(`「${name}」を追加しました`);}
@@ -2014,11 +2022,17 @@ function clearSelfSaving(tok){
 }
 function histPath(id){return 'purims/history/'+String(id);}
 
+/** Firebase は undefined を拒否するため、保存前に除去する */
+function sanitizeForFirebase(obj){
+  return JSON.parse(JSON.stringify(obj,(k,v)=>v===undefined?undefined:v));
+}
+
 /** マスタのみ保存（履歴はID単位で別保存。全文.setはしない） */
 function fbSave(){
   if(!currentUser)return Promise.resolve();
   const tok=markSelfSaving();
-  const master={clients:DB.clients,cycles:DB.cycles,products:DB.products,groups:DB.groups,clientGroups:DB.clientGroups,clientOrder:DB.clientOrder||{},closing:DB.closing,minCharge:DB.minCharge||{},savedAt:new Date().toISOString(),saveId:tok};
+  // undefined（例: 請求単価クリア）を残すと Firebase 全体が失敗するためサニタイズ
+  const master=sanitizeForFirebase({clients:DB.clients,cycles:DB.cycles,products:DB.products,groups:DB.groups,clientGroups:DB.clientGroups,clientOrder:DB.clientOrder||{},closing:DB.closing,minCharge:DB.minCharge||{},savedAt:new Date().toISOString(),saveId:tok});
   return db.ref('purims/data').transaction(current=>{
     if(current&&current.savedAt&&_lastAppliedSavedAt&&current.savedAt!==_lastAppliedSavedAt){
       return; // 他PCが先に更新 → abort
@@ -2456,6 +2470,7 @@ function closeLoginLog(){document.getElementById('loginlog-modal').style.display
 
 /* 更新情報（新しいものを上に追加） type: 'feat'=機能更新 / 'fix'=バグ修正 */
 const APP_UPDATES=[
+  {date:'2026-09-07',type:'fix',text:'請求単価の入力がクラウドに保存されない不具合を修正'},
   {date:'2026-09-02',type:'feat',text:'ユーザー管理で各ユーザーのパスワードを変更できるようにした'},
   {date:'2026-09-02',type:'feat',text:'発行履歴で伝票をチェック選択し、まとめて再印刷できるようにした'},
   {date:'2026-08-24',type:'fix',text:'ネクサス閲覧を別サイト（pv-dn.github.io/purims-nexus）に分離し、自社アプリと独立してインストールできるようにした'},
