@@ -416,9 +416,9 @@ select.cs:focus{outline:none;border-color:var(--ac)}
       伝票の発行履歴と請求単価から、<strong style="color:var(--tx)">ネクサス名義の請求明細書</strong>をアプリ内で表示します。Excelを開かなくても確認・印刷できます。
       <div style="display:flex;gap:10px;align-items:center;margin-top:14px;flex-wrap:wrap">
         <label style="font-size:12px;color:var(--tx);font-weight:600">請求月</label>
-        <input type="number" id="meisai-year" min="2020" max="2099" style="width:88px;padding:8px 10px;border:1.5px solid var(--b2);border-radius:6px;font-size:14px" placeholder="年">
+        <input type="number" id="meisai-year" min="2020" max="2099" style="width:88px;padding:8px 10px;border:1.5px solid var(--b2);border-radius:6px;font-size:14px" placeholder="年" onchange="renderParkingFeeCorner()">
         <span>年</span>
-        <input type="number" id="meisai-month" min="1" max="12" style="width:60px;padding:8px 10px;border:1.5px solid var(--b2);border-radius:6px;font-size:14px" placeholder="月">
+        <input type="number" id="meisai-month" min="1" max="12" style="width:60px;padding:8px 10px;border:1.5px solid var(--b2);border-radius:6px;font-size:14px" placeholder="月" onchange="renderParkingFeeCorner()">
         <span>月</span>
       </div>
       <div style="display:flex;gap:10px;align-items:center;margin-top:14px;flex-wrap:wrap">
@@ -427,6 +427,18 @@ select.cs:focus{outline:none;border-color:var(--ac)}
         <button type="button" id="billing-pending-view-btn" onclick="openMeisaiViewer('detail',{source:'pending'})" style="padding:12px 18px;background:#854f0b;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer">⏳ 未反映分を見る</button>
       </div>
       <div style="margin-top:12px;font-size:12px;color:var(--mu)">一覧の行をクリックすると、その客先の請求明細書に切り替わります。画面上で印刷もできます。</div>
+    </div>
+  </div>
+  <div id="parking-fee-section" style="background:var(--w);border:0.5px solid var(--b2);border-radius:10px;overflow:hidden;margin-bottom:14px">
+    <div class="ch" style="background:#3d5a40">🅿️ 駐車場代入力</div>
+    <div style="padding:14px 16px;font-size:13px;color:var(--mu);line-height:1.7">
+      マスタで「駐車場代あり」の客先について、領収書を見て金額を入力します。<strong style="color:var(--tx)">伝票には出ません。</strong> 空欄＝その回なし。上の請求月と同じ年月の伝票を表示します。
+      <div id="parking-fee-list" style="margin-top:12px"></div>
+      <div style="margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <button type="button" class="btn pri" onclick="saveAllParkingFees()" style="padding:8px 16px">駐車場代を保存</button>
+        <button type="button" class="btn" onclick="renderParkingFeeCorner()" style="padding:8px 14px">再表示</button>
+        <span id="parking-fee-hint" style="font-size:12px;color:var(--mu)"></span>
+      </div>
     </div>
   </div>
   <div id="billing-excel-section" style="background:var(--w);border:0.5px solid var(--b2);border-radius:10px;overflow:hidden">
@@ -608,6 +620,12 @@ select.cs:focus{outline:none;border-color:var(--ac)}
               <input type="number" min="0" step="1" style="width:140px;padding:8px 10px;border:1.5px solid var(--b2);border-radius:6px;font-size:14px;background:var(--w);color:var(--tx)" id="e-packaging-fee" placeholder="なし">
               <span style="font-size:12px;color:var(--mu)">円／点（税抜）納品の総点数×単価を請求明細へ。伝票面には出ません</span>
             </div>
+            <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
+              <label style="font-size:12px;color:var(--mu);min-width:80px;font-weight:500">駐車場代</label>
+              <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--tx);cursor:pointer">
+                <input type="checkbox" id="e-parking-enabled" style="width:16px;height:16px">あり（請求を分ける・領収書確認後に金額入力）
+              </label>
+            </div>
             <button class="btn pri" onclick="saveBasic()">変更を保存</button>
           </div>
         </div></div>
@@ -672,6 +690,12 @@ select.cs:focus{outline:none;border-color:var(--ac)}
             <label style="font-size:12px;color:var(--mu);min-width:80px;font-weight:500">包装料</label>
             <input type="number" min="0" step="1" style="width:140px;padding:8px 10px;border:1.5px solid var(--b2);border-radius:6px;font-size:14px;background:var(--w);color:var(--tx)" id="nc-packaging-fee" placeholder="なし">
             <span style="font-size:12px;color:var(--mu)">円／点（請求明細のみ・総点数×）</span>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
+            <label style="font-size:12px;color:var(--mu);min-width:80px;font-weight:500">駐車場代</label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--tx);cursor:pointer">
+              <input type="checkbox" id="nc-parking-enabled" style="width:16px;height:16px">あり
+            </label>
           </div>
           <button class="btn acc" onclick="addClient()">＋ 客先を追加</button>
         </div>
@@ -862,6 +886,7 @@ select.cs:focus{outline:none;border-color:var(--ac)}
       <div class="help-step"><div class="help-step-num">4</div><div class="help-step-body"><div class="help-step-title">最低保証（必要な客先のみ）</div>月額の税抜最低保証円を入力。請求明細の小計がこれを下回るときは、保証額で請求します（消費税はその上に10%）。空欄は保証なし。</div></div>
       <div class="help-step"><div class="help-step-num">5</div><div class="help-step-body"><div class="help-step-title">配送費（必要な客先のみ）</div>1回あたりの税抜配送費を入力。請求明細書では<strong>伝票1枚につき1回</strong>「配送費」行が自動加算されます。<strong>伝票の印刷・画面には出ません。</strong> 空欄は加算なし。</div></div>
       <div class="help-step"><div class="help-step-num">6</div><div class="help-step-body"><div class="help-step-title">包装料（必要な客先のみ）</div>1点あたりの税抜包装料を入力。請求明細書では<strong>その納品の総点数×単価</strong>で「包装料」行が自動加算されます。<strong>伝票の印刷・画面には出ません。</strong> 空欄は加算なし。</div></div>
+      <div class="help-step"><div class="help-step-num">7</div><div class="help-step-body"><div class="help-step-title">駐車場代（必要な客先のみ）</div>「あり」にすると、請求タブの<strong>駐車場代入力</strong>にその客先の伝票が出ます。領収書を見て金額を入力（空＝その回なし）。請求では<strong>客先名 駐車場代</strong>として別明細になります。<strong>伝票には出ません。</strong></div></div>
       <div class="help-warn">⚠️ 請求単価が未設定の品目は、請求明細で 0 円になり警告が出ます。</div>
     </div>
   </div>
@@ -869,11 +894,12 @@ select.cs:focus{outline:none;border-color:var(--ac)}
     <div class="help-section-hd" onclick="toggleHelp('billing')">📄 請求明細書（確認・Excel・印刷）<span class="help-toggle" id="help-toggle-billing">▶</span></div>
     <div class="help-section-body">
       <p>Purims がブラウザ内で請求明細書を<strong>直接表示・印刷・Excel出力</strong>します。運用 PC に Excel テンプレート（.xlsm）を置く必要はありません。印刷レイアウトは<strong>プゥル・ヴー伝票アプリと同じ書式</strong>です（ネクサス名義）。</p>
+      <div class="help-step"><div class="help-step-num">駐車場</div><div class="help-step-body"><div class="help-step-title">駐車場代を入力</div>マスタで「駐車場代あり」にした客先は、<span class="help-tag">請求</span> タブの <span class="help-tag">駐車場代入力</span> に伝票一覧が出ます。領収書を見て金額を入力 → <span class="help-tag">駐車場代を保存</span>。請求明細では「客先名 駐車場代」として分かれます。</div></div>
       <div class="help-step"><div class="help-step-num">確認</div><div class="help-step-body"><div class="help-step-title">アプリ内で見る</div><span class="help-tag">請求</span> タブ → 請求月を指定 → <span class="help-tag">請求明細書を見る</span>。左の客先一覧で切り替え。<span class="help-tag">未反映分を見る</span> で Excel 出力前の分も確認できます。</div></div>
       <div class="help-step"><div class="help-step-num">印刷</div><div class="help-step-body"><div class="help-step-title">この客先を印刷</div>明細表示中に <span class="help-tag">🖨 この客先を印刷</span> → 用紙 <strong>A4 横向き</strong>・倍率 <strong>100%</strong>。左上に客先名＋様、右上に小計・消費税・ご請求金額、下に品名・単価・納品日別数量の表（1ページ20行）です。</div></div>
       <div class="help-step"><div class="help-step-num">日次</div><div class="help-step-body"><div class="help-step-title">未反映→請求明細Excel</div>未反映の伝票（押し忘れ分を含む）を対象に、該当客先・請求月のシートを含む Excel を出力。ファイル名例: <code>purims_meisai_20250818.xlsx</code></div></div>
       <div class="help-step"><div class="help-step-num">月次</div><div class="help-step-body"><div class="help-step-title">請求月Excel出力</div><span class="help-tag">請求</span> または <span class="help-tag">データ</span> タブで年月を指定して再出力。ファイル名例: <code>purims_meisai_202508.xlsx</code></div></div>
-      <div class="help-step"><div class="help-step-num">内容</div><div class="help-step-body"><div class="help-step-title">シート構成</div>シート名は <code>客先名_YYYY年M月</code>。品名・単価・日別数量（最大14日分）・合計数・合計金額・小計・消費税10%・ご請求金額を含みます。マスタで配送費・包装料を設定した客先は、それぞれ伝票1枚ごと／総点数分の行が請求明細に追加されます（伝票面には出ません）。</div></div>
+      <div class="help-step"><div class="help-step-num">内容</div><div class="help-step-body"><div class="help-step-title">シート構成</div>シート名は <code>客先名_YYYY年M月</code>。品名・単価・日別数量（最大14日分）・合計数・合計金額・小計・消費税10%・ご請求金額を含みます。マスタで配送費・包装料を設定した客先は、それぞれ伝票1枚ごと／総点数分の行が請求明細に追加されます。駐車場代ありの客先は、入力した回だけ「客先名 駐車場代」として別明細になります（いずれも伝票面には出ません）。</div></div>
       <div class="help-note">💡 週2回程度の発行なら1店舗14伝票以内で問題ありません。14枚を超える客先は警告が出ます。</div>
       <div class="help-note">💡 品目が20行を超える客先は、画面・印刷とも2枚目以降に分割されます。合計金額は<strong>最終ページ</strong>に表示されます。</div>
       <div class="help-note">💡 対象は<strong>納品日 2026年8月1日以降</strong>の伝票のみです（7月以前は請求明細に載せません）。</div>
@@ -1005,7 +1031,7 @@ clients:{"SCAPES THE SUITE":{items:[{code:"P001",name:"コックコート"},{cod
 cycles:{"SCAPES THE SUITE":"水土","楽園　町田店":"火木土","楽園　相模原店":"月木","マキア　相模原店":"月木","マキア　町田店":"火","中沢小学校":"水金","境木小学校":"水金","バグース　町田東":"火土","隠れ房　町田":"火土","へぎそば清兵衛":"火土","ＧＣＣバグース　町田":"火土","天一　町田":"火土","町田　yusoshi":"火土","IVOホームズパスタトラットリア渋谷Part2":"月木","goo　italiano　渋谷本店":"月木","goo　italiano　代々木上原":"月木","ぬる燗佐藤　渋谷ヒカリエ":"月木","韓国大衆酒場　ラッキーソウル西新宿":"月木","ヘブンリー　代官山店":"月木","ベルサイユの豚":"月木","荒木山　東急プラザ渋谷店":"月木","田町　鳥心":"月木","やきとり　マルヒ":"月木","自由が丘まんぷく":"月木","代々木上原まんぷく":"月木","青山まんぷく":"月木","レッドペッパー　恵比寿":"月木","レッドペッパー　表参道":"月木","ローストビーフ大野　竹下口店":"月木","大豊記　恵比寿弐號房":"月木","大豊記　本館":"月木","大豊記　西新宿":"月木","茶茶花":"月木","わらやき屋　田町":"月木","熱中屋　田町三田LIVE":"月木","馬並み家　田町":"月木","ジンギスカン羊一":"月木","さかえや　恵比寿":"月木","ちいかわラーメン　渋谷店":"月木","比内亭　恵比寿":"月木","胡同　西麻布":"月木","穂のほまれ　西新宿店":"月木","美食米門　品川":"月木","門":"月木","鴨ときどき馬　品川本店":"月木","魚がし日本一　三田店":"月木","魚がし日本一　田町店":"月木","三軒茶屋病院":"月木","寿司カレッジ東京":"月木","酒とシャケとサーモンズ":"月木","コックマン":"月木","藤井茗縁":"月木","ＡＳＡＮＯＨＡ":"","炉端の佐藤　中目黒店":"月木","鮨　はつめ":"月木","鮨　謙心":"月木"}
 };
 
-let DB={clients:{},cycles:{},products:[],groups:[],clientGroups:{},clientOrder:{},closing:{},minCharge:{},deliveryFee:{},packagingFee:{},history:[]};
+let DB={clients:{},cycles:{},products:[],groups:[],clientGroups:{},clientOrder:{},closing:{},minCharge:{},deliveryFee:{},packagingFee:{},parkingEnabled:{},history:[]};
 let curC=null,qtys={},bikos={},extraItems=[],editC=null,lastSlip=null,openHistId=null,customDeliveryDate=null;
 let printMode=localStorage.getItem('purims_printmode')||'single',printQueue=[];
 let _issueSession=null,_lastAppliedSavedAt=null,_selfSaveTokens=new Set();
@@ -1019,13 +1045,13 @@ function persistHistoryLocal(){localStorage.setItem('purims_h',JSON.stringify(DB
 function load(){
   try{
     const saved=localStorage.getItem('purims_v14');
-    if(saved){const d=JSON.parse(saved);if(d.clients&&Object.keys(d.clients).length){DB.clients=d.clients;DB.cycles=d.cycles||{};DB.closing=d.closing||{};DB.minCharge=d.minCharge||{};DB.deliveryFee=d.deliveryFee||{};DB.packagingFee=d.packagingFee||{};DB.products=d.products&&d.products.length?d.products:JSON.parse(JSON.stringify(INIT_PRODUCTS));DB.groups=d.groups&&d.groups.length?d.groups:JSON.parse(JSON.stringify(INIT_GROUPS));DB.clientGroups=d.clientGroups||JSON.parse(JSON.stringify(INIT_CLIENT_GROUPS));DB.clientOrder=d.clientOrder||{};loadLocalHistory();return;}}
+    if(saved){const d=JSON.parse(saved);if(d.clients&&Object.keys(d.clients).length){DB.clients=d.clients;DB.cycles=d.cycles||{};DB.closing=d.closing||{};DB.minCharge=d.minCharge||{};DB.deliveryFee=d.deliveryFee||{};DB.packagingFee=d.packagingFee||{};DB.parkingEnabled=d.parkingEnabled||{};DB.products=d.products&&d.products.length?d.products:JSON.parse(JSON.stringify(INIT_PRODUCTS));DB.groups=d.groups&&d.groups.length?d.groups:JSON.parse(JSON.stringify(INIT_GROUPS));DB.clientGroups=d.clientGroups||JSON.parse(JSON.stringify(INIT_CLIENT_GROUPS));DB.clientOrder=d.clientOrder||{};loadLocalHistory();return;}}
   }catch(e){}
   DB.clients=JSON.parse(JSON.stringify(INIT_DATA.clients));DB.cycles=JSON.parse(JSON.stringify(INIT_DATA.cycles));DB.products=JSON.parse(JSON.stringify(INIT_PRODUCTS));DB.groups=JSON.parse(JSON.stringify(INIT_GROUPS));DB.clientGroups=JSON.parse(JSON.stringify(INIT_CLIENT_GROUPS));DB.history=[];
   loadLocalHistory();
 }
 function persistDraft(){
-  localStorage.setItem('purims_v14',JSON.stringify({clients:DB.clients,cycles:DB.cycles,products:DB.products,groups:DB.groups,clientGroups:DB.clientGroups,clientOrder:DB.clientOrder,closing:DB.closing,minCharge:DB.minCharge||{},deliveryFee:DB.deliveryFee||{},packagingFee:DB.packagingFee||{}}));
+  localStorage.setItem('purims_v14',JSON.stringify({clients:DB.clients,cycles:DB.cycles,products:DB.products,groups:DB.groups,clientGroups:DB.clientGroups,clientOrder:DB.clientOrder,closing:DB.closing,minCharge:DB.minCharge||{},deliveryFee:DB.deliveryFee||{},packagingFee:DB.packagingFee||{},parkingEnabled:DB.parkingEnabled||{}}));
 }
 function persistLocal(){
   persistDraft();
@@ -1241,12 +1267,12 @@ function resetToSelect(){
 }
 
 // ===== CSV/JSON出力 =====
-function exportMasterCSV(){const clients=DB.clients||{};const names=Object.keys(clients);if(!names.length){toast('客先データがありません','e');return;}const rows=[['客先名','品目コード','品目名','請求単価','締め日','最低保証','配送費','包装料']];names.forEach(cn=>{const items=clients[cn]?.items||[];const closing=DB.closing[cn]||'';const min=getMinCharge(cn);const fee=getDeliveryFee(cn);const pack=getPackagingFee(cn);if(!items.length){rows.push([cn,'','',0,closing,min||'',fee||'',pack||'']);}else{items.forEach((it,idx)=>{rows.push([cn,it.code||'',it.name||'',it.price||0,idx===0?closing:'',idx===0?(min||''):'',idx===0?(fee||''):'',idx===0?(pack||''):'']);});}});const bom='\uFEFF';const csv=bom+rows.map(r=>r.map(v=>{const s=String(v);return s.includes(',')||s.includes('"')||s.includes('\n')?'"'+s.replace(/"/g,'""')+'"':s;}).join(',')).join('\r\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='purims_master.csv';a.click();URL.revokeObjectURL(url);toast('マスターCSVを出力しました');}
+function exportMasterCSV(){const clients=DB.clients||{};const names=Object.keys(clients);if(!names.length){toast('客先データがありません','e');return;}const rows=[['客先名','品目コード','品目名','請求単価','締め日','最低保証','配送費','包装料','駐車場代あり']];names.forEach(cn=>{const items=clients[cn]?.items||[];const closing=DB.closing[cn]||'';const min=getMinCharge(cn);const fee=getDeliveryFee(cn);const pack=getPackagingFee(cn);const park=isParkingEnabled(cn)?'あり':'';if(!items.length){rows.push([cn,'','',0,closing,min||'',fee||'',pack||'',park]);}else{items.forEach((it,idx)=>{rows.push([cn,it.code||'',it.name||'',it.price||0,idx===0?closing:'',idx===0?(min||''):'',idx===0?(fee||''):'',idx===0?(pack||''):'',idx===0?park:'']);});}});const bom='\uFEFF';const csv=bom+rows.map(r=>r.map(v=>{const s=String(v);return s.includes(',')||s.includes('"')||s.includes('\n')?'"'+s.replace(/"/g,'""')+'"':s;}).join(',')).join('\r\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='purims_master.csv';a.click();URL.revokeObjectURL(url);toast('マスターCSVを出力しました');}
 // ===== 【修正⑦】exportCSV：日付比較をロケール非依存に =====
 function exportCSV(){const hist=DB.history;if(!hist||!hist.length){toast('発行履歴がありません','e');return;}const tStr=todayIso();const todayRecs=hist.filter(r=>r.date===tStr);const useAll=!todayRecs.length;const recs=useAll?hist:todayRecs;const rows=[['客先名','納品日','品目コード','品目名','数量','備考']];recs.forEach(r=>{r.items.forEach(it=>{rows.push([r.client||'',r.deliveryDate||'',it.code||'',it.name||'',it.qty||0,it.biko||'']);});});const bom='\uFEFF';const csv=bom+rows.map(r=>r.map(v=>{const s=String(v);return s.includes(',')||s.includes('"')||s.includes('\n')?'"'+s.replace(/"/g,'""')+'"':s;}).join(',')).join('\r\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='purims_'+fileDate()+(useAll?'_全件':'_本日')+'.csv';a.click();URL.revokeObjectURL(url);toast((useAll?'全'+recs.length+'件':'本日'+recs.length+'件')+'のCSVを出力しました');}
 function dlFile(c,f,t){const b=new Blob([t==='text/csv'?'\uFEFF'+c:c],{type:t+';charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=f;a.click();URL.revokeObjectURL(a.href);}
 function dlCSV(type){const td=fileDate();if(type==='clients'){let rows=[['客先名','品番','品目名','納品サイクル','グループ']];Object.keys(DB.clients).sort((a,b)=>a.localeCompare(b,'ja')).forEach(c=>{const cyc=DB.cycles[c]||'';const g=getClientGroup(c);(DB.clients[c].items||[]).forEach(it=>rows.push([c,it.code,it.name,cyc,g?g.name:'']));});dlFile(rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n'),`purims_master_${td}.csv`,'text/csv');toast('マスタCSVをダウンロードしました');}else if(type==='history'){let rows=[['発行日','客先名','納品日','品番','品目名','数量','合計']];DB.history.forEach(h=>{h.items.forEach((it,i)=>rows.push([h.date,h.client,h.deliveryDate,it.code,it.name,it.qty,i===0?h.total:'']));});dlFile(rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n'),`purims_history_${td}.csv`,'text/csv');toast('履歴CSVをダウンロードしました');}}
-function dlJSON(){const td=fileDate();dlFile(JSON.stringify({clients:DB.clients,cycles:DB.cycles,products:DB.products,groups:DB.groups,clientGroups:DB.clientGroups,clientOrder:DB.clientOrder||{},closing:DB.closing,minCharge:DB.minCharge||{},deliveryFee:DB.deliveryFee||{},packagingFee:DB.packagingFee||{},history:DB.history||[],exportedAt:new Date().toISOString()},null,2),`purims_backup_${td}.json`,'application/json');
+function dlJSON(){const td=fileDate();dlFile(JSON.stringify({clients:DB.clients,cycles:DB.cycles,products:DB.products,groups:DB.groups,clientGroups:DB.clientGroups,clientOrder:DB.clientOrder||{},closing:DB.closing,minCharge:DB.minCharge||{},deliveryFee:DB.deliveryFee||{},packagingFee:DB.packagingFee||{},parkingEnabled:DB.parkingEnabled||{},history:DB.history||[],exportedAt:new Date().toISOString()},null,2),`purims_backup_${td}.json`,'application/json');
 localStorage.setItem('purims_backed_up','1');toast('JSONバックアップをダウンロードしました');}
 
 function parseClosingDay(s){if(!s)return 0;if(String(s).includes('20'))return 20;if(String(s).includes('25'))return 25;if(String(s).includes('末'))return 99;return 0;}
@@ -1274,8 +1300,12 @@ function sortMeisaiData(meisaiData){
   (meisaiData||[]).sort((a,b)=>{
     const cr=closingSortRank(a.closingDay)-closingSortRank(b.closingDay);
     if(cr)return cr;
-    const cn=compareClientName(a.customer,b.customer);
+    const ap=/ 駐車場代$/.test(a.customer||''),bp=/ 駐車場代$/.test(b.customer||'');
+    const abase=ap?(a.customer||'').replace(/ 駐車場代$/,''):(a.customer||'');
+    const bbase=bp?(b.customer||'').replace(/ 駐車場代$/,''):(b.customer||'');
+    const cn=compareClientName(abase,bbase);
     if(cn)return cn;
+    if(ap!==bp)return ap?1:-1;
     return (a.year-b.year)||(a.month-b.month);
   });
   return meisaiData;
@@ -1283,6 +1313,9 @@ function sortMeisaiData(meisaiData){
 function getMinCharge(customer){const n=Number(DB.minCharge&&DB.minCharge[customer]);return n>0?n:0;}
 function getDeliveryFee(customer){const n=Number(DB.deliveryFee&&DB.deliveryFee[customer]);return n>0?n:0;}
 function getPackagingFee(customer){const n=Number(DB.packagingFee&&DB.packagingFee[customer]);return n>0?n:0;}
+function isParkingEnabled(customer){return !!(DB.parkingEnabled&&DB.parkingEnabled[customer]);}
+function parkingBillingName(customer){return String(customer||'')+' 駐車場代';}
+function buildParkingInvoicesFromRecs(recs){const park=(recs||[]).filter(h=>Number(h.parkingFee)>0);if(!park.length)return null;if(park.length>14){/* keep newest-sorted order already */}return park.slice(0,14).map((h,idx)=>({invoiceNo:String(idx+1),deliveryDate:historyDeliveryDate(h),items:[{name:'駐車場代',price:Number(h.parkingFee),qty:1}]}));}
 function toHalfWidthDigits(s){return String(s).replace(/[０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0));}
 function parseDeliveryDate(str){if(str==null||str===''||str==='—')return null;const s=toHalfWidthDigits(String(str).trim());let m=s.match(/(\d{4})年(\d{1,2})月(\d{1,2})日?/);if(m)return{y:+m[1],m:+m[2],d:+m[3]};m=s.match(/^(\d{4})[\/.\-](\d{1,2})[\/.\-](\d{1,2})$/);if(m)return{y:+m[1],m:+m[2],d:+m[3]};const p=s.split(/[\/.\-]/).map(Number);if(p.length>=3&&!isNaN(p[0])&&p[0]>1900)return{y:p[0],m:p[1],d:p[2]};return null;}
 function historyDeliveryDate(h){
@@ -1401,10 +1434,72 @@ function assignUniqueSheetNames(meisaiData){
   return meisaiData;
 }
 function xlCol(n){let s='';while(n>0){const r=(n-1)%26;s=String.fromCharCode(65+r)+s;n=Math.floor((n-1)/26);}return s;}
-function initMeisaiMonth(){const y=document.getElementById('meisai-year'),m=document.getElementById('meisai-month');if(!y||!m)return;const now=new Date();y.value=now.getFullYear();m.value=now.getMonth()+1;}
+function initMeisaiMonth(){const y=document.getElementById('meisai-year'),m=document.getElementById('meisai-month');if(!y||!m)return;const now=new Date();y.value=now.getFullYear();m.value=now.getMonth()+1;if(typeof renderParkingFeeCorner==='function')renderParkingFeeCorner();}
 function updateBillingPendingBadge(){const el=document.getElementById('billing-pending-badge');if(!el)return;const pending=(DB.history||[]).filter(h=>!h.billingExportedAt);const n=pending.filter(isExportableHist).length;el.style.display=n?'inline':'none';el.textContent='未反映: '+n+'件';}
+function renderParkingFeeCorner(){
+  const list=document.getElementById('parking-fee-list');
+  const hint=document.getElementById('parking-fee-hint');
+  if(!list)return;
+  if((currentUser&&currentUser.role==='viewer')||(typeof isNexusMode==='function'&&isNexusMode())){list.innerHTML='';return;}
+  const year=parseInt(document.getElementById('meisai-year')?.value,10);
+  const month=parseInt(document.getElementById('meisai-month')?.value,10);
+  if(!year||!month){list.innerHTML='<div style="color:var(--mu);font-size:12px">請求月を指定してください</div>';if(hint)hint.textContent='';return;}
+  const enabled=Object.keys(DB.clients||{}).filter(isParkingEnabled).sort((a,b)=>a.localeCompare(b,'ja'));
+  if(!enabled.length){list.innerHTML='<div style="color:var(--mu);font-size:12px">マスタで「駐車場代あり」の客先がありません</div>';if(hint)hint.textContent='';return;}
+  const rows=[];
+  enabled.forEach(customer=>{
+    const closingDay=parseClosingDay(DB.closing[customer]||'');
+    const recs=(DB.history||[]).filter(h=>{
+      if(h.client!==customer)return false;
+      const d=parseHistDeliveryDate(h);
+      if(!isBillingDeliveryInScope(d))return false;
+      return belongsToBillingMonth(d,year,month,closingDay);
+    }).sort(sortHistoryRecs);
+    recs.forEach(h=>{
+      const fee=Number(h.parkingFee)>0?Number(h.parkingFee):'';
+      const dd=h.deliveryDate||historyDeliveryDate(h)||'';
+      const pts=h.total!=null?h.total:(h.items||[]).reduce((s,it)=>s+(Number(it.qty)||0),0);
+      rows.push({id:h.id,customer,dd,pts,fee});
+    });
+  });
+  if(!rows.length){list.innerHTML='<div style="color:var(--mu);font-size:12px">この請求月の対象伝票がありません</div>';if(hint)hint.textContent=enabled.length+'客先が駐車場代あり';return;}
+  let html='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:var(--s);text-align:left"><th style="padding:8px;border-bottom:1px solid var(--bd)">客先</th><th style="padding:8px;border-bottom:1px solid var(--bd)">納品日</th><th style="padding:8px;border-bottom:1px solid var(--bd)">点数</th><th style="padding:8px;border-bottom:1px solid var(--bd)">駐車場代（円）</th></tr></thead><tbody>';
+  rows.forEach(r=>{
+    html+=`<tr><td style="padding:8px;border-bottom:1px solid var(--bd)">${r.customer}</td><td style="padding:8px;border-bottom:1px solid var(--bd)">${r.dd}</td><td style="padding:8px;border-bottom:1px solid var(--bd)">${r.pts}</td><td style="padding:8px;border-bottom:1px solid var(--bd)"><input type="number" min="0" step="1" data-parking-id="${r.id}" value="${r.fee}" placeholder="なし" style="width:120px;padding:6px 8px;border:1.5px solid var(--b2);border-radius:6px;font-size:13px"></td></tr>`;
+  });
+  html+='</tbody></table></div>';
+  list.innerHTML=html;
+  if(hint)hint.textContent=`${rows.length}件（${enabled.length}客先）`;
+}
+function saveAllParkingFees(){
+  const inputs=[...document.querySelectorAll('#parking-fee-list input[data-parking-id]')];
+  if(!inputs.length){toast('保存する行がありません','e');return;}
+  let changed=0;
+  inputs.forEach(inp=>{
+    const id=Number(inp.getAttribute('data-parking-id'));
+    const h=(DB.history||[]).find(x=>x.id===id);
+    if(!h)return;
+    const v=parseInt(inp.value,10);
+    const next=(!isNaN(v)&&v>0)?v:0;
+    const prev=Number(h.parkingFee)>0?Number(h.parkingFee):0;
+    if(next===prev)return;
+    if(next>0)h.parkingFee=next;else delete h.parkingFee;
+    changed++;
+    persistHistoryLocal();
+    fbSaveHistoryEntry(h);
+  });
+  toast(changed?changed+'件の駐車場代を保存しました':'変更はありません');
+  renderParkingFeeCorner();
+}
 function buildInvoicesFromRecs(recs,customer,warnings){if(recs.length>14)warnings.push(`${customer}（${recs.length}枚・14枚まで）`);let zeroPrice=0;const fee=getDeliveryFee(customer);const pack=getPackagingFee(customer);const invoices=recs.slice(0,14).map((h,idx)=>{const items=(h.items||[]).filter(it=>it.qty>0).map(it=>{const price=getBillingPrice(customer,it.code,it.name);if(!price)zeroPrice++;return{name:it.name,price,qty:it.qty};});const pts=items.reduce((s,it)=>s+(Number(it.qty)||0),0);if(fee>0)items.push({name:'配送費',price:fee,qty:1});if(pack>0&&pts>0)items.push({name:'包装料',price:pack,qty:pts});return{invoiceNo:String(idx+1),deliveryDate:historyDeliveryDate(h),items};});if(zeroPrice)warnings.push(`${customer} 単価未設定${zeroPrice}行`);return invoices;}
-function collectMeisaiData(opts){const warnings=[];const mode=opts?.mode||'month';if(mode==='today'){const toMark=(DB.history||[]).filter(h=>!h.billingExportedAt&&isExportableHist(h));if(!toMark.length){const raw=(DB.history||[]).filter(h=>!h.billingExportedAt).length;if(raw)return{error:`未反映 ${raw}件ありますが、7月以前・納品日不明などで出力対象がありません`};return{error:'未反映の伝票がありません'};}const sheetKeys=new Map();toMark.forEach(h=>{const closingDay=parseClosingDay(DB.closing[h.client]||'');const bm=getBillingMonth(parseHistDeliveryDate(h),closingDay);if(!bm)return;const k=`${h.client}\0${bm.y}\0${bm.m}`;if(!sheetKeys.has(k))sheetKeys.set(k,{customer:h.client,year:bm.y,month:bm.m,closingDay});});const meisaiData=[];sheetKeys.forEach(({customer,year,month,closingDay})=>{const recs=(DB.history||[]).filter(h=>{if(h.client!==customer)return false;const d=parseHistDeliveryDate(h);if(!isBillingDeliveryInScope(d))return false;return belongsToBillingMonth(d,year,month,closingDay);}).sort(sortHistoryRecs);if(!recs.length)return;meisaiData.push({customer,year,month,closingDay,minCharge:getMinCharge(customer),invoices:buildInvoicesFromRecs(recs,customer,warnings)});});sortMeisaiData(meisaiData);if(!meisaiData.length)return{error:'請求データを作成できませんでした（締め日・納品日の組み合わせを確認してください）'};assignUniqueSheetNames(meisaiData);return{meisaiData,toMark,warnings};}const year=parseInt(opts?.year,10),month=parseInt(opts?.month,10);if(!year||!month||month<1||month>12)return{error:'請求月（年月）を指定してください'};if(year<BILLING_DELIVERY_MIN.y||(year===BILLING_DELIVERY_MIN.y&&month<BILLING_DELIVERY_MIN.m))return{error:`${year}年${month}月は請求対象外です（${BILLING_DELIVERY_MIN.y}年${BILLING_DELIVERY_MIN.m}月以降の納品のみ）`};if(!isBillingMonthWithinRetention(year,month))return{error:`${year}年${month}月は保存期間（${HISTORY_KEEP_MONTHS}か月）外です`};const meisaiData=[];Object.keys(DB.clients||{}).forEach(customer=>{const closingDay=parseClosingDay(DB.closing[customer]||'');const recs=(DB.history||[]).filter(h=>{if(h.client!==customer)return false;if(!isBillingDeliveryInScope(parseHistDeliveryDate(h)))return false;return belongsToBillingMonth(parseHistDeliveryDate(h),year,month,closingDay);}).sort(sortHistoryRecs);if(!recs.length)return;meisaiData.push({customer,year,month,closingDay,minCharge:getMinCharge(customer),invoices:buildInvoicesFromRecs(recs,customer,warnings)});});if(!meisaiData.length)return{error:`${year}年${month}月の請求データがありません`};sortMeisaiData(meisaiData);assignUniqueSheetNames(meisaiData);return{meisaiData,warnings};}
+function collectMeisaiData(opts){const warnings=[];const mode=opts?.mode||'month';
+function pushCustomerSheets(meisaiData,customer,year,month,closingDay,recs){
+  if(!recs.length)return;
+  meisaiData.push({customer,year,month,closingDay,minCharge:getMinCharge(customer),invoices:buildInvoicesFromRecs(recs,customer,warnings)});
+  const parkInv=buildParkingInvoicesFromRecs(recs);
+  if(parkInv)meisaiData.push({customer:parkingBillingName(customer),year,month,closingDay,minCharge:0,invoices:parkInv});
+}
+if(mode==='today'){const toMark=(DB.history||[]).filter(h=>!h.billingExportedAt&&isExportableHist(h));if(!toMark.length){const raw=(DB.history||[]).filter(h=>!h.billingExportedAt).length;if(raw)return{error:`未反映 ${raw}件ありますが、7月以前・納品日不明などで出力対象がありません`};return{error:'未反映の伝票がありません'};}const sheetKeys=new Map();toMark.forEach(h=>{const closingDay=parseClosingDay(DB.closing[h.client]||'');const bm=getBillingMonth(parseHistDeliveryDate(h),closingDay);if(!bm)return;const k=`${h.client}\0${bm.y}\0${bm.m}`;if(!sheetKeys.has(k))sheetKeys.set(k,{customer:h.client,year:bm.y,month:bm.m,closingDay});});const meisaiData=[];sheetKeys.forEach(({customer,year,month,closingDay})=>{const recs=(DB.history||[]).filter(h=>{if(h.client!==customer)return false;const d=parseHistDeliveryDate(h);if(!isBillingDeliveryInScope(d))return false;return belongsToBillingMonth(d,year,month,closingDay);}).sort(sortHistoryRecs);pushCustomerSheets(meisaiData,customer,year,month,closingDay,recs);});sortMeisaiData(meisaiData);if(!meisaiData.length)return{error:'請求データを作成できませんでした（締め日・納品日の組み合わせを確認してください）'};assignUniqueSheetNames(meisaiData);return{meisaiData,toMark,warnings};}const year=parseInt(opts?.year,10),month=parseInt(opts?.month,10);if(!year||!month||month<1||month>12)return{error:'請求月（年月）を指定してください'};if(year<BILLING_DELIVERY_MIN.y||(year===BILLING_DELIVERY_MIN.y&&month<BILLING_DELIVERY_MIN.m))return{error:`${year}年${month}月は請求対象外です（${BILLING_DELIVERY_MIN.y}年${BILLING_DELIVERY_MIN.m}月以降の納品のみ）`};if(!isBillingMonthWithinRetention(year,month))return{error:`${year}年${month}月は保存期間（${HISTORY_KEEP_MONTHS}か月）外です`};const meisaiData=[];Object.keys(DB.clients||{}).forEach(customer=>{const closingDay=parseClosingDay(DB.closing[customer]||'');const recs=(DB.history||[]).filter(h=>{if(h.client!==customer)return false;if(!isBillingDeliveryInScope(parseHistDeliveryDate(h)))return false;return belongsToBillingMonth(parseHistDeliveryDate(h),year,month,closingDay);}).sort(sortHistoryRecs);pushCustomerSheets(meisaiData,customer,year,month,closingDay,recs);});if(!meisaiData.length)return{error:`${year}年${month}月の請求データがありません`};sortMeisaiData(meisaiData);assignUniqueSheetNames(meisaiData);return{meisaiData,warnings};}
 function meisaiThin(){return{style:'thin',color:{argb:'FF000000'}};}
 function meisaiBox(ws,r1,c1,r2,c2,inner){
   const t=meisaiThin();
@@ -1895,19 +1990,19 @@ document.addEventListener('keydown',e=>{
   if(document.getElementById('meisai-viewer')?.classList.contains('open'))closeMeisaiViewer();
 });
 function importCSV(e){const file=e.target.files[0];if(!file)return;const r=new FileReader();r.onload=ev=>{try{const lines=ev.target.result.replace(/\r/g,'').split('\n').filter(l=>l.trim());const nc={};const ncy={};lines.slice(1).forEach(line=>{const cols=line.split(',').map(c=>c.replace(/^"|"$/g,'').replace(/""/g,'"').trim());if(cols.length<3||!cols[0])return;const[client,code,name,cyc]=cols;if(!nc[client])nc[client]={items:[]};if(name)nc[client].items.push({code:code||'P000',name});if(cyc)ncy[client]=cyc;});if(!Object.keys(nc).length){toast('読み込めるデータがありませんでした','e');return;}if(!confirm(`${Object.keys(nc).length}件の客先データをインポートします。続けますか？`))return;Object.assign(DB.clients,nc);Object.assign(DB.cycles,ncy);persist();fillSel('csel');fillSel('msel');toast(`${Object.keys(nc).length}件をインポートしました`);}catch(err){toast('CSVの読み込みに失敗しました','e');}e.target.value='';};r.readAsText(file,'UTF-8');}
-function importJSON(e){const file=e.target.files[0];if(!file)return;const r=new FileReader();r.onload=ev=>{try{const d=JSON.parse(ev.target.result);if(!d.clients){toast('フォーマットが違います','e');return;}if(!confirm('バックアップから全データを復元します。続けますか？'))return;DB.clients=d.clients;DB.cycles=d.cycles||{};if(d.products&&d.products.length)DB.products=d.products;if(d.groups&&d.groups.length)DB.groups=d.groups;if(d.clientGroups)DB.clientGroups=d.clientGroups;if(d.clientOrder)DB.clientOrder=d.clientOrder;if(d.closing)DB.closing=d.closing;if(d.minCharge)DB.minCharge=d.minCharge;if(d.deliveryFee)DB.deliveryFee=d.deliveryFee;if(d.packagingFee)DB.packagingFee=d.packagingFee;if(Array.isArray(d.history)){DB.history=d.history;persistHistoryLocal();if(currentUser){const obj={};DB.history.forEach(h=>{if(h&&h.id!=null)obj[String(h.id)]=h;});db.ref('purims/history').set(obj).catch(e=>toast('履歴の復元に失敗しました: '+e.message,'e'));}}persist();fillSel('csel');fillSel('msel');fillGrpSel('e-grp');fillGrpSel('nc-grp');renderProducts();renderHistory();renderGroups();renderClientGrpList();const pruned=pruneExpiredHistory({quiet:true});const skipped=markOutOfScopeAsBilled();updateBillingPendingBadge();const parts=[];if(pruned)parts.push(`保存期間超過 ${pruned}件削除`);if(skipped)parts.push(`7月以前 ${skipped}件を請求対象外`);toast(parts.length?`${Object.keys(DB.clients).length}件を復元しました（${parts.join('、')}）`:`${Object.keys(DB.clients).length}件を復元しました`);}catch(err){toast('JSONの読み込みに失敗しました','e');}e.target.value='';};r.readAsText(file,'UTF-8');}
+function importJSON(e){const file=e.target.files[0];if(!file)return;const r=new FileReader();r.onload=ev=>{try{const d=JSON.parse(ev.target.result);if(!d.clients){toast('フォーマットが違います','e');return;}if(!confirm('バックアップから全データを復元します。続けますか？'))return;DB.clients=d.clients;DB.cycles=d.cycles||{};if(d.products&&d.products.length)DB.products=d.products;if(d.groups&&d.groups.length)DB.groups=d.groups;if(d.clientGroups)DB.clientGroups=d.clientGroups;if(d.clientOrder)DB.clientOrder=d.clientOrder;if(d.closing)DB.closing=d.closing;if(d.minCharge)DB.minCharge=d.minCharge;if(d.deliveryFee)DB.deliveryFee=d.deliveryFee;if(d.packagingFee)DB.packagingFee=d.packagingFee;if(d.parkingEnabled)DB.parkingEnabled=d.parkingEnabled;if(Array.isArray(d.history)){DB.history=d.history;persistHistoryLocal();if(currentUser){const obj={};DB.history.forEach(h=>{if(h&&h.id!=null)obj[String(h.id)]=h;});db.ref('purims/history').set(obj).catch(e=>toast('履歴の復元に失敗しました: '+e.message,'e'));}}persist();fillSel('csel');fillSel('msel');fillGrpSel('e-grp');fillGrpSel('nc-grp');renderProducts();renderHistory();renderGroups();renderClientGrpList();const pruned=pruneExpiredHistory({quiet:true});const skipped=markOutOfScopeAsBilled();updateBillingPendingBadge();const parts=[];if(pruned)parts.push(`保存期間超過 ${pruned}件削除`);if(skipped)parts.push(`7月以前 ${skipped}件を請求対象外`);toast(parts.length?`${Object.keys(DB.clients).length}件を復元しました（${parts.join('、')}）`:`${Object.keys(DB.clients).length}件を復元しました`);}catch(err){toast('JSONの読み込みに失敗しました','e');}e.target.value='';};r.readAsText(file,'UTF-8');}
 
 // ===== マスタ管理 =====
 function showPanel(id,btn){
   if((((currentUser&&currentUser.role==='viewer')||isNexusMode()))&&id!=='billing')return;
-  document.querySelectorAll('.panel').forEach(p=>{p.classList.remove('on');p.style.height='';});document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));const panel=document.getElementById('panel-'+id);panel.classList.add('on');const scrollPanels=['master','history','data','help','billing'];if(scrollPanels.includes(id)){const hdrH=document.querySelector('.hdr').offsetHeight;const tabH=document.querySelector('.tabs').offsetHeight;panel.style.height=(window.innerHeight-hdrH-tabH)+'px';}if(btn&&btn.classList)btn.classList.add('on');else{const tabs=[...document.querySelectorAll('.tabs .tab')];const map={slip:0,history:1,master:2,data:3,billing:4,help:5};if(map[id]!=null&&tabs[map[id]])tabs[map[id]].classList.add('on');}}
+  document.querySelectorAll('.panel').forEach(p=>{p.classList.remove('on');p.style.height='';});document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));const panel=document.getElementById('panel-'+id);panel.classList.add('on');const scrollPanels=['master','history','data','help','billing'];if(scrollPanels.includes(id)){const hdrH=document.querySelector('.hdr').offsetHeight;const tabH=document.querySelector('.tabs').offsetHeight;panel.style.height=(window.innerHeight-hdrH-tabH)+'px';}if(btn&&btn.classList)btn.classList.add('on');else{const tabs=[...document.querySelectorAll('.tabs .tab')];const map={slip:0,history:1,master:2,data:3,billing:4,help:5};if(map[id]!=null&&tabs[map[id]])tabs[map[id]].classList.add('on');}if(id==='billing')renderParkingFeeCorner();}
 function showCTab(id,btn){document.querySelectorAll('#m-panel-client .m-panel').forEach(p=>p.classList.remove('on'));document.querySelectorAll('#m-panel-client .m-tab').forEach(t=>t.classList.remove('on'));document.getElementById('c-panel-'+id).classList.add('on');if(btn)btn.classList.add('on');if(id==='new')renderCycBtns('nc-cyc-btns','nc-cyc','');}
 function showMTab(id,btn){document.querySelectorAll('.m-panel').forEach(p=>p.classList.remove('on'));document.querySelectorAll('.m-tab').forEach(t=>t.classList.remove('on'));document.getElementById('m-panel-'+id).classList.add('on');btn.classList.add('on');if(id==='product'){renderProducts();setNPCode();}if(id==='group'){renderGroups();renderClientGrpList();}if(id==='client')setNC2();}
 const CYC_DAYS=['月','火','水','木','金','土','日'];
 function renderCycBtns(wrapperId,hiddenId,current){const wrap=document.getElementById(wrapperId);if(!wrap)return;const sel=new Set([...(current||'')]);wrap.innerHTML=CYC_DAYS.map(d=>{const cls='cyc-btn'+(d==='土'?' sat':d==='日'?' sun':'')+(sel.has(d)?' on':'');return`<button type="button" class="${cls}" onclick="toggleCycBtn(this,'${d}','${hiddenId}')">${d}</button>`;}).join('');syncCycHidden(wrapperId,hiddenId);}
 function toggleCycBtn(btn,day,hiddenId){btn.classList.toggle('on');syncCycHidden(btn.closest('.cyc-btn-wrap').id,hiddenId);}
 function syncCycHidden(wrapperId,hiddenId){const wrap=document.getElementById(wrapperId);const hidden=document.getElementById(hiddenId);if(!wrap||!hidden)return;const val=CYC_DAYS.filter(d=>[...wrap.querySelectorAll('.cyc-btn')][CYC_DAYS.indexOf(d)]?.classList.contains('on')).join('');hidden.value=val;}
-function onMC(){editC=document.getElementById('msel').value||null;masterItemsDirty=false;if(!editC){document.getElementById('medit').style.display='none';const bar=document.getElementById('mitems-save-bar');if(bar)bar.style.display='none';return;}document.getElementById('medit').style.display='block';document.getElementById('e-name').value=editC;renderCycBtns('e-cyc-btns','e-cyc',DB.cycles[editC]||'');fillGrpSel('e-grp',DB.clientGroups[editC]||'');document.getElementById('e-closing').value=DB.closing[editC]||'';const mcEl=document.getElementById('e-mincharge');if(mcEl)mcEl.value=(DB.minCharge&&DB.minCharge[editC])||'';const dfEl=document.getElementById('e-delivery-fee');if(dfEl)dfEl.value=(DB.deliveryFee&&DB.deliveryFee[editC])||'';const pfEl=document.getElementById('e-packaging-fee');if(pfEl)pfEl.value=(DB.packagingFee&&DB.packagingFee[editC])||'';setNC2();fillMasterSel();renderMItems();}
+function onMC(){editC=document.getElementById('msel').value||null;masterItemsDirty=false;if(!editC){document.getElementById('medit').style.display='none';const bar=document.getElementById('mitems-save-bar');if(bar)bar.style.display='none';return;}document.getElementById('medit').style.display='block';document.getElementById('e-name').value=editC;renderCycBtns('e-cyc-btns','e-cyc',DB.cycles[editC]||'');fillGrpSel('e-grp',DB.clientGroups[editC]||'');document.getElementById('e-closing').value=DB.closing[editC]||'';const mcEl=document.getElementById('e-mincharge');if(mcEl)mcEl.value=(DB.minCharge&&DB.minCharge[editC])||'';const dfEl=document.getElementById('e-delivery-fee');if(dfEl)dfEl.value=(DB.deliveryFee&&DB.deliveryFee[editC])||'';const pfEl=document.getElementById('e-packaging-fee');if(pfEl)pfEl.value=(DB.packagingFee&&DB.packagingFee[editC])||'';const peEl=document.getElementById('e-parking-enabled');if(peEl)peEl.checked=isParkingEnabled(editC);setNC2();fillMasterSel();renderMItems();}
 function switchAddTab2(tab){const isMaster=tab==='master';document.getElementById('add-tab-master').style.background=isMaster?'var(--nv)':'var(--s)';document.getElementById('add-tab-master').style.color=isMaster?'#fff':'var(--mu)';document.getElementById('add-tab-free').style.background=isMaster?'var(--s)':'var(--nv)';document.getElementById('add-tab-free').style.color=isMaster?'var(--mu)':'#fff';document.getElementById('add-area-master').style.display=isMaster?'flex':'none';document.getElementById('add-area-free').style.display=isMaster?'none':'flex';}
 function fillMasterSel(){const sel=document.getElementById('ni-master-sel');if(!sel)return;const existing=(DB.clients[editC]?.items||[]).map(i=>i.code);sel.innerHTML='<option value="">— 品目を選択 —</option>';(DB.products||[]).forEach(p=>{if(!existing.includes(p.code)){const opt=document.createElement('option');opt.value=p.code;opt.textContent=p.code+'　'+p.name;sel.appendChild(opt);}});}
 function addItemFromMaster(){const sel=document.getElementById('ni-master-sel');const code=sel.value;if(!code){toast('品目を選択してください','e');return;}const prod=(DB.products||[]).find(p=>p.code===code);if(!prod){toast('品目が見つかりません','e');return;}if(!DB.clients[editC])return;flushMItemsFromDom();DB.clients[editC].items.push({code:prod.code,name:prod.name});persist();setMasterItemsDirty(false);fillMasterSel();renderMItems();toast(`「${prod.name}」を追加しました`);}
@@ -1948,8 +2043,8 @@ function saveMasterItems(){
 }
 function renderMItems(){if(!editC)return;const items=DB.clients[editC]?.items||[];const wrap=document.getElementById('mitems');const bar=document.getElementById('mitems-save-bar');if(bar)bar.style.display='flex';if(!items.length){wrap.innerHTML='<div class="emp" style="padding:14px">品目がありません</div>';setMasterItemsDirty(masterItemsDirty);return;}wrap.innerHTML=`<table style="width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed" id="mitems-tbl"><thead><tr><th style="background:var(--nv);color:#fff;padding:7px 10px;font-size:11px;font-weight:500;width:36px"></th><th style="background:var(--nv);color:#fff;padding:7px 10px;font-size:11px;font-weight:500;width:15%">品番</th><th style="background:var(--nv);color:#fff;padding:7px 10px;font-size:11px;font-weight:500">品目名</th><th style="background:var(--nv);color:#fff;padding:7px 10px;font-size:11px;text-align:right;font-weight:500;width:90px">請求単価</th><th style="background:var(--nv);color:#fff;padding:7px 10px;font-size:11px;text-align:center;font-weight:500;width:15%">操作</th></tr></thead><tbody id="mitems-body">${items.map((it,i)=>`<tr draggable="true" data-idx="${i}"><td style="padding:6px 10px;border-bottom:0.5px solid var(--bd);text-align:center;color:var(--mu);cursor:grab;font-size:16px;user-select:none">☰</td><td style="padding:6px 10px;border-bottom:0.5px solid var(--bd)"><input data-field="code" style="width:100%;padding:5px 8px;border:0.5px solid var(--b2);border-radius:4px;font-size:12px;background:var(--w);color:var(--tx);font-family:monospace" value="${escH(it.code||'')}" oninput="upd(${i},'code',this.value)"></td><td style="padding:6px 10px;border-bottom:0.5px solid var(--bd)"><input data-field="name" style="width:100%;padding:5px 8px;border:0.5px solid var(--b2);border-radius:4px;font-size:13px;background:var(--w);color:var(--tx)" value="${escH(it.name||'')}" oninput="upd(${i},'name',this.value)"></td><td style="padding:6px 10px;border-bottom:0.5px solid var(--bd)"><input data-field="price" type="number" min="0" style="width:100%;padding:5px 8px;border:0.5px solid var(--b2);border-radius:4px;font-size:13px;background:var(--w);color:var(--tx);text-align:right" value="${it.price||''}" placeholder="0" oninput="updPrice(${i},this.value)"></td><td style="padding:6px 10px;border-bottom:0.5px solid var(--bd);text-align:center"><button style="background:transparent;color:var(--ng);border:0.5px solid var(--ng);padding:4px 10px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:600" onclick="delItem(${i})">削除</button></td></tr>`).join('')}</tbody></table>`;initMItemsDrag();setMasterItemsDirty(masterItemsDirty);}
 function initMItemsDrag(){const tbody=document.getElementById('mitems-body');if(!tbody)return;let dragSrc=null;tbody.querySelectorAll('tr').forEach(row=>{row.addEventListener('dragstart',e=>{dragSrc=row;row.style.opacity='0.4';e.dataTransfer.effectAllowed='move';});row.addEventListener('dragend',e=>{row.style.opacity='';tbody.querySelectorAll('tr').forEach(r=>r.style.background='');});row.addEventListener('dragover',e=>{e.preventDefault();tbody.querySelectorAll('tr').forEach(r=>r.style.background='');if(row!==dragSrc)row.style.background='rgba(200,153,42,0.15)';});row.addEventListener('drop',e=>{e.preventDefault();if(dragSrc===row)return;flushMItemsFromDom();const fi=parseInt(dragSrc.dataset.idx);const ti=parseInt(row.dataset.idx);const items=DB.clients[editC].items;const moved=items.splice(fi,1)[0];items.splice(ti,0,moved);persist();setMasterItemsDirty(false);if(curC===editC){renderItems();updateChips();}renderMItems();toast('順番を変更しました');});});}
-function saveBasic(){if(!editC)return;const newN=document.getElementById('e-name').value.trim();const newC=document.getElementById('e-cyc').value.trim();const newG=document.getElementById('e-grp').value;const newCL=document.getElementById('e-closing').value;if(!newN){toast('客先名を入力してください','e');return;}if(newN!==editC){if(DB.clients[newN]){toast('同名の客先が既に存在します','e');return;}const oldName=editC;DB.clients[newN]=DB.clients[editC];delete DB.clients[editC];if(DB.cycles[editC]){DB.cycles[newN]=DB.cycles[editC];delete DB.cycles[editC];}if(DB.closing[editC]){DB.closing[newN]=DB.closing[editC];delete DB.closing[editC];}if(DB.minCharge&&DB.minCharge[editC]){DB.minCharge[newN]=DB.minCharge[editC];delete DB.minCharge[editC];}if(DB.deliveryFee&&DB.deliveryFee[editC]){DB.deliveryFee[newN]=DB.deliveryFee[editC];delete DB.deliveryFee[editC];}if(DB.packagingFee&&DB.packagingFee[editC]){DB.packagingFee[newN]=DB.packagingFee[editC];delete DB.packagingFee[editC];}if(DB.clientGroups[editC]){DB.clientGroups[newN]=DB.clientGroups[editC];delete DB.clientGroups[editC];}Object.keys(DB.clientOrder||{}).forEach(gid=>{const ord=DB.clientOrder[gid];if(!Array.isArray(ord))return;const i=ord.indexOf(oldName);if(i>=0)ord[i]=newN;});if(curC===editC)curC=newN;editC=newN;}DB.cycles[editC]=newC;if(newCL)DB.closing[editC]=newCL;else delete DB.closing[editC];if(!DB.minCharge)DB.minCharge={};const minv=parseInt(document.getElementById('e-mincharge')?.value,10);if(!isNaN(minv)&&minv>0)DB.minCharge[editC]=minv;else delete DB.minCharge[editC];if(!DB.deliveryFee)DB.deliveryFee={};const feev=parseInt(document.getElementById('e-delivery-fee')?.value,10);if(!isNaN(feev)&&feev>0)DB.deliveryFee[editC]=feev;else delete DB.deliveryFee[editC];if(!DB.packagingFee)DB.packagingFee={};const packv=parseInt(document.getElementById('e-packaging-fee')?.value,10);if(!isNaN(packv)&&packv>0)DB.packagingFee[editC]=packv;else delete DB.packagingFee[editC];if(newG)DB.clientGroups[editC]=newG;else delete DB.clientGroups[editC];flushMItemsFromDom();setMasterItemsDirty(false);persist();fillSel('csel',curC);fillSel('msel',editC);if(curC)updateChips();renderGroups();renderClientGrpList();toast('変更を保存しました');}
-function delClient(){if(!editC){toast('客先を選択してください','e');return;}if(!confirm(`「${editC}」を削除しますか？`))return;const name=editC;delete DB.clients[name];delete DB.cycles[name];delete DB.clientGroups[name];delete DB.closing[name];if(DB.minCharge)delete DB.minCharge[name];if(DB.deliveryFee)delete DB.deliveryFee[name];if(DB.packagingFee)delete DB.packagingFee[name];Object.keys(DB.clientOrder||{}).forEach(gid=>{if(Array.isArray(DB.clientOrder[gid]))DB.clientOrder[gid]=DB.clientOrder[gid].filter(c=>c!==name);});masterItemsDirty=false;persist();if(curC===name){curC=null;document.getElementById('csel').value='';onCC();}editC=null;document.getElementById('msel').value='';document.getElementById('medit').style.display='none';const bar=document.getElementById('mitems-save-bar');if(bar)bar.style.display='none';fillSel('csel');fillSel('msel');renderGroups();renderClientGrpList();toast('削除しました');}
+function saveBasic(){if(!editC)return;const newN=document.getElementById('e-name').value.trim();const newC=document.getElementById('e-cyc').value.trim();const newG=document.getElementById('e-grp').value;const newCL=document.getElementById('e-closing').value;if(!newN){toast('客先名を入力してください','e');return;}if(newN!==editC){if(DB.clients[newN]){toast('同名の客先が既に存在します','e');return;}const oldName=editC;DB.clients[newN]=DB.clients[editC];delete DB.clients[editC];if(DB.cycles[editC]){DB.cycles[newN]=DB.cycles[editC];delete DB.cycles[editC];}if(DB.closing[editC]){DB.closing[newN]=DB.closing[editC];delete DB.closing[editC];}if(DB.minCharge&&DB.minCharge[editC]){DB.minCharge[newN]=DB.minCharge[editC];delete DB.minCharge[editC];}if(DB.deliveryFee&&DB.deliveryFee[editC]){DB.deliveryFee[newN]=DB.deliveryFee[editC];delete DB.deliveryFee[editC];}if(DB.packagingFee&&DB.packagingFee[editC]){DB.packagingFee[newN]=DB.packagingFee[editC];delete DB.packagingFee[editC];}if(DB.parkingEnabled&&DB.parkingEnabled[editC]){DB.parkingEnabled[newN]=DB.parkingEnabled[editC];delete DB.parkingEnabled[editC];}if(DB.clientGroups[editC]){DB.clientGroups[newN]=DB.clientGroups[editC];delete DB.clientGroups[editC];}Object.keys(DB.clientOrder||{}).forEach(gid=>{const ord=DB.clientOrder[gid];if(!Array.isArray(ord))return;const i=ord.indexOf(oldName);if(i>=0)ord[i]=newN;});if(curC===editC)curC=newN;editC=newN;}DB.cycles[editC]=newC;if(newCL)DB.closing[editC]=newCL;else delete DB.closing[editC];if(!DB.minCharge)DB.minCharge={};const minv=parseInt(document.getElementById('e-mincharge')?.value,10);if(!isNaN(minv)&&minv>0)DB.minCharge[editC]=minv;else delete DB.minCharge[editC];if(!DB.deliveryFee)DB.deliveryFee={};const feev=parseInt(document.getElementById('e-delivery-fee')?.value,10);if(!isNaN(feev)&&feev>0)DB.deliveryFee[editC]=feev;else delete DB.deliveryFee[editC];if(!DB.packagingFee)DB.packagingFee={};const packv=parseInt(document.getElementById('e-packaging-fee')?.value,10);if(!isNaN(packv)&&packv>0)DB.packagingFee[editC]=packv;else delete DB.packagingFee[editC];if(!DB.parkingEnabled)DB.parkingEnabled={};if(document.getElementById('e-parking-enabled')?.checked)DB.parkingEnabled[editC]=true;else delete DB.parkingEnabled[editC];if(newG)DB.clientGroups[editC]=newG;else delete DB.clientGroups[editC];flushMItemsFromDom();setMasterItemsDirty(false);persist();fillSel('csel',curC);fillSel('msel',editC);if(curC)updateChips();renderGroups();renderClientGrpList();toast('変更を保存しました');}
+function delClient(){if(!editC){toast('客先を選択してください','e');return;}if(!confirm(`「${editC}」を削除しますか？`))return;const name=editC;delete DB.clients[name];delete DB.cycles[name];delete DB.clientGroups[name];delete DB.closing[name];if(DB.minCharge)delete DB.minCharge[name];if(DB.deliveryFee)delete DB.deliveryFee[name];if(DB.packagingFee)delete DB.packagingFee[name];if(DB.parkingEnabled)delete DB.parkingEnabled[name];Object.keys(DB.clientOrder||{}).forEach(gid=>{if(Array.isArray(DB.clientOrder[gid]))DB.clientOrder[gid]=DB.clientOrder[gid].filter(c=>c!==name);});masterItemsDirty=false;persist();if(curC===name){curC=null;document.getElementById('csel').value='';onCC();}editC=null;document.getElementById('msel').value='';document.getElementById('medit').style.display='none';const bar=document.getElementById('mitems-save-bar');if(bar)bar.style.display='none';fillSel('csel');fillSel('msel');renderGroups();renderClientGrpList();toast('削除しました');}
 function upd(i,f,v){if(DB.clients[editC]?.items[i])DB.clients[editC].items[i][f]=v.trim();persistDraft();setMasterItemsDirty(true);}
 function updPrice(i,v){
   const it=DB.clients[editC]?.items[i];
@@ -1963,7 +2058,7 @@ function updPrice(i,v){
 }
 function delItem(i){flushMItemsFromDom();DB.clients[editC]?.items.splice(i,1);persist();setMasterItemsDirty(false);renderMItems();setNC2();if(curC===editC){renderItems();updateChips();}}
 function addItem(){if(!editC){toast('客先を選択してください','e');return;}const code=document.getElementById('ni-code').value.trim()||nextPCode();const name=document.getElementById('ni-name').value.trim();if(!name){toast('品目名を入力してください','e');return;}if(!DB.clients[editC])DB.clients[editC]={items:[]};flushMItemsFromDom();const pv=parseInt(document.getElementById('ni-price').value,10);DB.clients[editC].items.push({code,name,...(!isNaN(pv)&&pv>0?{price:pv}:{})});document.getElementById('ni-name').value='';const pip=document.getElementById('ni-price');if(pip)pip.value='';persist();setMasterItemsDirty(false);renderMItems();setNC2();if(curC===editC){renderItems();updateChips();}toast(`「${name}」（${code}）を追加しました`);}
-function addClient(){const name=document.getElementById('nc-name').value.trim();const cyc=document.getElementById('nc-cyc').value.trim();const gid=document.getElementById('nc-grp').value;const cl=document.getElementById('nc-closing').value;const minv=parseInt(document.getElementById('nc-mincharge')?.value,10);const feev=parseInt(document.getElementById('nc-delivery-fee')?.value,10);const packv=parseInt(document.getElementById('nc-packaging-fee')?.value,10);if(!name){toast('客先名を入力してください','e');return;}if(DB.clients[name]){toast('同名の客先が既に存在します','e');return;}DB.clients[name]={items:[]};if(cyc)DB.cycles[name]=cyc;if(cl)DB.closing[name]=cl;if(!isNaN(minv)&&minv>0){if(!DB.minCharge)DB.minCharge={};DB.minCharge[name]=minv;}if(!isNaN(feev)&&feev>0){if(!DB.deliveryFee)DB.deliveryFee={};DB.deliveryFee[name]=feev;}if(!isNaN(packv)&&packv>0){if(!DB.packagingFee)DB.packagingFee={};DB.packagingFee[name]=packv;}if(gid)DB.clientGroups[name]=gid;document.getElementById('nc-name').value='';renderCycBtns('nc-cyc-btns','nc-cyc','');document.getElementById('nc-closing').value='';const nmc=document.getElementById('nc-mincharge');if(nmc)nmc.value='';const ndf=document.getElementById('nc-delivery-fee');if(ndf)ndf.value='';const npf=document.getElementById('nc-packaging-fee');if(npf)npf.value='';persist();fillSel('csel');fillSel('msel');renderGroups();renderClientGrpList();showCTab('edit',document.getElementById('ctab-edit'));document.getElementById('msel').value=name;onMC();toast(`「${name}」を追加しました`);}
+function addClient(){const name=document.getElementById('nc-name').value.trim();const cyc=document.getElementById('nc-cyc').value.trim();const gid=document.getElementById('nc-grp').value;const cl=document.getElementById('nc-closing').value;const minv=parseInt(document.getElementById('nc-mincharge')?.value,10);const feev=parseInt(document.getElementById('nc-delivery-fee')?.value,10);const packv=parseInt(document.getElementById('nc-packaging-fee')?.value,10);const parkOn=!!document.getElementById('nc-parking-enabled')?.checked;if(!name){toast('客先名を入力してください','e');return;}if(DB.clients[name]){toast('同名の客先が既に存在します','e');return;}DB.clients[name]={items:[]};if(cyc)DB.cycles[name]=cyc;if(cl)DB.closing[name]=cl;if(!isNaN(minv)&&minv>0){if(!DB.minCharge)DB.minCharge={};DB.minCharge[name]=minv;}if(!isNaN(feev)&&feev>0){if(!DB.deliveryFee)DB.deliveryFee={};DB.deliveryFee[name]=feev;}if(!isNaN(packv)&&packv>0){if(!DB.packagingFee)DB.packagingFee={};DB.packagingFee[name]=packv;}if(parkOn){if(!DB.parkingEnabled)DB.parkingEnabled={};DB.parkingEnabled[name]=true;}if(gid)DB.clientGroups[name]=gid;document.getElementById('nc-name').value='';renderCycBtns('nc-cyc-btns','nc-cyc','');document.getElementById('nc-closing').value='';const nmc=document.getElementById('nc-mincharge');if(nmc)nmc.value='';const ndf=document.getElementById('nc-delivery-fee');if(ndf)ndf.value='';const npf=document.getElementById('nc-packaging-fee');if(npf)npf.value='';const npe=document.getElementById('nc-parking-enabled');if(npe)npe.checked=false;persist();fillSel('csel');fillSel('msel');renderGroups();renderClientGrpList();showCTab('edit',document.getElementById('ctab-edit'));document.getElementById('msel').value=name;onMC();toast(`「${name}」を追加しました`);}
 
 // ===== グループ管理 =====
 let dragSrcIdx=null;
@@ -2131,7 +2226,7 @@ function fbSave(){
   if(!currentUser)return Promise.resolve();
   const tok=markSelfSaving();
   // undefined（例: 請求単価クリア）を残すと Firebase 全体が失敗するためサニタイズ
-  const master=sanitizeForFirebase({clients:DB.clients,cycles:DB.cycles,products:DB.products,groups:DB.groups,clientGroups:DB.clientGroups,clientOrder:DB.clientOrder||{},closing:DB.closing,minCharge:DB.minCharge||{},deliveryFee:DB.deliveryFee||{},packagingFee:DB.packagingFee||{},savedAt:new Date().toISOString(),saveId:tok});
+  const master=sanitizeForFirebase({clients:DB.clients,cycles:DB.cycles,products:DB.products,groups:DB.groups,clientGroups:DB.clientGroups,clientOrder:DB.clientOrder||{},closing:DB.closing,minCharge:DB.minCharge||{},deliveryFee:DB.deliveryFee||{},packagingFee:DB.packagingFee||{},parkingEnabled:DB.parkingEnabled||{},savedAt:new Date().toISOString(),saveId:tok});
   return db.ref('purims/data').transaction(current=>{
     if(current&&current.savedAt&&_lastAppliedSavedAt&&current.savedAt!==_lastAppliedSavedAt){
       return; // 他PCが先に更新 → abort
@@ -2201,11 +2296,11 @@ function fbApplyData(d,history){
   DB.products=d.products&&d.products.length?d.products:DB.products;
   DB.groups=d.groups&&d.groups.length?d.groups:DB.groups;
   DB.clientGroups=d.clientGroups||{};
-  DB.clientOrder=d.clientOrder||{};DB.closing=d.closing||{};DB.minCharge=d.minCharge||{};DB.deliveryFee=d.deliveryFee||{};DB.packagingFee=d.packagingFee||{};
+  DB.clientOrder=d.clientOrder||{};DB.closing=d.closing||{};DB.minCharge=d.minCharge||{};DB.deliveryFee=d.deliveryFee||{};DB.packagingFee=d.packagingFee||{};DB.parkingEnabled=d.parkingEnabled||{};
   _lastAppliedSavedAt=d.savedAt||null;
   DB.history=parseHistory(history);
   persistHistoryLocal();
-  localStorage.setItem('purims_v14',JSON.stringify({clients:DB.clients,cycles:DB.cycles,products:DB.products,groups:DB.groups,clientGroups:DB.clientGroups,clientOrder:DB.clientOrder,closing:DB.closing,minCharge:DB.minCharge||{},deliveryFee:DB.deliveryFee||{},packagingFee:DB.packagingFee||{}}));
+  localStorage.setItem('purims_v14',JSON.stringify({clients:DB.clients,cycles:DB.cycles,products:DB.products,groups:DB.groups,clientGroups:DB.clientGroups,clientOrder:DB.clientOrder,closing:DB.closing,minCharge:DB.minCharge||{},deliveryFee:DB.deliveryFee||{},packagingFee:DB.packagingFee||{},parkingEnabled:DB.parkingEnabled||{}}));
   fillSel("csel",curC);fillSel("msel",editC);fillGrpSel("e-grp");fillGrpSel("nc-grp");
   renderProducts();renderHistory();renderGroups();renderClientGrpList();
   const pruned=pruneExpiredHistory({quiet:true});
@@ -2246,9 +2341,9 @@ function fbStartListeners(){
     DB.clients=d.clients;DB.cycles=d.cycles||{};
     DB.products=d.products&&d.products.length?d.products:DB.products;
     DB.groups=d.groups&&d.groups.length?d.groups:DB.groups;
-    DB.clientGroups=d.clientGroups||{};DB.clientOrder=d.clientOrder||{};DB.closing=d.closing||{};DB.minCharge=d.minCharge||{};DB.deliveryFee=d.deliveryFee||{};DB.packagingFee=d.packagingFee||{};
+    DB.clientGroups=d.clientGroups||{};DB.clientOrder=d.clientOrder||{};DB.closing=d.closing||{};DB.minCharge=d.minCharge||{};DB.deliveryFee=d.deliveryFee||{};DB.packagingFee=d.packagingFee||{};DB.parkingEnabled=d.parkingEnabled||{};
     _lastAppliedSavedAt=d.savedAt||_lastAppliedSavedAt;
-    localStorage.setItem('purims_v14',JSON.stringify({clients:DB.clients,cycles:DB.cycles,products:DB.products,groups:DB.groups,clientGroups:DB.clientGroups,clientOrder:DB.clientOrder,closing:DB.closing,minCharge:DB.minCharge||{},deliveryFee:DB.deliveryFee||{},packagingFee:DB.packagingFee||{}}));
+    localStorage.setItem('purims_v14',JSON.stringify({clients:DB.clients,cycles:DB.cycles,products:DB.products,groups:DB.groups,clientGroups:DB.clientGroups,clientOrder:DB.clientOrder,closing:DB.closing,minCharge:DB.minCharge||{},deliveryFee:DB.deliveryFee||{},packagingFee:DB.packagingFee||{},parkingEnabled:DB.parkingEnabled||{}}));
     fillSel("csel",curC);fillSel("msel",editC);fillGrpSel("e-grp");fillGrpSel("nc-grp");
     renderProducts();renderGroups();renderClientGrpList();
     toast("☁️ 他のPCでマスタが更新されました");
@@ -2306,6 +2401,8 @@ function resetRoleUi(){
   });
   const excelSec=document.getElementById('billing-excel-section');
   if(excelSec)excelSec.style.display='';
+  const parkSec=document.getElementById('parking-fee-section');
+  if(parkSec)parkSec.style.display='';
   const pendingBtn=document.getElementById('billing-pending-view-btn');
   if(pendingBtn)pendingBtn.style.display='';
   document.getElementById('user-mgr-btn').style.display='none';
@@ -2318,6 +2415,8 @@ function applyViewerUi(){
   });
   const excelSec=document.getElementById('billing-excel-section');
   if(excelSec)excelSec.style.display='none';
+  const parkSec=document.getElementById('parking-fee-section');
+  if(parkSec)parkSec.style.display='none';
   const pendingBtn=document.getElementById('billing-pending-view-btn');
   if(pendingBtn)pendingBtn.style.display='none';
 }
@@ -2452,7 +2551,7 @@ function doLogout(){
 function exitApp(){
   clearTimeout(persist._t);
   persistHistoryLocal();
-  localStorage.setItem('purims_v14',JSON.stringify({clients:DB.clients,cycles:DB.cycles,products:DB.products,groups:DB.groups,clientGroups:DB.clientGroups,clientOrder:DB.clientOrder,closing:DB.closing,minCharge:DB.minCharge||{},deliveryFee:DB.deliveryFee||{},packagingFee:DB.packagingFee||{}}));
+  localStorage.setItem('purims_v14',JSON.stringify({clients:DB.clients,cycles:DB.cycles,products:DB.products,groups:DB.groups,clientGroups:DB.clientGroups,clientOrder:DB.clientOrder,closing:DB.closing,minCharge:DB.minCharge||{},deliveryFee:DB.deliveryFee||{},packagingFee:DB.packagingFee||{},parkingEnabled:DB.parkingEnabled||{}}));
   toast('保存しています…');
   Promise.resolve(fbSave()).then(()=>toast('保存しました'));
 }
@@ -2569,6 +2668,7 @@ function closeLoginLog(){document.getElementById('loginlog-modal').style.display
 
 /* 更新情報（新しいものを上に追加） type: 'feat'=機能更新 / 'fix'=バグ修正 */
 const APP_UPDATES=[
+  {date:'2026-09-07',type:'feat',text:'駐車場代ありの客先は請求タブで金額入力し、「客先名 駐車場代」として別明細に分割'},
   {date:'2026-09-07',type:'feat',text:'客先ごとの包装料を追加（納品の総点数×単価を請求明細へ・伝票面には非表示）'},
   {date:'2026-09-07',type:'feat',text:'客先ごとの配送費を追加（伝票1枚につき請求明細へ自動加算・伝票面には非表示）'},
   {date:'2026-09-07',type:'feat',text:'請求額一覧の並びを締め日順（20→25→末）＋客先番号順に変更'},
