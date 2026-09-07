@@ -1473,12 +1473,11 @@ function renderParkingFeeCorner(){
     return belongsToBillingMonth(d,year,month,closingDay);
   }).sort(sortHistoryRecs);
   if(!recs.length){list.innerHTML='<div style="color:var(--mu);font-size:12px">この請求月の対象伝票がありません</div>';if(hint)hint.textContent=customer;return;}
-  let html='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:var(--s);text-align:left"><th style="padding:8px;border-bottom:1px solid var(--bd)">納品日</th><th style="padding:8px;border-bottom:1px solid var(--bd)">点数</th><th style="padding:8px;border-bottom:1px solid var(--bd)">駐車場代（円）</th></tr></thead><tbody>';
+  let html='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:var(--s);text-align:left"><th style="padding:8px;border-bottom:1px solid var(--bd)">納品日</th><th style="padding:8px;border-bottom:1px solid var(--bd)">駐車場代（円）</th></tr></thead><tbody>';
   recs.forEach(h=>{
     const fee=Number(h.parkingFee)>0?Number(h.parkingFee):'';
     const dd=h.deliveryDate||historyDeliveryDate(h)||'';
-    const pts=h.total!=null?h.total:(h.items||[]).reduce((s,it)=>s+(Number(it.qty)||0),0);
-    html+='<tr><td style="padding:8px;border-bottom:1px solid var(--bd)">'+dd+'</td><td style="padding:8px;border-bottom:1px solid var(--bd)">'+pts+'</td><td style="padding:8px;border-bottom:1px solid var(--bd)"><input type="number" min="0" step="1" data-parking-id="'+h.id+'" value="'+fee+'" placeholder="なし" style="width:120px;padding:6px 8px;border:1.5px solid var(--b2);border-radius:6px;font-size:13px"></td></tr>';
+    html+='<tr><td style="padding:8px;border-bottom:1px solid var(--bd)">'+dd+'</td><td style="padding:8px;border-bottom:1px solid var(--bd)"><input type="number" min="0" step="1" data-parking-id="'+h.id+'" value="'+fee+'" placeholder="なし" style="width:120px;padding:6px 8px;border:1.5px solid var(--b2);border-radius:6px;font-size:13px"></td></tr>';
   });
   html+='</tbody></table></div>';
   list.innerHTML=html;
@@ -2681,6 +2680,7 @@ function closeLoginLog(){document.getElementById('loginlog-modal').style.display
 
 /* 更新情報（新しいものを上に追加） type: 'feat'=機能更新 / 'fix'=バグ修正 */
 const APP_UPDATES=[
+  {date:'2026-09-07',type:'fix',text:'駐車場代入力から点数列を削除（金額のみ）'},
   {date:'2026-09-07',type:'fix',text:'駐車場代入力を客先選択方式に変更'},
   {date:'2026-09-07',type:'feat',text:'駐車場代ありの客先は請求タブで金額入力し、「客先名 駐車場代」として別明細に分割'},
   {date:'2026-09-07',type:'feat',text:'客先ごとの包装料を追加（納品の総点数×単価を請求明細へ・伝票面には非表示）'},
