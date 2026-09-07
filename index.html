@@ -754,7 +754,7 @@ select.cs:focus{outline:none;border-color:var(--ac)}
     <button type="button" class="btn" style="font-size:12px;padding:7px 12px" onclick="selectAllVisibleHist()">表示中をすべて選択</button>
     <button type="button" class="btn" style="font-size:12px;padding:7px 12px" onclick="clearHistSelection()">選択解除</button>
   </div>
-  <div style="font-size:12px;color:var(--mu);margin-bottom:10px" id="hist-hint">発行日ごとにまとまっています。フォルダをクリックして開きます。履歴の保存期間は<strong>12か月</strong>（納品日基準）です。</div>
+  <div style="font-size:12px;color:var(--mu);margin-bottom:10px" id="hist-hint">月ごとのフォルダの中に発行日があります。フォルダをクリックして開きます。履歴の保存期間は<strong>6か月</strong>（納品日基準）です。</div>
   <div id="hlist"></div>
 </div>
 
@@ -776,7 +776,7 @@ select.cs:focus{outline:none;border-color:var(--ac)}
     <div style="padding:14px 16px;font-size:13px;color:var(--mu);line-height:1.8">
       伝票（プリームス）の発行履歴から、<strong style="color:var(--tx)">ネクサス請求明細 .xlsx</strong> を出力します（Excel を開いて取り込む必要はありません）。<br>
       単価はマスタの「請求単価」列を使います（伝票には出しません）。客先ごとにシートが自動作成されます。<br>
-      <span style="color:#854f0b;font-weight:600">対象は納品日 2026年8月1日以降です（7月以前は請求明細に載せません）。発行履歴のアプリ内保存は<strong>12か月</strong>です。</span>
+      <span style="color:#854f0b;font-weight:600">対象は納品日 2026年8月1日以降です（7月以前は請求明細に載せません）。発行履歴のアプリ内保存は<strong>6か月</strong>です。</span>
       <div style="display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap">
         <button onclick="exportTodayBilling()" style="padding:8px 16px;background:#854f0b;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">📄 未反映分を請求明細Excel出力</button>
         <button onclick="exportSampleBilling()" style="padding:8px 16px;background:#fff;color:#854f0b;border:1.5px solid #854f0b;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">🖨 印刷見本を出力</button>
@@ -860,9 +860,9 @@ select.cs:focus{outline:none;border-color:var(--ac)}
       <div class="help-step"><div class="help-step-num">3</div><div class="help-step-body"><div class="help-step-title">数量を入力して伝票発行</div>品目一覧に数量を入力し、<span class="help-tag">伝票発行</span>ボタンを押します。発行しない客先は <span class="help-tag">⏭ 飛ばす</span> で次の客先へ進めます（リストから選び直す必要はありません）。</div></div>
       <div class="help-step"><div class="help-step-num">4</div><div class="help-step-body"><div class="help-step-title">次の客先へ</div>発行後は <span class="help-tag">▶ 客先名</span> で次へ。<span class="help-tag">客先選択に戻る</span> はリストの先頭からやり直すとき。</div></div>
       <div class="help-step"><div class="help-step-num">5</div><div class="help-step-body"><div class="help-step-title">間違えたとき</div>完了画面の <span class="help-tag">入力に戻る（発行取消）</span> で履歴から取り消せます。</div></div>
-      <div class="help-step"><div class="help-step-num">履歴</div><div class="help-step-body"><div class="help-step-title">まとめて再印刷</div><span class="help-tag">発行履歴</span> で伝票左のチェックを入れ → <span class="help-tag">選択した伝票をまとめて印刷</span>。1件だけなら明細内の <span class="help-tag">伝票印刷</span> でも再発行できます。</div></div>
+      <div class="help-step"><div class="help-step-num">履歴</div><div class="help-step-body"><div class="help-step-title">まとめて再印刷</div><span class="help-tag">発行履歴</span>（発行日別は <strong>月 → 日付</strong> のフォルダ）で伝票左のチェックを入れ → <span class="help-tag">選択した伝票をまとめて印刷</span>。1件だけなら明細内の <span class="help-tag">伝票印刷</span> でも再発行できます。</div></div>
       <div class="help-note">💡 データはクラウド（Firebase）に自動保存されます。別のPCで開いても同じデータが表示されます。</div>
-      <div class="help-note">💡 <strong>発行履歴の保存期間は12か月</strong>です（納品日基準）。12か月を超えた伝票はアプリ起動・クラウド読み込み時に自動削除されます。必要な分は事前にCSV/請求Excelで保存してください。</div>
+      <div class="help-note">💡 <strong>発行履歴の保存期間は6か月</strong>です（納品日基準）。6か月を超えた伝票はアプリ起動・クラウド読み込み時に自動削除されます。必要な分は事前にCSV/請求Excelで保存してください。</div>
     </div>
   </div>
   <div class="help-section help-collapsed" id="help-print">
@@ -1335,7 +1335,7 @@ function historyDeliveryDate(h){
   return String(raw);
 }
 function parseHistDeliveryDate(h){return parseDeliveryDate(historyDeliveryDate(h));}
-const HISTORY_KEEP_MONTHS=12;
+const HISTORY_KEEP_MONTHS=6;
 function historyRetentionCutoff(){const d=new Date();d.setHours(0,0,0,0);d.setMonth(d.getMonth()-HISTORY_KEEP_MONTHS);return d;}
 function histRetentionDate(h){
   const d=parseHistDeliveryDate(h);
@@ -2173,6 +2173,15 @@ function histSlipHtml(h,byClient){
   return `<div style="background:var(--w);border-bottom:0.5px solid var(--bd)"><div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;cursor:pointer;background:${open?'var(--s)':'var(--w)'}" onclick="toggleHist(${h.id})"><label style="display:flex;align-items:center;flex-shrink:0;margin-right:4px;cursor:pointer" onclick="event.stopPropagation()"><input type="checkbox" ${histSelectedIds.has(h.id)?'checked':''} onchange="toggleHistSelect(${h.id},this.checked)" style="width:16px;height:16px;cursor:pointer" aria-label="印刷対象に選択"></label><div style="flex:1;min-width:0"><div style="font-weight:600;font-size:14px">${title}</div><div style="font-size:11px;color:var(--mu);margin-top:2px">${sub}</div></div><div style="display:flex;align-items:center;gap:10px"><span style="background:var(--nv);color:#fff;padding:3px 10px;border-radius:10px;font-size:12px;font-weight:600">合計 ${h.total}点</span><span style="font-size:14px;color:var(--mu);display:inline-block;transform:rotate(${open?'180':'0'}deg)">▼</span></div></div><div style="display:${open?'block':'none'};padding:14px 16px;background:var(--s);border-top:0.5px solid var(--bd)"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px"><div style="font-size:12px;color:var(--mu);line-height:1.8"><strong style="color:var(--tx);font-size:13px">${escH(h.client)}</strong><br>発行日: ${escH(h.date)}　｜　納品日: ${escH(h.deliveryDate)}${h.issuedBy?'　｜　発行者: <strong style="color:var(--nv);">'+escH(h.issuedBy)+'</strong>':''}</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" style="font-size:12px;padding:6px 12px" onclick="event.stopPropagation();dlHistCSV(${h.id})">CSV出力</button><button class="btn pri" style="font-size:12px;padding:6px 12px" onclick="event.stopPropagation();printHist(${h.id})">伝票印刷</button><button class="btn ng" style="font-size:12px;padding:6px 12px" onclick="event.stopPropagation();delHist(${h.id})">削除</button></div></div><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr><th style="background:var(--nv);color:#fff;padding:7px 10px;font-size:11px;text-align:left;font-weight:500;width:18%">品番</th><th style="background:var(--nv);color:#fff;padding:7px 10px;font-size:11px;text-align:left;font-weight:500">品目名</th><th style="background:var(--nv);color:#fff;padding:7px 10px;font-size:11px;text-align:right;font-weight:500;width:80px">数量</th></tr></thead><tbody>${(h.items||[]).map(it=>`<tr><td style="padding:7px 10px;border-bottom:0.5px solid var(--bd)"><span class="cbdg">${escH(it.code)}</span></td><td style="padding:7px 10px;border-bottom:0.5px solid var(--bd)">${escH(it.name)}</td><td style="padding:7px 10px;border-bottom:0.5px solid var(--bd);text-align:right;font-weight:700">${it.qty}</td></tr>`).join('')}</tbody><tfoot><tr><td colspan="2" style="background:var(--w);padding:8px 10px;font-weight:700;border-top:2px solid var(--b2)">合計</td><td style="background:var(--w);padding:8px 10px;font-weight:700;text-align:right;border-top:2px solid var(--b2);font-size:15px;color:var(--nv)">${h.total}点</td></tr></tfoot></table></div></div>`;
 }
 function histFiltered(){const q=(document.getElementById('hist-search')?.value||'').trim().toLowerCase();if(!q)return DB.history||[];return (DB.history||[]).filter(h=>[h.client,h.date,h.deliveryDate,h.issuedBy,...((h.items||[]).flatMap(it=>[it.code,it.name]))].some(v=>String(v||'').toLowerCase().includes(q)));}
+function histMonthLabel(dateStr){
+  const p=String(dateStr||'').split(/[\/\-]/).map(Number);
+  if(p.length<2||isNaN(p[0])||isNaN(p[1]))return '不明';
+  return p[0]+'年'+p[1]+'月';
+}
+function histMonthSortVal(label){
+  const m=String(label||'').match(/(\d+)年(\d+)月/);
+  return m?Number(m[1])*100+Number(m[2]):0;
+}
 function renderHistory(){
   const el=document.getElementById('hlist');if(!el)return;
   const hint=document.getElementById('hist-hint');
@@ -2186,18 +2195,47 @@ function renderHistory(){
   if(bar)bar.style.display='flex';
   if(!recs.length){el.innerHTML='<div class="emp">該当する履歴がありません</div>';if(hint)hint.textContent='検索条件に一致する伝票はありません。';return;}
   const byClient=histViewMode==='client';
-  if(hint)hint.textContent=(byClient?'客先ごとにまとまっています。フォルダをクリックして開きます。':'発行日ごとにまとまっています。フォルダをクリックして開きます。')+' チェックを入れた伝票だけまとめて再印刷できます。履歴の保存期間は12か月（納品日基準）です。';
-  const groups={};
-  recs.forEach(h=>{const k=byClient?(h.client||'（客先なし）'):(h.date||'不明');if(!groups[k])groups[k]=[];groups[k].push(h);});
-  const keys=Object.keys(groups).sort((a,b)=>byClient?a.localeCompare(b,'ja'):parseYMD(b)-parseYMD(a));
-  el.innerHTML=keys.map(key=>{
-    const items=groups[key].slice().sort((a,b)=>byClient?(parseYMD(b.date)-parseYMD(a.date)||(b.id||0)-(a.id||0)):((b.id||0)-(a.id||0)));
-    const total=items.reduce((s,h)=>s+h.total,0);
-    const folderKey=(byClient?'c|':'d|')+key;
-    const isOpen=histFolderCollapsed[folderKey]===true;
-    const enc=encodeURIComponent(folderKey);
-    const label=escH(key);
-    return `<div style="margin-bottom:10px"><div onclick="toggleHistFolder('${enc}')" style="display:flex;align-items:center;gap:10px;padding:9px 14px;background:var(--nv);color:#fff;border-radius:${isOpen?'8px 8px 0 0':'8px'};cursor:pointer;user-select:none"><span style="font-size:16px">${byClient?'🏢':'📁'}</span><span style="font-weight:700;font-size:14px;flex:1">${label}</span><span style="font-size:12px;opacity:.8">${items.length}件　合計 ${total}点</span><span style="font-size:13px;display:inline-block;transform:rotate(${isOpen?'180':'0'}deg)">▼</span></div><div style="display:${isOpen?'block':'none'};border:0.5px solid var(--nv);border-top:none;border-radius:0 0 8px 8px;overflow:hidden">${items.map(h=>histSlipHtml(h,byClient)).join('')}</div></div>`;
+  if(hint)hint.textContent=(byClient?'客先ごとにまとまっています。フォルダをクリックして開きます。':'月ごとのフォルダの中に発行日があります。フォルダをクリックして開きます。')+' チェックを入れた伝票だけまとめて再印刷できます。履歴の保存期間は6か月（納品日基準）です。';
+  if(byClient){
+    const groups={};
+    recs.forEach(h=>{const k=h.client||'（客先なし）';if(!groups[k])groups[k]=[];groups[k].push(h);});
+    const keys=Object.keys(groups).sort((a,b)=>a.localeCompare(b,'ja'));
+    el.innerHTML=keys.map(key=>{
+      const items=groups[key].slice().sort((a,b)=>parseYMD(b.date)-parseYMD(a.date)||(b.id||0)-(a.id||0));
+      const total=items.reduce((sum,h)=>sum+h.total,0);
+      const folderKey='c|'+key;
+      const isOpen=histFolderCollapsed[folderKey]===true;
+      const enc=encodeURIComponent(folderKey);
+      return '<div style="margin-bottom:10px"><div onclick="toggleHistFolder(\''+enc+'\')" style="display:flex;align-items:center;gap:10px;padding:9px 14px;background:var(--nv);color:#fff;border-radius:'+(isOpen?'8px 8px 0 0':'8px')+';cursor:pointer;user-select:none"><span style="font-size:16px">🏢</span><span style="font-weight:700;font-size:14px;flex:1">'+escH(key)+'</span><span style="font-size:12px;opacity:.8">'+items.length+'件　合計 '+total+'点</span><span style="font-size:13px;display:inline-block;transform:rotate('+(isOpen?'180':'0')+'deg)">▼</span></div><div style="display:'+(isOpen?'block':'none')+';border:0.5px solid var(--nv);border-top:none;border-radius:0 0 8px 8px;overflow:hidden">'+items.map(h=>histSlipHtml(h,true)).join('')+'</div></div>';
+    }).join('');
+    return;
+  }
+  const byMonth={};
+  recs.forEach(h=>{
+    const mk=histMonthLabel(h.date);
+    if(!byMonth[mk])byMonth[mk]={};
+    const dk=h.date||'不明';
+    if(!byMonth[mk][dk])byMonth[mk][dk]=[];
+    byMonth[mk][dk].push(h);
+  });
+  const monthKeys=Object.keys(byMonth).sort((a,b)=>histMonthSortVal(b)-histMonthSortVal(a));
+  el.innerHTML=monthKeys.map(mk=>{
+    const days=byMonth[mk];
+    const dayKeys=Object.keys(days).sort((a,b)=>parseYMD(b)-parseYMD(a));
+    let monthCount=0,monthTotal=0;
+    dayKeys.forEach(dk=>{days[dk].forEach(h=>{monthCount++;monthTotal+=h.total;});});
+    const monthFolderKey='m|'+mk;
+    const monthOpen=histFolderCollapsed[monthFolderKey]===true;
+    const monthEnc=encodeURIComponent(monthFolderKey);
+    const dayHtml=dayKeys.map(dk=>{
+      const items=days[dk].slice().sort((a,b)=>(b.id||0)-(a.id||0));
+      const total=items.reduce((sum,h)=>sum+h.total,0);
+      const dayFolderKey='d|'+dk;
+      const dayOpen=histFolderCollapsed[dayFolderKey]===true;
+      const dayEnc=encodeURIComponent(dayFolderKey);
+      return '<div style="margin:8px 10px 0 10px"><div onclick="event.stopPropagation();toggleHistFolder(\''+dayEnc+'\')" style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:#3d4f6f;color:#fff;border-radius:'+(dayOpen?'8px 8px 0 0':'8px')+';cursor:pointer;user-select:none"><span style="font-size:15px">📁</span><span style="font-weight:700;font-size:13px;flex:1">'+escH(dk)+'</span><span style="font-size:11px;opacity:.85">'+items.length+'件　合計 '+total+'点</span><span style="font-size:12px;display:inline-block;transform:rotate('+(dayOpen?'180':'0')+'deg)">▼</span></div><div style="display:'+(dayOpen?'block':'none')+';border:0.5px solid #3d4f6f;border-top:none;border-radius:0 0 8px 8px;overflow:hidden">'+items.map(h=>histSlipHtml(h,false)).join('')+'</div></div>';
+    }).join('')+'<div style="height:8px"></div>';
+    return '<div style="margin-bottom:12px"><div onclick="toggleHistFolder(\''+monthEnc+'\')" style="display:flex;align-items:center;gap:10px;padding:9px 14px;background:var(--nv);color:#fff;border-radius:'+(monthOpen?'8px 8px 0 0':'8px')+';cursor:pointer;user-select:none"><span style="font-size:16px">📅</span><span style="font-weight:700;font-size:14px;flex:1">'+escH(mk)+'</span><span style="font-size:12px;opacity:.8">'+monthCount+'件　合計 '+monthTotal+'点</span><span style="font-size:13px;display:inline-block;transform:rotate('+(monthOpen?'180':'0')+'deg)">▼</span></div><div style="display:'+(monthOpen?'block':'none')+';border:0.5px solid var(--nv);border-top:none;border-radius:0 0 8px 8px;background:#f4f6fa">'+dayHtml+'</div></div>';
   }).join('');
 }
 function toggleHist(id){openHistId=openHistId===id?null:id;renderHistory();}
@@ -2676,6 +2714,7 @@ function closeLoginLog(){document.getElementById('loginlog-modal').style.display
 
 /* 更新情報（新しいものを上に追加） type: 'feat'=機能更新 / 'fix'=バグ修正 */
 const APP_UPDATES=[
+  {date:'2026-09-07',type:'feat',text:'発行履歴を月フォルダ→日付フォルダの入れ子表示に変更。保存期間を6か月に短縮'},
   {date:'2026-09-07',type:'fix',text:'伝票発行タブからExcel出力ボタン類を外し、印刷モードと表示倍率だけにした'},
   {date:'2026-09-07',type:'fix',text:'駐車場代入力から点数列を削除（金額のみ）'},
   {date:'2026-09-07',type:'fix',text:'駐車場代入力を客先選択方式に変更'},
