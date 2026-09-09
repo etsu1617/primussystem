@@ -591,13 +591,13 @@ select.cs:focus{outline:none;border-color:var(--ac)}
           <div id="add-panel-master" class="add-item-panel on">
             <select class="add-item-sel" id="master-add-sel"><option value="">— 商品を選択 —</option></select>
             <input type="number" class="qty" style="width:70px" id="master-add-qty" min="1" value="1">
-            <input type="text" style="padding:7px 10px;border:1.5px solid var(--b2);border-radius:6px;font-size:12px;background:var(--w);color:var(--tx);width:130px" id="master-add-biko" placeholder="備考（任意）">
+            <input type="text" class="enter-skip" style="padding:7px 10px;border:1.5px solid var(--b2);border-radius:6px;font-size:12px;background:var(--w);color:var(--tx);width:130px" id="master-add-biko" placeholder="備考（任意）">
             <button class="btn pri" style="padding:7px 14px;font-size:13px;white-space:nowrap" onclick="addFromMaster()">追加</button>
           </div>
           <div id="add-panel-free" class="add-item-panel">
             <input type="text" class="add-item-inp" id="free-add-name" placeholder="品名を入力" oninput="onFreeNameInput(this)">
             <input type="number" class="qty" style="width:70px" id="free-add-qty" min="1" value="1">
-            <input type="text" style="padding:7px 10px;border:1.5px solid var(--b2);border-radius:6px;font-size:12px;background:var(--w);color:var(--tx);width:130px" id="free-add-biko" placeholder="備考（任意）">
+            <input type="text" class="enter-skip" style="padding:7px 10px;border:1.5px solid var(--b2);border-radius:6px;font-size:12px;background:var(--w);color:var(--tx);width:130px" id="free-add-biko" placeholder="備考（任意）">
             <button class="btn pri" style="padding:7px 14px;font-size:13px;white-space:nowrap" onclick="addFromFree()">追加</button>
             <div class="add-item-hint" id="free-match-hint"></div>
           </div>
@@ -916,7 +916,7 @@ select.cs:focus{outline:none;border-color:var(--ac)}
       <div class="help-step"><div class="help-step-num">注意</div><div class="help-step-body"><div class="help-step-title">同じ納品日の再打ち込みは不可</div>同じ客先・同じ納品日の伝票が既にあると、<strong>新規の打ち直し発行はできません</strong>。警告から案内どおり <span class="help-tag">発行履歴</span> → <span class="help-tag">訂正して再発行</span> で数量を直します。訂正すると履歴に「訂正再発行」と日時が残ります。</div></div>
       <div class="help-step"><div class="help-step-num">履歴</div><div class="help-step-body"><div class="help-step-title">まとめて再印刷</div><span class="help-tag">発行履歴</span>（発行日別は <strong>月 → 日付</strong> のフォルダ）で伝票左のチェックを入れ → <span class="help-tag">選択した伝票をまとめて印刷</span>。1件だけなら明細内の <span class="help-tag">伝票印刷</span> でも再発行できます。</div></div>
       <div class="help-step"><div class="help-step-num">事務</div><div class="help-step-body"><div class="help-step-title">発行伝票のチェック済み</div><span class="help-tag">請求</span> タブでまず<strong>締め日</strong>（20日〆／25日〆／末日〆）を選び、ミニカレンダー（または請求明細書ビューア左上）の<strong>納品日</strong>をクリックすると、その締めのその日以前を事務確認済みとして記録します。チェック済みは締め日ごとに別管理。「○○〆 チェック済み: 納品日 ○○まで」と表示。同じ客先・納品日で新規発行しようとしたとき、チェック済み期間なら警告文にその旨が出ます。</div></div>
-      <div class="help-note">💡 数量・単価などの入力欄では <strong>Enter</strong> で次のマス／次の行へ進めます。</div>
+      <div class="help-note">💡 数量などの入力欄では <strong>Enter</strong> で次の行へ進みます（備考は通常スキップ。必要なときだけクリックして入力）。</div>
       <div class="help-note">💡 データはクラウド（Firebase）に自動保存されます。別のPCで開いても同じデータが表示されます。</div>
       <div class="help-note">💡 <strong>発行履歴の保存期間は6か月</strong>です（納品日基準）。6か月を超えた伝票はアプリ起動・クラウド読み込み時に自動削除されます。必要な分は事前にCSV/請求Excelで保存してください。</div>
     </div>
@@ -1213,7 +1213,7 @@ function updateChips(){if(!curC)return;const cyc=DB.cycles[curC]||'';document.ge
 function startCyc(){if(!curC)return;document.getElementById('cyc-v').style.display='none';document.getElementById('cyc-edit-hint').style.display='none';renderCycBtns('slip-cyc-btns','slip-cyc',DB.cycles[curC]||'');document.getElementById('cyc-btn-area').style.display='flex';}
 function saveCycBtns(){if(!curC)return;const val=document.getElementById('slip-cyc').value.trim();DB.cycles[curC]=val;persist();if(!customDeliveryDate){document.getElementById('nd-v').textContent=fmtD(nxtDel(val));}updateChips();if(editC===curC)renderCycBtns('e-cyc-btns','e-cyc',val);toast('サイクルを更新しました');}
 function cancelCyc(){document.getElementById('cyc-btn-area').style.display='none';document.getElementById('cyc-v').style.display='';document.getElementById('cyc-edit-hint').style.display='';}
-function renderItems(){if(!curC)return;const items=DB.clients[curC]?.items||[];const masterRows=items.map((it,i)=>`<tr><td><span class="cbdg">${it.code}</span></td><td>${it.name}</td><td style="text-align:center"><input class="qty${qtys[i]?' f':''}" type="number" min="0" value="${qtys[i]||''}" placeholder="0" oninput="setQ(${i},this)"></td><td><input style="width:100%;padding:4px 6px;border:1px solid var(--b2);border-radius:4px;font-size:12px;background:var(--w);color:var(--tx)" type="text" value="${bikos[i]||''}" placeholder="備考" oninput="bikos[${i}]=this.value"></td><td></td></tr>`).join('');const extraRows=extraItems.map((it,i)=>`<tr class="extra-row"><td><span class="cbdg">${it.code}</span></td><td>${it.name} <span style="font-size:9px;background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7;padding:1px 5px;border-radius:4px">追加</span></td><td style="text-align:center"><input class="qty${it.qty?' f':''}" type="number" min="0" value="${it.qty||''}" placeholder="0" oninput="setEQ(${i},this)"></td><td><input style="width:100%;padding:4px 6px;border:1px solid var(--b2);border-radius:4px;font-size:12px;background:var(--w);color:var(--tx)" type="text" value="${it.biko||''}" placeholder="備考" oninput="extraItems[${i}].biko=this.value"></td><td style="text-align:center"><button class="btn-rm" onclick="removeExtra(${i})">✕</button></td></tr>`).join('');const hasAny=items.length||extraItems.length;if(!hasAny){document.getElementById('iarea').innerHTML='<div class="emp">品目が登録されていません</div>';return;}const COL='<colgroup><col style="width:12%"><col style="width:38%"><col style="width:15%"><col style="width:35%"><col style="width:32px"></colgroup>';document.getElementById('iarea').innerHTML=`<div class="iarea-wrap"><div class="iarea-thead"><table>${COL}<thead><tr><th>品番</th><th>品　名</th><th style="text-align:center">数　量</th><th>備　考</th><th></th></tr></thead></table></div><div class="iarea-body" id="iarea-body"><table>${COL}<tbody>${masterRows}${extraRows}</tbody></table></div></div>`;setTimeout(applyZoom,0);}
+function renderItems(){if(!curC)return;const items=DB.clients[curC]?.items||[];const masterRows=items.map((it,i)=>`<tr><td><span class="cbdg">${it.code}</span></td><td>${it.name}</td><td style="text-align:center"><input class="qty${qtys[i]?' f':''}" type="number" min="0" value="${qtys[i]||''}" placeholder="0" oninput="setQ(${i},this)"></td><td><input class="enter-skip" style="width:100%;padding:4px 6px;border:1px solid var(--b2);border-radius:4px;font-size:12px;background:var(--w);color:var(--tx)" type="text" value="${bikos[i]||''}" placeholder="備考" oninput="bikos[${i}]=this.value"></td><td></td></tr>`).join('');const extraRows=extraItems.map((it,i)=>`<tr class="extra-row"><td><span class="cbdg">${it.code}</span></td><td>${it.name} <span style="font-size:9px;background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7;padding:1px 5px;border-radius:4px">追加</span></td><td style="text-align:center"><input class="qty${it.qty?' f':''}" type="number" min="0" value="${it.qty||''}" placeholder="0" oninput="setEQ(${i},this)"></td><td><input class="enter-skip" style="width:100%;padding:4px 6px;border:1px solid var(--b2);border-radius:4px;font-size:12px;background:var(--w);color:var(--tx)" type="text" value="${it.biko||''}" placeholder="備考" oninput="extraItems[${i}].biko=this.value"></td><td style="text-align:center"><button class="btn-rm" onclick="removeExtra(${i})">✕</button></td></tr>`).join('');const hasAny=items.length||extraItems.length;if(!hasAny){document.getElementById('iarea').innerHTML='<div class="emp">品目が登録されていません</div>';return;}const COL='<colgroup><col style="width:12%"><col style="width:38%"><col style="width:15%"><col style="width:35%"><col style="width:32px"></colgroup>';document.getElementById('iarea').innerHTML=`<div class="iarea-wrap"><div class="iarea-thead"><table>${COL}<thead><tr><th>品番</th><th>品　名</th><th style="text-align:center">数　量</th><th>備　考</th><th></th></tr></thead></table></div><div class="iarea-body" id="iarea-body"><table>${COL}<tbody>${masterRows}${extraRows}</tbody></table></div></div>`;setTimeout(applyZoom,0);}
 function fitIareaBody(){const body=document.getElementById('iarea-body');if(!body)return;const wrap=document.querySelector('.iarea-wrap');if(!wrap)return;const thead=wrap.querySelector('.iarea-thead');const addArea=document.getElementById('add-item-area');const addH=(addArea&&addArea.style.display!=='none')?addArea.offsetHeight+8:0;const wrapTop=wrap.getBoundingClientRect().top;const theadH=thead?thead.offsetHeight:0;const brow=document.getElementById('sbtns');const browH=brow?brow.offsetHeight:0;const available=window.innerHeight-wrapTop-theadH-addH-browH-24;body.style.maxHeight=Math.max(available,120)+'px';}
 window.addEventListener('resize',()=>{fitIareaBody();resizeScrollPanel();});
 function resizeScrollPanel(){const scrollPanels=['master','history','data','help','billing'];const hdrH=document.querySelector('.hdr').offsetHeight;const tabH=document.querySelector('.tabs').offsetHeight;const h=window.innerHeight-hdrH-tabH;scrollPanels.forEach(id=>{const p=document.getElementById('panel-'+id);if(p&&p.classList.contains('on'))p.style.height=h+'px';});}
@@ -2338,7 +2338,7 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Enter'&&!e.isComposing&&!e.altKey&&!e.ctrlKey&&!e.metaKey){
     const t=e.target;
     if(t&&(t.id==='login-pass'||t.id==='admin-pass-input'))return;
-    if(isEnterNavField(t)){
+    if(canEnterNavigateFrom(t)){
       e.preventDefault();
       focusNextEnterField(t);
       return;
@@ -2348,8 +2348,14 @@ document.addEventListener('keydown',e=>{
   if(document.getElementById('updates-modal')?.classList.contains('open')){closeUpdatesModal();return;}
   if(document.getElementById('meisai-viewer')?.classList.contains('open'))closeMeisaiViewer();
 });
+function canEnterNavigateFrom(el){
+  if(!el)return false;
+  if(el.classList&&el.classList.contains('enter-skip')&&el.tagName==='INPUT'&&!el.disabled)return true;
+  return isEnterNavField(el);
+}
 function isEnterNavField(el){
   if(!el||el.disabled||el.readOnly)return false;
+  if(el.classList&&el.classList.contains('enter-skip'))return false;
   const tag=el.tagName;
   if(tag==='SELECT')return true;
   if(tag!=='INPUT')return false;
@@ -2386,12 +2392,27 @@ function getEnterNavFields(){
 function focusNextEnterField(from){
   const fields=getEnterNavFields();
   const i=fields.indexOf(from);
-  if(i<0)return false;
-  const next=fields[i+1];
-  if(!next){from.blur();return false;}
-  next.focus();
-  try{if(typeof next.select==='function')next.select();}catch(err){}
-  return true;
+  if(i>=0){
+    const next=fields[i+1];
+    if(!next){from.blur();return false;}
+    next.focus();
+    try{if(typeof next.select==='function')next.select();}catch(err){}
+    return true;
+  }
+  // 備考など enter-skip 上での Enter → 直後の次の入力へ
+  const root=getEnterNavRoot();
+  const all=[...root.querySelectorAll('input,select')].filter(enterNavFieldVisible);
+  const pos=all.indexOf(from);
+  if(pos<0)return false;
+  for(let j=pos+1;j<all.length;j++){
+    if(isEnterNavField(all[j])){
+      all[j].focus();
+      try{if(typeof all[j].select==='function')all[j].select();}catch(err){}
+      return true;
+    }
+  }
+  from.blur();
+  return false;
 }
 function importCSV(e){const file=e.target.files[0];if(!file)return;const r=new FileReader();r.onload=ev=>{try{const lines=ev.target.result.replace(/\r/g,'').split('\n').filter(l=>l.trim());const nc={};const ncy={};lines.slice(1).forEach(line=>{const cols=line.split(',').map(c=>c.replace(/^"|"$/g,'').replace(/""/g,'"').trim());if(cols.length<3||!cols[0])return;const[client,code,name,cyc]=cols;if(!nc[client])nc[client]={items:[]};if(name)nc[client].items.push({code:code||'P000',name});if(cyc)ncy[client]=cyc;});if(!Object.keys(nc).length){toast('読み込めるデータがありませんでした','e');return;}if(!confirm(`${Object.keys(nc).length}件の客先データをインポートします。続けますか？`))return;Object.assign(DB.clients,nc);Object.assign(DB.cycles,ncy);persist();fillSel('csel');fillSel('msel');toast(`${Object.keys(nc).length}件をインポートしました`);}catch(err){toast('CSVの読み込みに失敗しました','e');}e.target.value='';};r.readAsText(file,'UTF-8');}
 function importJSON(e){const file=e.target.files[0];if(!file)return;const r=new FileReader();r.onload=ev=>{try{const d=JSON.parse(ev.target.result);if(!d.clients){toast('フォーマットが違います','e');return;}if(!confirm('バックアップから全データを復元します。続けますか？'))return;DB.clients=d.clients;DB.cycles=d.cycles||{};if(d.products&&d.products.length)DB.products=d.products;if(d.groups&&d.groups.length)DB.groups=d.groups;if(d.clientGroups)DB.clientGroups=d.clientGroups;if(d.clientOrder)DB.clientOrder=d.clientOrder;if(d.closing)DB.closing=d.closing;if(d.minCharge)DB.minCharge=d.minCharge;if(d.deliveryFee)DB.deliveryFee=d.deliveryFee;if(d.packagingFee)DB.packagingFee=d.packagingFee;if(d.parkingEnabled)DB.parkingEnabled=d.parkingEnabled;if(d.slipCheckedThrough!=null)DB.slipCheckedThrough=d.slipCheckedThrough||'';if(d.slipCheckedThroughByClosing)DB.slipCheckedThroughByClosing=d.slipCheckedThroughByClosing;if(Array.isArray(d.history)){DB.history=d.history;persistHistoryLocal();if(currentUser){const obj={};DB.history.forEach(h=>{if(h&&h.id!=null)obj[String(h.id)]=h;});db.ref('purims/history').set(obj).catch(e=>toast('履歴の復元に失敗しました: '+e.message,'e'));}}persist();fillSel('csel');fillSel('msel');fillGrpSel('e-grp');fillGrpSel('nc-grp');renderProducts();renderHistory();renderGroups();renderClientGrpList();const pruned=pruneExpiredHistory({quiet:true});const skipped=markOutOfScopeAsBilled();updateBillingPendingBadge();const parts=[];if(pruned)parts.push(`保存期間超過 ${pruned}件削除`);if(skipped)parts.push(`7月以前 ${skipped}件を請求対象外`);toast(parts.length?`${Object.keys(DB.clients).length}件を復元しました（${parts.join('、')}）`:`${Object.keys(DB.clients).length}件を復元しました`);}catch(err){toast('JSONの読み込みに失敗しました','e');}e.target.value='';};r.readAsText(file,'UTF-8');}
@@ -3130,6 +3151,7 @@ function closeLoginLog(){document.getElementById('loginlog-modal').style.display
 
 /* 更新情報（新しいものを上に追加） type: 'feat'=機能更新 / 'fix'=バグ修正 */
 const APP_UPDATES=[
+  {date:'2026-09-09',type:'fix',text:'Enter移動は備考欄をスキップ（必要なときだけクリックして入力）'},
   {date:'2026-09-09',type:'feat',text:'数値・テキスト入力で Enter を押すと次のマス／次の行へ進む'},
   {date:'2026-09-09',type:'feat',text:'同じ客先・納品日の新規打ち直しを禁止。履歴の「訂正して再発行」で修正し記録を残す'},
   {date:'2026-09-09',type:'fix',text:'駐車場代の別明細（客先名 駐車場代）を一覧で分かりやすく表示'},
