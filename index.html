@@ -474,7 +474,8 @@ select.cs:focus{outline:none;border-color:var(--ac)}
   <div id="parking-fee-section" style="background:var(--w);border:0.5px solid var(--b2);border-radius:10px;overflow:hidden;margin-bottom:14px">
     <div class="ch" style="background:#3d5a40">🅿️ 駐車場代入力</div>
     <div style="padding:14px 16px;font-size:13px;color:var(--mu);line-height:1.7">
-      マスタで「駐車場代あり」の客先を選び、領収書を見て金額を入力します。<strong style="color:var(--tx)">伝票には出ません。</strong> 空欄＝その回なし。上の請求月と同じ年月の伝票を表示します。
+      マスタで「駐車場代あり」の客先を選び、領収書を見て金額を入力します。<strong style="color:var(--tx)">伝票には出ません。</strong> 空欄＝その回なし。上の請求月と同じ年月の伝票を表示します。<br>
+      金額を入れると請求は<strong style="color:var(--tx)">「客先名」</strong>と<strong style="color:var(--tx)">「客先名 駐車場代」</strong>の<strong>2枚</strong>に分かれます（例: あ／あ 駐車場代）。
       <div style="display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap">
         <label style="font-size:12px;color:var(--tx);font-weight:600">客先</label>
         <select id="parking-fee-client" onchange="renderParkingFeeCorner()" style="min-width:220px;padding:8px 10px;border:1.5px solid var(--b2);border-radius:6px;font-size:14px;background:var(--w);color:var(--tx)">
@@ -945,7 +946,7 @@ select.cs:focus{outline:none;border-color:var(--ac)}
     <div class="help-section-hd" onclick="toggleHelp('billing')">📄 請求明細書（確認・Excel・印刷）<span class="help-toggle" id="help-toggle-billing">▶</span></div>
     <div class="help-section-body">
       <p>Purims がブラウザ内で請求明細書を<strong>直接表示・印刷・Excel出力</strong>します。運用 PC に Excel テンプレート（.xlsm）を置く必要はありません。印刷レイアウトは<strong>プゥル・ヴー伝票アプリと同じ書式</strong>です（ネクサス名義）。</p>
-      <div class="help-step"><div class="help-step-num">駐車場</div><div class="help-step-body"><div class="help-step-title">駐車場代を入力</div>マスタで「駐車場代あり」にした客先は、<span class="help-tag">請求</span> タブの <span class="help-tag">駐車場代入力</span> で客先を選び、領収書を見て金額を入力 → <span class="help-tag">駐車場代を保存</span>。請求明細では「客先名 駐車場代」として分かれます。</div></div>
+      <div class="help-step"><div class="help-step-num">駐車場</div><div class="help-step-body"><div class="help-step-title">駐車場代を入力</div>マスタで「駐車場代あり」にした客先は、<span class="help-tag">請求</span> タブの <span class="help-tag">駐車場代入力</span> で客先を選び、領収書を見て金額を入力 → <span class="help-tag">駐車場代を保存</span>。請求明細・請求額一覧では例として <strong>あ</strong>（通常品目）と <strong>あ 駐車場代</strong>（駐車場のみ）の<strong>2枚／2行</strong>になります。金額が入っている回だけ駐車場側が作られます。</div></div>
       <div class="help-step"><div class="help-step-num">確認</div><div class="help-step-body"><div class="help-step-title">アプリ内で見る</div><span class="help-tag">請求</span> タブ → 請求月を指定 → <span class="help-tag">請求明細書を見る</span>。左の客先一覧で切り替え。<span class="help-tag">未反映分を見る</span> で Excel 出力前の分も確認できます。</div></div>
       <div class="help-step"><div class="help-step-num">事務</div><div class="help-step-body"><div class="help-step-title">チェック済みにする</div>請求明細書を確認したら、<span class="help-tag">請求</span> タブ（または明細ビューア左上）で<strong>締め日</strong>を選び → ミニカレンダーの<strong>納品日</strong>をクリック。チェック済みは締め日ごとに分かれます。その締めの納品ありの日は薄い青、チェック済は緑です。</div></div>
       <div class="help-step"><div class="help-step-num">印刷</div><div class="help-step-body"><div class="help-step-title">この客先を印刷</div>明細表示中に <span class="help-tag">🖨 この客先を印刷</span> → 用紙 <strong>A4 横向き</strong>・倍率 <strong>100%</strong>。左上に客先名＋様、右上に小計・消費税・ご請求金額、下に品名・単価・納品日別数量の表（1ページ20行）です。</div></div>
@@ -1542,6 +1543,7 @@ function renderBillingCheckCalendar(){
   updateSlipCheckStatus();
 }
 function parkingBillingName(customer){return String(customer||'')+' 駐車場代';}
+function isParkingMeisai(data){return / 駐車場代$/.test(String(data&&data.customer||''));}
 function buildParkingInvoicesFromRecs(recs){const park=(recs||[]).filter(h=>Number(h.parkingFee)>0);if(!park.length)return null;if(park.length>14){/* keep newest-sorted order already */}return park.slice(0,14).map((h,idx)=>({invoiceNo:String(idx+1),deliveryDate:historyDeliveryDate(h),items:[{name:'駐車場代',price:Number(h.parkingFee),qty:1}]}));}
 function toHalfWidthDigits(s){return String(s).replace(/[０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0));}
 function parseDeliveryDate(str){if(str==null||str===''||str==='—')return null;const s=toHalfWidthDigits(String(str).trim());let m=s.match(/(\d{4})年(\d{1,2})月(\d{1,2})日?/);if(m)return{y:+m[1],m:+m[2],d:+m[3]};m=s.match(/^(\d{4})[\/.\-](\d{1,2})[\/.\-](\d{1,2})$/);if(m)return{y:+m[1],m:+m[2],d:+m[3]};const p=s.split(/[\/.\-]/).map(Number);if(p.length>=3&&!isNaN(p[0])&&p[0]>1900)return{y:p[0],m:p[1],d:p[2]};return null;}
@@ -2064,15 +2066,19 @@ function meisaiSummaryHtml(){
   const sumTax=rows.reduce((s,r)=>s+r.tax,0);
   const sumTot=rows.reduce((s,r)=>s+r.total,0);
   const sumSlips=rows.reduce((s,r)=>s+r.slipCount,0);
-  const body=rows.map((r,n)=>`<tr onclick="selectMeisaiViewer(${r.idx});setMeisaiViewerMode('detail')">
+  const body=rows.map((r,n)=>{
+    const park=/ 駐車場代$/.test(String(r.customer||''));
+    const nameHtml=escH(r.customer)+(park?' <span style="color:#2e7d32;font-size:11px;font-weight:700">駐車場</span>':'');
+    return`<tr onclick="selectMeisaiViewer(${r.idx});setMeisaiViewerMode('detail')">
     <td class="cen">${n+1}</td>
-    <td>${escH(r.customer)}</td>
+    <td>${nameHtml}</td>
     <td class="cen">${escH(r.closing)}</td>
     <td class="cen">${r.slipCount}</td>
     <td class="num">${yenFmt(r.subtotal)}${r.minApplied?' <span style="color:#854f0b;font-size:11px">保</span>':''}</td>
     <td class="num">${yenFmt(r.tax)}</td>
     <td class="num" style="font-weight:700">${yenFmt(r.total)}</td>
-  </tr>`).join('')||'<tr><td colspan="7" class="cen" style="padding:24px;color:#888">データがありません</td></tr>';
+  </tr>`;
+  }).join('')||'<tr><td colspan="7" class="cen" style="padding:24px;color:#888">データがありません</td></tr>';
   return`<div id="meisai-summary-print">
     <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;flex-wrap:wrap;gap:8px">
       <div>
@@ -2166,7 +2172,9 @@ function renderMeisaiViewerList(){
   if(!filtered.length){el.innerHTML='<div style="padding:12px;font-size:12px;color:var(--mu)">該当なし</div>';return;}
   el.innerHTML=filtered.map(({d,i})=>{
     const tot=buildMeisaiRows(d).total;
-    return`<button type="button" class="meisai-viewer-item${i===_meisaiViewerIdx?' on':''}" onclick="selectMeisaiViewer(${i})"><div>${escH(d.customer)}</div><div style="font-size:11px;opacity:.85;margin-top:2px">${yenFmt(tot)}</div></button>`;
+    const park=isParkingMeisai(d);
+    const badge=park?'<span style="display:inline-block;margin-left:4px;padding:1px 6px;border-radius:8px;background:#c8e6c9;color:#1b5e20;font-size:10px;font-weight:700">駐車場</span>':'';
+    return`<button type="button" class="meisai-viewer-item${i===_meisaiViewerIdx?' on':''}" onclick="selectMeisaiViewer(${i})"><div>${escH(d.customer)}${badge}</div><div style="font-size:11px;opacity:.85;margin-top:2px">${yenFmt(tot)}</div></button>`;
   }).join('');
 }
 function selectMeisaiViewer(idx){
@@ -2962,6 +2970,7 @@ function closeLoginLog(){document.getElementById('loginlog-modal').style.display
 
 /* 更新情報（新しいものを上に追加） type: 'feat'=機能更新 / 'fix'=バグ修正 */
 const APP_UPDATES=[
+  {date:'2026-09-09',type:'fix',text:'駐車場代の別明細（客先名 駐車場代）を一覧で分かりやすく表示'},
   {date:'2026-09-09',type:'feat',text:'事務チェックカレンダーを締め日別（20／25／末日）に分けて切り替え表示'},
   {date:'2026-09-09',type:'fix',text:'事務チェックカレンダーに短い説明を追加し、印刷時は非表示に'},
   {date:'2026-09-09',type:'fix',text:'事務チェックの基準を発行日から納品日に変更（請求タブのカレンダー）'},
