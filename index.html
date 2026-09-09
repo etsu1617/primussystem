@@ -53,6 +53,21 @@ h2.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,
 .updates-tag.feat{background:#e8f0fe;color:#185fa5}
 .updates-tag.fix{background:#fdecea;color:#c0392b}
 .updates-text{color:var(--tx);flex:1}
+.check-cal{user-select:none;max-width:280px}
+.check-cal-hd{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:8px}
+.check-cal-hd button{width:28px;height:28px;border:1px solid var(--b2);border-radius:6px;background:var(--w);cursor:pointer;font-size:14px;line-height:1;color:var(--tx)}
+.check-cal-title{font-size:13px;font-weight:700;color:var(--tx)}
+.check-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.check-cal-dow{text-align:center;font-size:10px;color:var(--mu);font-weight:600;padding:2px 0}
+.check-cal-day{aspect-ratio:1;border:none;border-radius:6px;background:transparent;cursor:pointer;font-size:12px;font-weight:600;color:var(--tx);padding:0;min-height:28px}
+.check-cal-day:hover{background:#e8f0fe}
+.check-cal-day.muted{color:#ccc;cursor:default}
+.check-cal-day.has-slip{background:#f0f4fa;border:1px solid #ccd6e8}
+.check-cal-day.checked{background:#c8e6c9;border:1px solid #81c784;color:#1b5e20}
+.check-cal-day.through{outline:2px solid #2e7d32;outline-offset:0}
+.check-cal-day.today{box-shadow:inset 0 0 0 1.5px var(--ac)}
+.check-cal-legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;font-size:11px;color:var(--mu)}
+.check-cal-legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}
 .main{flex:1;padding:0;max-width:1100px;margin:0 auto;width:100%;display:flex;flex-direction:column;overflow:hidden}
 .panel{display:none;flex:1;overflow:hidden}.panel.on{display:flex;flex-direction:column}
 #panel-slip.on{display:flex!important;flex-direction:column}
@@ -416,9 +431,9 @@ select.cs:focus{outline:none;border-color:var(--ac)}
       伝票の発行履歴と請求単価から、<strong style="color:var(--tx)">ネクサス名義の請求明細書</strong>をアプリ内で表示します。Excelを開かなくても確認・印刷できます。
       <div style="display:flex;gap:10px;align-items:center;margin-top:14px;flex-wrap:wrap">
         <label style="font-size:12px;color:var(--tx);font-weight:600">請求月</label>
-        <input type="number" id="meisai-year" min="2020" max="2099" style="width:88px;padding:8px 10px;border:1.5px solid var(--b2);border-radius:6px;font-size:14px" placeholder="年" onchange="renderParkingFeeCorner()">
+        <input type="number" id="meisai-year" min="2020" max="2099" style="width:88px;padding:8px 10px;border:1.5px solid var(--b2);border-radius:6px;font-size:14px" placeholder="年" onchange="onMeisaiMonthChange()">
         <span>年</span>
-        <input type="number" id="meisai-month" min="1" max="12" style="width:60px;padding:8px 10px;border:1.5px solid var(--b2);border-radius:6px;font-size:14px" placeholder="月" onchange="renderParkingFeeCorner()">
+        <input type="number" id="meisai-month" min="1" max="12" style="width:60px;padding:8px 10px;border:1.5px solid var(--b2);border-radius:6px;font-size:14px" placeholder="月" onchange="onMeisaiMonthChange()">
         <span>月</span>
       </div>
       <div style="display:flex;gap:10px;align-items:center;margin-top:14px;flex-wrap:wrap">
@@ -427,6 +442,19 @@ select.cs:focus{outline:none;border-color:var(--ac)}
         <button type="button" id="billing-pending-view-btn" onclick="openMeisaiViewer('detail',{source:'pending'})" style="padding:12px 18px;background:#854f0b;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer">⏳ 未反映分を見る</button>
       </div>
       <div style="margin-top:12px;font-size:12px;color:var(--mu)">一覧の行をクリックすると、その客先の請求明細書に切り替わります。画面上で印刷もできます。</div>
+    </div>
+  </div>
+  <div id="billing-check-section" style="background:var(--w);border:0.5px solid var(--b2);border-radius:10px;overflow:hidden;margin-bottom:14px">
+    <div class="ch" style="background:#2e7d32">✓ 事務チェック（発行日）</div>
+    <div style="padding:14px 16px;display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start">
+      <div style="flex:1;min-width:200px;font-size:13px;color:var(--mu);line-height:1.7">
+        請求明細書を確認したら、カレンダーの<strong style="color:var(--tx)">発行日</strong>をクリックすると、その日までチェック済みになります。<br>
+        <span id="billing-check-status" style="display:inline-block;margin-top:8px;font-weight:700;color:#2e7d32">チェック済み: 未設定</span>
+        <div style="margin-top:10px">
+          <button type="button" class="btn" style="font-size:12px;padding:5px 10px" onclick="clearSlipCheckedThrough()">チェック解除</button>
+        </div>
+      </div>
+      <div id="billing-check-cal" class="check-cal"></div>
     </div>
   </div>
   <div id="parking-fee-section" style="background:var(--w);border:0.5px solid var(--b2);border-radius:10px;overflow:hidden;margin-bottom:14px">
@@ -848,7 +876,7 @@ select.cs:focus{outline:none;border-color:var(--ac)}
       <p>伝票は<strong>プリームス</strong>名義、請求明細は<strong>ネクサス</strong>名義です。Excel テンプレート（.xlsm）の取り込みは<strong>不要</strong>（Purims が .xlsx を直接作成します）。</p>
       <p style="margin-top:8px;font-size:12px;color:var(--mu)">画面上部タブの順番 … <span class="help-tag">伝票発行</span> → <span class="help-tag">発行履歴</span> → <span class="help-tag">マスタ管理</span> → <span class="help-tag">データ</span> → <span class="help-tag">請求</span> → <span class="help-tag">使い方</span>（右端の <span class="help-tag">更新情報</span> で変更履歴を確認できます）</p>
       <div class="help-step"><div class="help-step-num">朝〜夕</div><div class="help-step-body"><div class="help-step-title">伝票を発行する</div>客先を選び数量を入力 → <span class="help-tag">伝票発行</span>。出さない店は <span class="help-tag">⏭ 飛ばす</span>。一括印刷モードなら最後に <span class="help-tag">まとめて印刷</span>。</div></div>
-      <div class="help-step"><div class="help-step-num">終了前</div><div class="help-step-body"><div class="help-step-title">請求明細をアプリ内で確認（任意）</div><span class="help-tag">請求</span> タブ → 請求月を指定 → <span class="help-tag">請求明細書を見る</span>。左の客先一覧で切り替え、<span class="help-tag">この客先を印刷</span> で印刷プレビューを確認できます（Excel なしで OK）。</div></div>
+      <div class="help-step"><div class="help-step-num">終了前</div><div class="help-step-body"><div class="help-step-title">請求明細をアプリ内で確認（任意）</div><span class="help-tag">請求</span> タブ → 請求月を指定 → <span class="help-tag">請求明細書を見る</span>。確認後、同じタブのミニカレンダーで発行日をクリックするとチェック済みになります（Excel なしで OK）。</div></div>
       <div class="help-step"><div class="help-step-num">終了時</div><div class="help-step-body"><div class="help-step-title">請求明細 Excel を出力</div><span class="help-tag">請求</span> または <span class="help-tag">データ</span> タブの <span class="help-tag">未反映→請求明細Excel</span> を押す → <code>purims_meisai_YYYYMMDD.xlsx</code> がダウンロード。客先ごとにシート自動作成。</div></div>
       <div class="help-step"><div class="help-step-num">必要なら</div><div class="help-step-body"><div class="help-step-title">Excel で保存・印刷</div>ダウンロードした .xlsx を Excel で開く（取り込み操作なし）。印刷または所定フォルダに保存。</div></div>
       <div class="help-note">💡 <strong>未反映の伝票</strong> … <span class="help-tag">請求</span> タブの <span class="help-tag">未反映分を見る</span> や <span class="help-tag">未反映→請求明細Excel</span> で扱います（本日以前の分も含む）。Excel出力すると反映済みになり、同じ伝票は二重に出力されません。件数は <strong>2026年8月1日以降の納品</strong> のみです。7月以前は初回読み込み時に反映済み扱いになります。</div>
@@ -867,7 +895,7 @@ select.cs:focus{outline:none;border-color:var(--ac)}
       <div class="help-step"><div class="help-step-num">5</div><div class="help-step-body"><div class="help-step-title">間違えたとき</div>完了画面の <span class="help-tag">入力に戻る（発行取消）</span> で履歴から取り消せます。</div></div>
       <div class="help-step"><div class="help-step-num">注意</div><div class="help-step-body"><div class="help-step-title">同じ内容の再発行</div>同じ客先・同じ納品日・同じ品目内容で発行しようとすると警告が出ます。それでも発行する場合は確認後に進められ、完了画面で「同じ内容ですが発行しました」と表示されます。</div></div>
       <div class="help-step"><div class="help-step-num">履歴</div><div class="help-step-body"><div class="help-step-title">まとめて再印刷</div><span class="help-tag">発行履歴</span>（発行日別は <strong>月 → 日付</strong> のフォルダ）で伝票左のチェックを入れ → <span class="help-tag">選択した伝票をまとめて印刷</span>。1件だけなら明細内の <span class="help-tag">伝票印刷</span> でも再発行できます。</div></div>
-      <div class="help-step"><div class="help-step-num">事務</div><div class="help-step-body"><div class="help-step-title">発行伝票のチェック済み</div><span class="help-tag">発行履歴</span> の日付フォルダで <span class="help-tag">この日までチェック済み</span> を押すと、その<strong>発行日以前</strong>を事務確認済みとして記録します（全体で1つ）。上部に「チェック済み: 発行日 ○○まで」と表示。同じ内容の再発行時、チェック済み期間の伝票と重複する場合は警告文にその旨が出ます。</div></div>
+      <div class="help-step"><div class="help-step-num">事務</div><div class="help-step-body"><div class="help-step-title">発行伝票のチェック済み</div><span class="help-tag">請求</span> タブのミニカレンダー（または請求明細書ビューア左上）で<strong>発行日</strong>をクリックすると、その日以前を事務確認済みとして記録します（全体で1つ）。「チェック済み: 発行日 ○○まで」と表示。伝票がある日は薄い青、チェック済は緑。<span class="help-tag">発行履歴</span> の日付フォルダでも同じ操作ができます。同じ内容の再発行時、チェック済み期間の伝票と重複する場合は警告文にその旨が出ます。</div></div>
       <div class="help-note">💡 データはクラウド（Firebase）に自動保存されます。別のPCで開いても同じデータが表示されます。</div>
       <div class="help-note">💡 <strong>発行履歴の保存期間は6か月</strong>です（納品日基準）。6か月を超えた伝票はアプリ起動・クラウド読み込み時に自動削除されます。必要な分は事前にCSV/請求Excelで保存してください。</div>
     </div>
@@ -905,6 +933,7 @@ select.cs:focus{outline:none;border-color:var(--ac)}
       <p>Purims がブラウザ内で請求明細書を<strong>直接表示・印刷・Excel出力</strong>します。運用 PC に Excel テンプレート（.xlsm）を置く必要はありません。印刷レイアウトは<strong>プゥル・ヴー伝票アプリと同じ書式</strong>です（ネクサス名義）。</p>
       <div class="help-step"><div class="help-step-num">駐車場</div><div class="help-step-body"><div class="help-step-title">駐車場代を入力</div>マスタで「駐車場代あり」にした客先は、<span class="help-tag">請求</span> タブの <span class="help-tag">駐車場代入力</span> で客先を選び、領収書を見て金額を入力 → <span class="help-tag">駐車場代を保存</span>。請求明細では「客先名 駐車場代」として分かれます。</div></div>
       <div class="help-step"><div class="help-step-num">確認</div><div class="help-step-body"><div class="help-step-title">アプリ内で見る</div><span class="help-tag">請求</span> タブ → 請求月を指定 → <span class="help-tag">請求明細書を見る</span>。左の客先一覧で切り替え。<span class="help-tag">未反映分を見る</span> で Excel 出力前の分も確認できます。</div></div>
+      <div class="help-step"><div class="help-step-num">事務</div><div class="help-step-body"><div class="help-step-title">チェック済みにする</div>請求明細書を確認したら、<span class="help-tag">請求</span> タブ（または明細ビューア左上）のミニカレンダーで<strong>発行日</strong>をクリック → その日までチェック済み。伝票ありの日は薄い青、チェック済は緑で表示されます。</div></div>
       <div class="help-step"><div class="help-step-num">印刷</div><div class="help-step-body"><div class="help-step-title">この客先を印刷</div>明細表示中に <span class="help-tag">🖨 この客先を印刷</span> → 用紙 <strong>A4 横向き</strong>・倍率 <strong>100%</strong>。左上に客先名＋様、右上に小計・消費税・ご請求金額、下に品名・単価・納品日別数量の表（1ページ20行）です。</div></div>
       <div class="help-step"><div class="help-step-num">日次</div><div class="help-step-body"><div class="help-step-title">未反映→請求明細Excel</div>未反映の伝票（押し忘れ分を含む）を対象に、該当客先・請求月のシートを含む Excel を出力。ファイル名例: <code>purims_meisai_20250818.xlsx</code></div></div>
       <div class="help-step"><div class="help-step-num">月次</div><div class="help-step-body"><div class="help-step-title">請求月Excel出力</div><span class="help-tag">請求</span> または <span class="help-tag">データ</span> タブで年月を指定して再出力。ファイル名例: <code>purims_meisai_202508.xlsx</code></div></div>
@@ -969,6 +998,11 @@ select.cs:focus{outline:none;border-color:var(--ac)}
     <div class="meisai-summary-wrap on" id="meisai-summary-wrap"></div>
     <div class="meisai-viewer-body" id="meisai-detail-wrap" style="display:none">
       <div class="meisai-viewer-side">
+        <div id="meisai-check-wrap" style="padding:10px;border-bottom:1px solid var(--bd);background:#eef6ee">
+          <div style="font-size:11px;font-weight:700;color:#2e7d32;margin-bottom:6px">✓ 事務チェック（発行日をクリック）</div>
+          <div id="meisai-check-status" style="font-size:11px;color:#1b5e20;font-weight:600;margin-bottom:6px">チェック済み: 未設定</div>
+          <div id="meisai-check-cal" class="check-cal"></div>
+        </div>
         <input type="search" id="meisai-viewer-search" placeholder="客先を検索…" oninput="renderMeisaiViewerList()">
         <div class="meisai-viewer-list" id="meisai-viewer-list"></div>
       </div>
@@ -1338,8 +1372,70 @@ function getPackagingFee(customer){const n=Number(DB.packagingFee&&DB.packagingF
 function isParkingEnabled(customer){return !!(DB.parkingEnabled&&DB.parkingEnabled[customer]);}
 function getSlipCheckedThrough(){return DB.slipCheckedThrough||'';}
 function isIssueDateChecked(dateStr){const through=getSlipCheckedThrough();if(!through||!dateStr)return false;const a=parseYMD(dateStr),b=parseYMD(through);return a&&b&&a<=b;}
-function setSlipCheckedThrough(dateStr){const next=String(dateStr||'').trim();const prev=getSlipCheckedThrough();if(next&&prev&&parseYMD(next)<parseYMD(prev)){if(!confirm('チェック済み日を '+prev+' から '+next+' に戻しますか？\n（それ以降は未チェック扱いになります）'))return false;}DB.slipCheckedThrough=next;persist();renderHistory();toast(next?'発行日 '+next+' までチェック済みにしました':'チェック済みを解除しました');return true;}
-function clearSlipCheckedThrough(){if(!getSlipCheckedThrough()){toast('チェック済みは未設定です');return;}if(!confirm('チェック済みを解除しますか？'))return;DB.slipCheckedThrough='';persist();renderHistory();toast('チェック済みを解除しました');}
+function setSlipCheckedThrough(dateStr){const next=String(dateStr||'').trim();const prev=getSlipCheckedThrough();if(next&&prev&&parseYMD(next)<parseYMD(prev)){if(!confirm('チェック済み日を '+prev+' から '+next+' に戻しますか？\n（それ以降は未チェック扱いになります）'))return false;}DB.slipCheckedThrough=next;persist();if(typeof renderHistory==='function')renderHistory();renderBillingCheckCalendar();toast(next?'発行日 '+next+' までチェック済みにしました':'チェック済みを解除しました');return true;}
+function clearSlipCheckedThrough(){if(!getSlipCheckedThrough()){toast('チェック済みは未設定です');return;}if(!confirm('チェック済みを解除しますか？'))return;DB.slipCheckedThrough='';persist();if(typeof renderHistory==='function')renderHistory();renderBillingCheckCalendar();toast('チェック済みを解除しました');}
+let _checkCalY=0,_checkCalM=0;
+function syncCheckCalFromMeisai(){
+  const y=parseInt(document.getElementById('meisai-year')?.value,10);
+  const m=parseInt(document.getElementById('meisai-month')?.value,10);
+  if(y&&m){_checkCalY=y;_checkCalM=m;}
+  else{const n=new Date();_checkCalY=n.getFullYear();_checkCalM=n.getMonth()+1;}
+}
+function shiftCheckCal(delta){
+  if(!_checkCalY)syncCheckCalFromMeisai();
+  let y=_checkCalY,m=_checkCalM+delta;
+  while(m<1){m+=12;y--;}
+  while(m>12){m-=12;y++;}
+  _checkCalY=y;_checkCalM=m;
+  renderBillingCheckCalendar();
+}
+function issueDatesInMonth(y,m){
+  const set=new Set();
+  (DB.history||[]).forEach(h=>{
+    const p=String(h.date||'').split(/[\/\-]/).map(Number);
+    if(p.length>=3&&p[0]===y&&p[1]===m)set.add(p[0]+'/'+p[1]+'/'+p[2]);
+  });
+  return set;
+}
+function updateSlipCheckStatus(){
+  const through=getSlipCheckedThrough();
+  const text=through?('チェック済み: 発行日 '+through+' まで'):'チェック済み: 未設定';
+  ['slip-check-status','billing-check-status','meisai-check-status'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.textContent=text;
+  });
+}
+function renderBillingCheckCalendar(){
+  if(!_checkCalY||!_checkCalM)syncCheckCalFromMeisai();
+  const y=_checkCalY,m=_checkCalM;
+  const slipDays=issueDatesInMonth(y,m);
+  const through=getSlipCheckedThrough();
+  const today=todayIso();
+  const first=new Date(y,m-1,1);
+  const startDow=first.getDay();
+  const daysInMonth=new Date(y,m,0).getDate();
+  const dows=['日','月','火','水','木','金','土'];
+  let cells=dows.map(d=>'<div class="check-cal-dow">'+d+'</div>').join('');
+  for(let i=0;i<startDow;i++)cells+='<button type="button" class="check-cal-day muted" tabindex="-1" disabled></button>';
+  for(let d=1;d<=daysInMonth;d++){
+    const key=y+'/'+m+'/'+d;
+    const has=slipDays.has(key);
+    const checked=isIssueDateChecked(key);
+    const isThrough=through&&parseYMD(key)===parseYMD(through);
+    const isToday=key===today;
+    let cls='check-cal-day';
+    if(has)cls+=' has-slip';
+    if(checked)cls+=' checked';
+    if(isThrough)cls+=' through';
+    if(isToday)cls+=' today';
+    const title=key+(has?'（伝票あり）':'')+(checked?' チェック済':'');
+    cells+='<button type="button" class="'+cls+'" title="'+title+'" onclick="setSlipCheckedThrough(\''+key+'\')">'+d+'</button>';
+  }
+  const html='<div class="check-cal-hd"><button type="button" onclick="shiftCheckCal(-1)" aria-label="前月">‹</button><div class="check-cal-title">'+y+'年'+m+'月</div><button type="button" onclick="shiftCheckCal(1)" aria-label="翌月">›</button></div><div class="check-cal-grid">'+cells+'</div><div class="check-cal-legend"><span><i style="background:#f0f4fa;border:1px solid #ccd6e8"></i>伝票あり</span><span><i style="background:#c8e6c9;border:1px solid #81c784"></i>チェック済</span><span><i style="outline:2px solid #2e7d32"></i>境界日</span></div>';
+  ['billing-check-cal','meisai-check-cal'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.innerHTML=html;
+  });
+  updateSlipCheckStatus();
+}
 function parkingBillingName(customer){return String(customer||'')+' 駐車場代';}
 function buildParkingInvoicesFromRecs(recs){const park=(recs||[]).filter(h=>Number(h.parkingFee)>0);if(!park.length)return null;if(park.length>14){/* keep newest-sorted order already */}return park.slice(0,14).map((h,idx)=>({invoiceNo:String(idx+1),deliveryDate:historyDeliveryDate(h),items:[{name:'駐車場代',price:Number(h.parkingFee),qty:1}]}));}
 function toHalfWidthDigits(s){return String(s).replace(/[０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0));}
@@ -1460,7 +1556,7 @@ function assignUniqueSheetNames(meisaiData){
   return meisaiData;
 }
 function xlCol(n){let s='';while(n>0){const r=(n-1)%26;s=String.fromCharCode(65+r)+s;n=Math.floor((n-1)/26);}return s;}
-function initMeisaiMonth(){const y=document.getElementById('meisai-year'),m=document.getElementById('meisai-month');if(!y||!m)return;const now=new Date();y.value=now.getFullYear();m.value=now.getMonth()+1;if(typeof renderParkingFeeCorner==='function')renderParkingFeeCorner();}
+function initMeisaiMonth(){const y=document.getElementById('meisai-year'),m=document.getElementById('meisai-month');if(!y||!m)return;const now=new Date();y.value=now.getFullYear();m.value=now.getMonth()+1;if(typeof renderParkingFeeCorner==='function')renderParkingFeeCorner();syncCheckCalFromMeisai();renderBillingCheckCalendar();}
 function updateBillingPendingBadge(){const el=document.getElementById('billing-pending-badge');if(!el)return;const pending=(DB.history||[]).filter(h=>!h.billingExportedAt);const n=pending.filter(isExportableHist).length;el.style.display=n?'inline':'none';el.textContent='未反映: '+n+'件';}
 function fillParkingFeeClientSel(){
   const sel=document.getElementById('parking-fee-client');
@@ -1941,6 +2037,12 @@ function openMeisaiViewer(mode,opts){
   document.getElementById('meisai-viewer-period').textContent=periodText;
   document.getElementById('meisai-viewer-count').textContent=`${_meisaiViewerData.length}店舗`;
   document.getElementById('meisai-viewer').classList.add('open');
+  if(_meisaiViewerSource==='month'&&year&&month){
+    _checkCalY=year;_checkCalM=month;
+  }else{
+    syncCheckCalFromMeisai();
+  }
+  renderBillingCheckCalendar();
   renderMeisaiViewerList();
   if(_meisaiViewerData.length){
     selectMeisaiViewer(0);
@@ -2027,7 +2129,8 @@ function importJSON(e){const file=e.target.files[0];if(!file)return;const r=new 
 // ===== マスタ管理 =====
 function showPanel(id,btn){
   if((((currentUser&&currentUser.role==='viewer')||isNexusMode()))&&id!=='billing')return;
-  document.querySelectorAll('.panel').forEach(p=>{p.classList.remove('on');p.style.height='';});document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));const panel=document.getElementById('panel-'+id);panel.classList.add('on');const scrollPanels=['master','history','data','help','billing'];if(scrollPanels.includes(id)){const hdrH=document.querySelector('.hdr').offsetHeight;const tabH=document.querySelector('.tabs').offsetHeight;panel.style.height=(window.innerHeight-hdrH-tabH)+'px';}if(btn&&btn.classList)btn.classList.add('on');else{const tabs=[...document.querySelectorAll('.tabs .tab')];const map={slip:0,history:1,master:2,data:3,billing:4,help:5};if(map[id]!=null&&tabs[map[id]])tabs[map[id]].classList.add('on');}if(id==='billing')renderParkingFeeCorner();}
+  document.querySelectorAll('.panel').forEach(p=>{p.classList.remove('on');p.style.height='';});document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));const panel=document.getElementById('panel-'+id);panel.classList.add('on');const scrollPanels=['master','history','data','help','billing'];if(scrollPanels.includes(id)){const hdrH=document.querySelector('.hdr').offsetHeight;const tabH=document.querySelector('.tabs').offsetHeight;panel.style.height=(window.innerHeight-hdrH-tabH)+'px';}if(btn&&btn.classList)btn.classList.add('on');else{const tabs=[...document.querySelectorAll('.tabs .tab')];const map={slip:0,history:1,master:2,data:3,billing:4,help:5};if(map[id]!=null&&tabs[map[id]])tabs[map[id]].classList.add('on');}if(id==='billing'){renderParkingFeeCorner();syncCheckCalFromMeisai();renderBillingCheckCalendar();}}
+function onMeisaiMonthChange(){renderParkingFeeCorner();syncCheckCalFromMeisai();renderBillingCheckCalendar();}
 function showCTab(id,btn){document.querySelectorAll('#m-panel-client .m-panel').forEach(p=>p.classList.remove('on'));document.querySelectorAll('#m-panel-client .m-tab').forEach(t=>t.classList.remove('on'));document.getElementById('c-panel-'+id).classList.add('on');if(btn)btn.classList.add('on');if(id==='new')renderCycBtns('nc-cyc-btns','nc-cyc','');}
 function showMTab(id,btn){document.querySelectorAll('.m-panel').forEach(p=>p.classList.remove('on'));document.querySelectorAll('.m-tab').forEach(t=>t.classList.remove('on'));document.getElementById('m-panel-'+id).classList.add('on');btn.classList.add('on');if(id==='product'){renderProducts();setNPCode();}if(id==='group'){renderGroups();renderClientGrpList();}if(id==='client')setNC2();}
 const CYC_DAYS=['月','火','水','木','金','土','日'];
@@ -2205,12 +2308,6 @@ function histMonthLabel(dateStr){
 function histMonthSortVal(label){
   const m=String(label||'').match(/(\d+)年(\d+)月/);
   return m?Number(m[1])*100+Number(m[2]):0;
-}
-function updateSlipCheckStatus(){
-  const el=document.getElementById('slip-check-status');
-  if(!el)return;
-  const through=getSlipCheckedThrough();
-  el.textContent=through?('チェック済み: 発行日 '+through+' まで'):'チェック済み: 未設定';
 }
 function renderHistory(){
   const el=document.getElementById('hlist');if(!el)return;
@@ -2489,6 +2586,10 @@ function resetRoleUi(){
   if(excelSec)excelSec.style.display='';
   const parkSec=document.getElementById('parking-fee-section');
   if(parkSec)parkSec.style.display='';
+  const checkSec=document.getElementById('billing-check-section');
+  if(checkSec)checkSec.style.display='';
+  const meisaiCheck=document.getElementById('meisai-check-wrap');
+  if(meisaiCheck)meisaiCheck.style.display='';
   const pendingBtn=document.getElementById('billing-pending-view-btn');
   if(pendingBtn)pendingBtn.style.display='';
   document.getElementById('user-mgr-btn').style.display='none';
@@ -2503,6 +2604,10 @@ function applyViewerUi(){
   if(excelSec)excelSec.style.display='none';
   const parkSec=document.getElementById('parking-fee-section');
   if(parkSec)parkSec.style.display='none';
+  const checkSec=document.getElementById('billing-check-section');
+  if(checkSec)checkSec.style.display='none';
+  const meisaiCheck=document.getElementById('meisai-check-wrap');
+  if(meisaiCheck)meisaiCheck.style.display='none';
   const pendingBtn=document.getElementById('billing-pending-view-btn');
   if(pendingBtn)pendingBtn.style.display='none';
 }
@@ -2754,6 +2859,7 @@ function closeLoginLog(){document.getElementById('loginlog-modal').style.display
 
 /* 更新情報（新しいものを上に追加） type: 'feat'=機能更新 / 'fix'=バグ修正 */
 const APP_UPDATES=[
+  {date:'2026-09-09',type:'feat',text:'請求タブに事務チェック用ミニカレンダーを追加（日付クリックで発行日までチェック済み）'},
   {date:'2026-09-09',type:'feat',text:'発行履歴に「発行日○○までチェック済み」を追加（事務確認・再発行警告と連携）'},
   {date:'2026-09-09',type:'feat',text:'同じ客先・納品日・品目内容の再発行時に警告。続行すると「同じ内容ですが発行しました」と表示'},
   {date:'2026-09-07',type:'feat',text:'発行履歴を月フォルダ→日付フォルダの入れ子表示に変更。保存期間を6か月に短縮'},
