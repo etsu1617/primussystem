@@ -744,6 +744,11 @@ select.cs:focus{outline:none;border-color:var(--ac)}
     <span style="font-size:15px;font-weight:600;color:var(--nv)">発行履歴</span>
     <button class="btn ng" style="padding:5px 12px;font-size:12px" onclick="clearHist()">全履歴クリア</button>
   </div>
+  <div id="slip-check-bar" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;padding:10px 12px;background:#eef6ee;border:1px solid #b7d4b7;border-radius:8px;font-size:13px;color:var(--tx)">
+    <span style="font-weight:700;color:#2e7d32">✓ 事務チェック</span>
+    <span id="slip-check-status" style="flex:1;min-width:160px">チェック済み: 未設定</span>
+    <button type="button" class="btn" style="font-size:12px;padding:5px 10px" onclick="clearSlipCheckedThrough()">解除</button>
+  </div>
   <div class="m-tabs" style="margin-bottom:12px">
     <button class="m-tab on" id="hist-tab-date" onclick="setHistView('date')">📅 発行日別</button>
     <button class="m-tab" id="hist-tab-client" onclick="setHistView('client')">🏢 客先別</button>
@@ -754,7 +759,7 @@ select.cs:focus{outline:none;border-color:var(--ac)}
     <button type="button" class="btn" style="font-size:12px;padding:7px 12px" onclick="selectAllVisibleHist()">表示中をすべて選択</button>
     <button type="button" class="btn" style="font-size:12px;padding:7px 12px" onclick="clearHistSelection()">選択解除</button>
   </div>
-  <div style="font-size:12px;color:var(--mu);margin-bottom:10px" id="hist-hint">月ごとのフォルダの中に発行日があります。フォルダをクリックして開きます。履歴の保存期間は<strong>6か月</strong>（納品日基準）です。</div>
+  <div style="font-size:12px;color:var(--mu);margin-bottom:10px" id="hist-hint">月ごとのフォルダの中に発行日があります。日付フォルダの「この日までチェック済み」で事務確認を記録できます。履歴の保存期間は<strong>6か月</strong>（納品日基準）です。</div>
   <div id="hlist"></div>
 </div>
 
@@ -862,6 +867,7 @@ select.cs:focus{outline:none;border-color:var(--ac)}
       <div class="help-step"><div class="help-step-num">5</div><div class="help-step-body"><div class="help-step-title">間違えたとき</div>完了画面の <span class="help-tag">入力に戻る（発行取消）</span> で履歴から取り消せます。</div></div>
       <div class="help-step"><div class="help-step-num">注意</div><div class="help-step-body"><div class="help-step-title">同じ内容の再発行</div>同じ客先・同じ納品日・同じ品目内容で発行しようとすると警告が出ます。それでも発行する場合は確認後に進められ、完了画面で「同じ内容ですが発行しました」と表示されます。</div></div>
       <div class="help-step"><div class="help-step-num">履歴</div><div class="help-step-body"><div class="help-step-title">まとめて再印刷</div><span class="help-tag">発行履歴</span>（発行日別は <strong>月 → 日付</strong> のフォルダ）で伝票左のチェックを入れ → <span class="help-tag">選択した伝票をまとめて印刷</span>。1件だけなら明細内の <span class="help-tag">伝票印刷</span> でも再発行できます。</div></div>
+      <div class="help-step"><div class="help-step-num">事務</div><div class="help-step-body"><div class="help-step-title">発行伝票のチェック済み</div><span class="help-tag">発行履歴</span> の日付フォルダで <span class="help-tag">この日までチェック済み</span> を押すと、その<strong>発行日以前</strong>を事務確認済みとして記録します（全体で1つ）。上部に「チェック済み: 発行日 ○○まで」と表示。同じ内容の再発行時、チェック済み期間の伝票と重複する場合は警告文にその旨が出ます。</div></div>
       <div class="help-note">💡 データはクラウド（Firebase）に自動保存されます。別のPCで開いても同じデータが表示されます。</div>
       <div class="help-note">💡 <strong>発行履歴の保存期間は6か月</strong>です（納品日基準）。6か月を超えた伝票はアプリ起動・クラウド読み込み時に自動削除されます。必要な分は事前にCSV/請求Excelで保存してください。</div>
     </div>
@@ -1034,7 +1040,7 @@ clients:{"SCAPES THE SUITE":{items:[{code:"P001",name:"コックコート"},{cod
 cycles:{"SCAPES THE SUITE":"水土","楽園　町田店":"火木土","楽園　相模原店":"月木","マキア　相模原店":"月木","マキア　町田店":"火","中沢小学校":"水金","境木小学校":"水金","バグース　町田東":"火土","隠れ房　町田":"火土","へぎそば清兵衛":"火土","ＧＣＣバグース　町田":"火土","天一　町田":"火土","町田　yusoshi":"火土","IVOホームズパスタトラットリア渋谷Part2":"月木","goo　italiano　渋谷本店":"月木","goo　italiano　代々木上原":"月木","ぬる燗佐藤　渋谷ヒカリエ":"月木","韓国大衆酒場　ラッキーソウル西新宿":"月木","ヘブンリー　代官山店":"月木","ベルサイユの豚":"月木","荒木山　東急プラザ渋谷店":"月木","田町　鳥心":"月木","やきとり　マルヒ":"月木","自由が丘まんぷく":"月木","代々木上原まんぷく":"月木","青山まんぷく":"月木","レッドペッパー　恵比寿":"月木","レッドペッパー　表参道":"月木","ローストビーフ大野　竹下口店":"月木","大豊記　恵比寿弐號房":"月木","大豊記　本館":"月木","大豊記　西新宿":"月木","茶茶花":"月木","わらやき屋　田町":"月木","熱中屋　田町三田LIVE":"月木","馬並み家　田町":"月木","ジンギスカン羊一":"月木","さかえや　恵比寿":"月木","ちいかわラーメン　渋谷店":"月木","比内亭　恵比寿":"月木","胡同　西麻布":"月木","穂のほまれ　西新宿店":"月木","美食米門　品川":"月木","門":"月木","鴨ときどき馬　品川本店":"月木","魚がし日本一　三田店":"月木","魚がし日本一　田町店":"月木","三軒茶屋病院":"月木","寿司カレッジ東京":"月木","酒とシャケとサーモンズ":"月木","コックマン":"月木","藤井茗縁":"月木","ＡＳＡＮＯＨＡ":"","炉端の佐藤　中目黒店":"月木","鮨　はつめ":"月木","鮨　謙心":"月木"}
 };
 
-let DB={clients:{},cycles:{},products:[],groups:[],clientGroups:{},clientOrder:{},closing:{},minCharge:{},deliveryFee:{},packagingFee:{},parkingEnabled:{},history:[]};
+let DB={clients:{},cycles:{},products:[],groups:[],clientGroups:{},clientOrder:{},closing:{},minCharge:{},deliveryFee:{},packagingFee:{},parkingEnabled:{},slipCheckedThrough:'',history:[]};
 let curC=null,qtys={},bikos={},extraItems=[],editC=null,lastSlip=null,openHistId=null,customDeliveryDate=null;
 let printMode=localStorage.getItem('purims_printmode')||'single',printQueue=[];
 let _issueSession=null,_lastAppliedSavedAt=null,_selfSaveTokens=new Set();
@@ -1049,13 +1055,13 @@ function persistHistoryLocal(){localStorage.setItem('purims_h',JSON.stringify(DB
 function load(){
   try{
     const saved=localStorage.getItem('purims_v14');
-    if(saved){const d=JSON.parse(saved);if(d.clients&&Object.keys(d.clients).length){DB.clients=d.clients;DB.cycles=d.cycles||{};DB.closing=d.closing||{};DB.minCharge=d.minCharge||{};DB.deliveryFee=d.deliveryFee||{};DB.packagingFee=d.packagingFee||{};DB.parkingEnabled=d.parkingEnabled||{};DB.products=d.products&&d.products.length?d.products:JSON.parse(JSON.stringify(INIT_PRODUCTS));DB.groups=d.groups&&d.groups.length?d.groups:JSON.parse(JSON.stringify(INIT_GROUPS));DB.clientGroups=d.clientGroups||JSON.parse(JSON.stringify(INIT_CLIENT_GROUPS));DB.clientOrder=d.clientOrder||{};loadLocalHistory();return;}}
+    if(saved){const d=JSON.parse(saved);if(d.clients&&Object.keys(d.clients).length){DB.clients=d.clients;DB.cycles=d.cycles||{};DB.closing=d.closing||{};DB.minCharge=d.minCharge||{};DB.deliveryFee=d.deliveryFee||{};DB.packagingFee=d.packagingFee||{};DB.parkingEnabled=d.parkingEnabled||{};DB.slipCheckedThrough=d.slipCheckedThrough||'';DB.products=d.products&&d.products.length?d.products:JSON.parse(JSON.stringify(INIT_PRODUCTS));DB.groups=d.groups&&d.groups.length?d.groups:JSON.parse(JSON.stringify(INIT_GROUPS));DB.clientGroups=d.clientGroups||JSON.parse(JSON.stringify(INIT_CLIENT_GROUPS));DB.clientOrder=d.clientOrder||{};loadLocalHistory();return;}}
   }catch(e){}
   DB.clients=JSON.parse(JSON.stringify(INIT_DATA.clients));DB.cycles=JSON.parse(JSON.stringify(INIT_DATA.cycles));DB.products=JSON.parse(JSON.stringify(INIT_PRODUCTS));DB.groups=JSON.parse(JSON.stringify(INIT_GROUPS));DB.clientGroups=JSON.parse(JSON.stringify(INIT_CLIENT_GROUPS));DB.history=[];
   loadLocalHistory();
 }
 function persistDraft(){
-  localStorage.setItem('purims_v14',JSON.stringify({clients:DB.clients,cycles:DB.cycles,products:DB.products,groups:DB.groups,clientGroups:DB.clientGroups,clientOrder:DB.clientOrder,closing:DB.closing,minCharge:DB.minCharge||{},deliveryFee:DB.deliveryFee||{},packagingFee:DB.packagingFee||{},parkingEnabled:DB.parkingEnabled||{}}));
+  localStorage.setItem('purims_v14',JSON.stringify({clients:DB.clients,cycles:DB.cycles,products:DB.products,groups:DB.groups,clientGroups:DB.clientGroups,clientOrder:DB.clientOrder,closing:DB.closing,minCharge:DB.minCharge||{},deliveryFee:DB.deliveryFee||{},packagingFee:DB.packagingFee||{},parkingEnabled:DB.parkingEnabled||{},slipCheckedThrough:DB.slipCheckedThrough||''}));
 }
 function persistLocal(){
   persistDraft();
@@ -1178,7 +1184,8 @@ function showPrev(){
   const dupHist=findDuplicateHist(curC,ds,allItems);
   let issuedAsDuplicate=false;
   if(dupHist){
-    const ok=confirm('同じ客先・同じ納品日・同じ品目内容の伝票が既にあります。\n\n客先: '+curC+'\n納品日: '+ds+(dupHist.date?'\n（既存の発行日: '+dupHist.date+'）':'')+'\n\nそれでも発行しますか？');
+    const checkedNote=(dupHist.date&&isIssueDateChecked(dupHist.date))?'\n※チェック済み期間の伝票と重複しています':'';
+    const ok=confirm('同じ客先・同じ納品日・同じ品目内容の伝票が既にあります。\n\n客先: '+curC+'\n納品日: '+ds+(dupHist.date?'\n（既存の発行日: '+dupHist.date+'）':'')+checkedNote+'\n\nそれでも発行しますか？');
     if(!ok){toast('発行をキャンセルしました');return;}
     issuedAsDuplicate=true;
   }
@@ -1287,7 +1294,7 @@ function exportMasterCSV(){const clients=DB.clients||{};const names=Object.keys(
 function exportCSV(){const hist=DB.history;if(!hist||!hist.length){toast('発行履歴がありません','e');return;}const tStr=todayIso();const todayRecs=hist.filter(r=>r.date===tStr);const useAll=!todayRecs.length;const recs=useAll?hist:todayRecs;const rows=[['客先名','納品日','品目コード','品目名','数量','備考']];recs.forEach(r=>{r.items.forEach(it=>{rows.push([r.client||'',r.deliveryDate||'',it.code||'',it.name||'',it.qty||0,it.biko||'']);});});const bom='\uFEFF';const csv=bom+rows.map(r=>r.map(v=>{const s=String(v);return s.includes(',')||s.includes('"')||s.includes('\n')?'"'+s.replace(/"/g,'""')+'"':s;}).join(',')).join('\r\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='purims_'+fileDate()+(useAll?'_全件':'_本日')+'.csv';a.click();URL.revokeObjectURL(url);toast((useAll?'全'+recs.length+'件':'本日'+recs.length+'件')+'のCSVを出力しました');}
 function dlFile(c,f,t){const b=new Blob([t==='text/csv'?'\uFEFF'+c:c],{type:t+';charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=f;a.click();URL.revokeObjectURL(a.href);}
 function dlCSV(type){const td=fileDate();if(type==='clients'){let rows=[['客先名','品番','品目名','納品サイクル','グループ']];Object.keys(DB.clients).sort((a,b)=>a.localeCompare(b,'ja')).forEach(c=>{const cyc=DB.cycles[c]||'';const g=getClientGroup(c);(DB.clients[c].items||[]).forEach(it=>rows.push([c,it.code,it.name,cyc,g?g.name:'']));});dlFile(rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n'),`purims_master_${td}.csv`,'text/csv');toast('マスタCSVをダウンロードしました');}else if(type==='history'){let rows=[['発行日','客先名','納品日','品番','品目名','数量','合計']];DB.history.forEach(h=>{h.items.forEach((it,i)=>rows.push([h.date,h.client,h.deliveryDate,it.code,it.name,it.qty,i===0?h.total:'']));});dlFile(rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n'),`purims_history_${td}.csv`,'text/csv');toast('履歴CSVをダウンロードしました');}}
-function dlJSON(){const td=fileDate();dlFile(JSON.stringify({clients:DB.clients,cycles:DB.cycles,products:DB.products,groups:DB.groups,clientGroups:DB.clientGroups,clientOrder:DB.clientOrder||{},closing:DB.closing,minCharge:DB.minCharge||{},deliveryFee:DB.deliveryFee||{},packagingFee:DB.packagingFee||{},parkingEnabled:DB.parkingEnabled||{},history:DB.history||[],exportedAt:new Date().toISOString()},null,2),`purims_backup_${td}.json`,'application/json');
+function dlJSON(){const td=fileDate();dlFile(JSON.stringify({clients:DB.clients,cycles:DB.cycles,products:DB.products,groups:DB.groups,clientGroups:DB.clientGroups,clientOrder:DB.clientOrder||{},closing:DB.closing,minCharge:DB.minCharge||{},deliveryFee:DB.deliveryFee||{},packagingFee:DB.packagingFee||{},parkingEnabled:DB.parkingEnabled||{},slipCheckedThrough:DB.slipCheckedThrough||'',history:DB.history||[],exportedAt:new Date().toISOString()},null,2),`purims_backup_${td}.json`,'application/json');
 localStorage.setItem('purims_backed_up','1');toast('JSONバックアップをダウンロードしました');}
 
 function parseClosingDay(s){if(!s)return 0;if(String(s).includes('20'))return 20;if(String(s).includes('25'))return 25;if(String(s).includes('末'))return 99;return 0;}
@@ -1329,6 +1336,10 @@ function getMinCharge(customer){const n=Number(DB.minCharge&&DB.minCharge[custom
 function getDeliveryFee(customer){const n=Number(DB.deliveryFee&&DB.deliveryFee[customer]);return n>0?n:0;}
 function getPackagingFee(customer){const n=Number(DB.packagingFee&&DB.packagingFee[customer]);return n>0?n:0;}
 function isParkingEnabled(customer){return !!(DB.parkingEnabled&&DB.parkingEnabled[customer]);}
+function getSlipCheckedThrough(){return DB.slipCheckedThrough||'';}
+function isIssueDateChecked(dateStr){const through=getSlipCheckedThrough();if(!through||!dateStr)return false;const a=parseYMD(dateStr),b=parseYMD(through);return a&&b&&a<=b;}
+function setSlipCheckedThrough(dateStr){const next=String(dateStr||'').trim();const prev=getSlipCheckedThrough();if(next&&prev&&parseYMD(next)<parseYMD(prev)){if(!confirm('チェック済み日を '+prev+' から '+next+' に戻しますか？\n（それ以降は未チェック扱いになります）'))return false;}DB.slipCheckedThrough=next;persist();renderHistory();toast(next?'発行日 '+next+' までチェック済みにしました':'チェック済みを解除しました');return true;}
+function clearSlipCheckedThrough(){if(!getSlipCheckedThrough()){toast('チェック済みは未設定です');return;}if(!confirm('チェック済みを解除しますか？'))return;DB.slipCheckedThrough='';persist();renderHistory();toast('チェック済みを解除しました');}
 function parkingBillingName(customer){return String(customer||'')+' 駐車場代';}
 function buildParkingInvoicesFromRecs(recs){const park=(recs||[]).filter(h=>Number(h.parkingFee)>0);if(!park.length)return null;if(park.length>14){/* keep newest-sorted order already */}return park.slice(0,14).map((h,idx)=>({invoiceNo:String(idx+1),deliveryDate:historyDeliveryDate(h),items:[{name:'駐車場代',price:Number(h.parkingFee),qty:1}]}));}
 function toHalfWidthDigits(s){return String(s).replace(/[０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0));}
@@ -2011,7 +2022,7 @@ document.addEventListener('keydown',e=>{
   if(document.getElementById('meisai-viewer')?.classList.contains('open'))closeMeisaiViewer();
 });
 function importCSV(e){const file=e.target.files[0];if(!file)return;const r=new FileReader();r.onload=ev=>{try{const lines=ev.target.result.replace(/\r/g,'').split('\n').filter(l=>l.trim());const nc={};const ncy={};lines.slice(1).forEach(line=>{const cols=line.split(',').map(c=>c.replace(/^"|"$/g,'').replace(/""/g,'"').trim());if(cols.length<3||!cols[0])return;const[client,code,name,cyc]=cols;if(!nc[client])nc[client]={items:[]};if(name)nc[client].items.push({code:code||'P000',name});if(cyc)ncy[client]=cyc;});if(!Object.keys(nc).length){toast('読み込めるデータがありませんでした','e');return;}if(!confirm(`${Object.keys(nc).length}件の客先データをインポートします。続けますか？`))return;Object.assign(DB.clients,nc);Object.assign(DB.cycles,ncy);persist();fillSel('csel');fillSel('msel');toast(`${Object.keys(nc).length}件をインポートしました`);}catch(err){toast('CSVの読み込みに失敗しました','e');}e.target.value='';};r.readAsText(file,'UTF-8');}
-function importJSON(e){const file=e.target.files[0];if(!file)return;const r=new FileReader();r.onload=ev=>{try{const d=JSON.parse(ev.target.result);if(!d.clients){toast('フォーマットが違います','e');return;}if(!confirm('バックアップから全データを復元します。続けますか？'))return;DB.clients=d.clients;DB.cycles=d.cycles||{};if(d.products&&d.products.length)DB.products=d.products;if(d.groups&&d.groups.length)DB.groups=d.groups;if(d.clientGroups)DB.clientGroups=d.clientGroups;if(d.clientOrder)DB.clientOrder=d.clientOrder;if(d.closing)DB.closing=d.closing;if(d.minCharge)DB.minCharge=d.minCharge;if(d.deliveryFee)DB.deliveryFee=d.deliveryFee;if(d.packagingFee)DB.packagingFee=d.packagingFee;if(d.parkingEnabled)DB.parkingEnabled=d.parkingEnabled;if(Array.isArray(d.history)){DB.history=d.history;persistHistoryLocal();if(currentUser){const obj={};DB.history.forEach(h=>{if(h&&h.id!=null)obj[String(h.id)]=h;});db.ref('purims/history').set(obj).catch(e=>toast('履歴の復元に失敗しました: '+e.message,'e'));}}persist();fillSel('csel');fillSel('msel');fillGrpSel('e-grp');fillGrpSel('nc-grp');renderProducts();renderHistory();renderGroups();renderClientGrpList();const pruned=pruneExpiredHistory({quiet:true});const skipped=markOutOfScopeAsBilled();updateBillingPendingBadge();const parts=[];if(pruned)parts.push(`保存期間超過 ${pruned}件削除`);if(skipped)parts.push(`7月以前 ${skipped}件を請求対象外`);toast(parts.length?`${Object.keys(DB.clients).length}件を復元しました（${parts.join('、')}）`:`${Object.keys(DB.clients).length}件を復元しました`);}catch(err){toast('JSONの読み込みに失敗しました','e');}e.target.value='';};r.readAsText(file,'UTF-8');}
+function importJSON(e){const file=e.target.files[0];if(!file)return;const r=new FileReader();r.onload=ev=>{try{const d=JSON.parse(ev.target.result);if(!d.clients){toast('フォーマットが違います','e');return;}if(!confirm('バックアップから全データを復元します。続けますか？'))return;DB.clients=d.clients;DB.cycles=d.cycles||{};if(d.products&&d.products.length)DB.products=d.products;if(d.groups&&d.groups.length)DB.groups=d.groups;if(d.clientGroups)DB.clientGroups=d.clientGroups;if(d.clientOrder)DB.clientOrder=d.clientOrder;if(d.closing)DB.closing=d.closing;if(d.minCharge)DB.minCharge=d.minCharge;if(d.deliveryFee)DB.deliveryFee=d.deliveryFee;if(d.packagingFee)DB.packagingFee=d.packagingFee;if(d.parkingEnabled)DB.parkingEnabled=d.parkingEnabled;if(d.slipCheckedThrough!=null)DB.slipCheckedThrough=d.slipCheckedThrough||'';if(Array.isArray(d.history)){DB.history=d.history;persistHistoryLocal();if(currentUser){const obj={};DB.history.forEach(h=>{if(h&&h.id!=null)obj[String(h.id)]=h;});db.ref('purims/history').set(obj).catch(e=>toast('履歴の復元に失敗しました: '+e.message,'e'));}}persist();fillSel('csel');fillSel('msel');fillGrpSel('e-grp');fillGrpSel('nc-grp');renderProducts();renderHistory();renderGroups();renderClientGrpList();const pruned=pruneExpiredHistory({quiet:true});const skipped=markOutOfScopeAsBilled();updateBillingPendingBadge();const parts=[];if(pruned)parts.push(`保存期間超過 ${pruned}件削除`);if(skipped)parts.push(`7月以前 ${skipped}件を請求対象外`);toast(parts.length?`${Object.keys(DB.clients).length}件を復元しました（${parts.join('、')}）`:`${Object.keys(DB.clients).length}件を復元しました`);}catch(err){toast('JSONの読み込みに失敗しました','e');}e.target.value='';};r.readAsText(file,'UTF-8');}
 
 // ===== マスタ管理 =====
 function showPanel(id,btn){
@@ -2195,12 +2206,19 @@ function histMonthSortVal(label){
   const m=String(label||'').match(/(\d+)年(\d+)月/);
   return m?Number(m[1])*100+Number(m[2]):0;
 }
+function updateSlipCheckStatus(){
+  const el=document.getElementById('slip-check-status');
+  if(!el)return;
+  const through=getSlipCheckedThrough();
+  el.textContent=through?('チェック済み: 発行日 '+through+' まで'):'チェック済み: 未設定';
+}
 function renderHistory(){
   const el=document.getElementById('hlist');if(!el)return;
   const hint=document.getElementById('hist-hint');
   const bar=document.getElementById('hist-print-bar');
   const recs=histFiltered();
   updateHistSelCount();
+  updateSlipCheckStatus();
   if(!(DB.history||[]).length){
     if(bar)bar.style.display='none';
     el.innerHTML='<div class="emp">発行履歴はありません</div>';if(hint)hint.textContent='';return;
@@ -2208,7 +2226,7 @@ function renderHistory(){
   if(bar)bar.style.display='flex';
   if(!recs.length){el.innerHTML='<div class="emp">該当する履歴がありません</div>';if(hint)hint.textContent='検索条件に一致する伝票はありません。';return;}
   const byClient=histViewMode==='client';
-  if(hint)hint.textContent=(byClient?'客先ごとにまとまっています。フォルダをクリックして開きます。':'月ごとのフォルダの中に発行日があります。フォルダをクリックして開きます。')+' チェックを入れた伝票だけまとめて再印刷できます。履歴の保存期間は6か月（納品日基準）です。';
+  if(hint)hint.textContent=(byClient?'客先ごとにまとまっています。フォルダをクリックして開きます。':'月ごとのフォルダの中に発行日があります。フォルダをクリックして開きます。日付フォルダの「この日までチェック済み」で事務確認済みを記録できます。')+' チェックを入れた伝票だけまとめて再印刷できます。履歴の保存期間は6か月（納品日基準）です。';
   if(byClient){
     const groups={};
     recs.forEach(h=>{const k=h.client||'（客先なし）';if(!groups[k])groups[k]=[];groups[k].push(h);});
@@ -2235,22 +2253,31 @@ function renderHistory(){
   el.innerHTML=monthKeys.map(mk=>{
     const days=byMonth[mk];
     const dayKeys=Object.keys(days).sort((a,b)=>parseYMD(b)-parseYMD(a));
-    let monthCount=0,monthTotal=0;
-    dayKeys.forEach(dk=>{days[dk].forEach(h=>{monthCount++;monthTotal+=h.total;});});
+    let monthCount=0,monthTotal=0,monthAllChecked=dayKeys.length>0;
+    dayKeys.forEach(dk=>{
+      days[dk].forEach(h=>{monthCount++;monthTotal+=h.total;});
+      if(!isIssueDateChecked(dk))monthAllChecked=false;
+    });
     const monthFolderKey='m|'+mk;
     const monthOpen=histFolderCollapsed[monthFolderKey]===true;
     const monthEnc=encodeURIComponent(monthFolderKey);
+    const monthMark=monthAllChecked?' ✓':'';
     const dayHtml=dayKeys.map(dk=>{
       const items=days[dk].slice().sort((a,b)=>(b.id||0)-(a.id||0));
       const total=items.reduce((sum,h)=>sum+h.total,0);
       const dayFolderKey='d|'+dk;
       const dayOpen=histFolderCollapsed[dayFolderKey]===true;
       const dayEnc=encodeURIComponent(dayFolderKey);
-      return '<div style="margin:8px 10px 0 10px"><div onclick="event.stopPropagation();toggleHistFolder(\''+dayEnc+'\')" style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:#3d4f6f;color:#fff;border-radius:'+(dayOpen?'8px 8px 0 0':'8px')+';cursor:pointer;user-select:none"><span style="font-size:15px">📁</span><span style="font-weight:700;font-size:13px;flex:1">'+escH(dk)+'</span><span style="font-size:11px;opacity:.85">'+items.length+'件　合計 '+total+'点</span><span style="font-size:12px;display:inline-block;transform:rotate('+(dayOpen?'180':'0')+'deg)">▼</span></div><div style="display:'+(dayOpen?'block':'none')+';border:0.5px solid #3d4f6f;border-top:none;border-radius:0 0 8px 8px;overflow:hidden">'+items.map(h=>histSlipHtml(h,false)).join('')+'</div></div>';
+      const dayChecked=isIssueDateChecked(dk);
+      const dayMark=dayChecked?' ✓':'';
+      const dkAttr=encodeURIComponent(dk);
+      const checkBtn='<button type="button" onclick="event.stopPropagation();setSlipCheckedThrough(decodeURIComponent(\''+dkAttr+'\'))" style="margin-left:8px;padding:3px 8px;border:none;border-radius:4px;background:'+(dayChecked?'#c8e6c9':'#fff')+';color:#1b5e20;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">'+(dayChecked?'チェック済':'この日までチェック済み')+'</button>';
+      return '<div style="margin:8px 10px 0 10px"><div onclick="event.stopPropagation();toggleHistFolder(\''+dayEnc+'\')" style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:'+(dayChecked?'#2e5a3c':'#3d4f6f')+';color:#fff;border-radius:'+(dayOpen?'8px 8px 0 0':'8px')+';cursor:pointer;user-select:none"><span style="font-size:15px">📁</span><span style="font-weight:700;font-size:13px;flex:1">'+escH(dk)+dayMark+'</span><span style="font-size:11px;opacity:.85">'+items.length+'件　合計 '+total+'点</span>'+checkBtn+'<span style="font-size:12px;display:inline-block;transform:rotate('+(dayOpen?'180':'0')+'deg)">▼</span></div><div style="display:'+(dayOpen?'block':'none')+';border:0.5px solid '+(dayChecked?'#2e5a3c':'#3d4f6f')+';border-top:none;border-radius:0 0 8px 8px;overflow:hidden">'+items.map(h=>histSlipHtml(h,false)).join('')+'</div></div>';
     }).join('')+'<div style="height:8px"></div>';
-    return '<div style="margin-bottom:12px"><div onclick="toggleHistFolder(\''+monthEnc+'\')" style="display:flex;align-items:center;gap:10px;padding:9px 14px;background:var(--nv);color:#fff;border-radius:'+(monthOpen?'8px 8px 0 0':'8px')+';cursor:pointer;user-select:none"><span style="font-size:16px">📅</span><span style="font-weight:700;font-size:14px;flex:1">'+escH(mk)+'</span><span style="font-size:12px;opacity:.8">'+monthCount+'件　合計 '+monthTotal+'点</span><span style="font-size:13px;display:inline-block;transform:rotate('+(monthOpen?'180':'0')+'deg)">▼</span></div><div style="display:'+(monthOpen?'block':'none')+';border:0.5px solid var(--nv);border-top:none;border-radius:0 0 8px 8px;background:#f4f6fa">'+dayHtml+'</div></div>';
+    return '<div style="margin-bottom:12px"><div onclick="toggleHistFolder(\''+monthEnc+'\')" style="display:flex;align-items:center;gap:10px;padding:9px 14px;background:var(--nv);color:#fff;border-radius:'+(monthOpen?'8px 8px 0 0':'8px')+';cursor:pointer;user-select:none"><span style="font-size:16px">📅</span><span style="font-weight:700;font-size:14px;flex:1">'+escH(mk)+monthMark+'</span><span style="font-size:12px;opacity:.8">'+monthCount+'件　合計 '+monthTotal+'点</span><span style="font-size:13px;display:inline-block;transform:rotate('+(monthOpen?'180':'0')+'deg)">▼</span></div><div style="display:'+(monthOpen?'block':'none')+';border:0.5px solid var(--nv);border-top:none;border-radius:0 0 8px 8px;background:#f4f6fa">'+dayHtml+'</div></div>';
   }).join('');
 }
+
 function toggleHist(id){openHistId=openHistId===id?null:id;renderHistory();}
 function delHist(id){if(!confirm('この履歴を削除しますか？'))return;DB.history=DB.history.filter(h=>h.id!==id);histSelectedIds.delete(id);persistHistoryLocal();if(openHistId===id)openHistId=null;renderHistory();fbDeleteHistoryEntry(id);toast('削除しました');}
 function dlHistCSV(id){const h=DB.history.find(r=>r.id===id);if(!h)return;let rows=[['客先名','納品日','品番','品目名','数量']];h.items.forEach(it=>rows.push([h.client,h.deliveryDate,it.code,it.name,it.qty]));dlFile(rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n'),`purims_${h.client}_${h.date.replace(/\//g,'-')}.csv`,'text/csv');toast('CSVをダウンロードしました');}
@@ -2285,7 +2312,7 @@ function fbSave(){
   if(!currentUser)return Promise.resolve();
   const tok=markSelfSaving();
   // undefined（例: 請求単価クリア）を残すと Firebase 全体が失敗するためサニタイズ
-  const master=sanitizeForFirebase({clients:DB.clients,cycles:DB.cycles,products:DB.products,groups:DB.groups,clientGroups:DB.clientGroups,clientOrder:DB.clientOrder||{},closing:DB.closing,minCharge:DB.minCharge||{},deliveryFee:DB.deliveryFee||{},packagingFee:DB.packagingFee||{},parkingEnabled:DB.parkingEnabled||{},savedAt:new Date().toISOString(),saveId:tok});
+  const master=sanitizeForFirebase({clients:DB.clients,cycles:DB.cycles,products:DB.products,groups:DB.groups,clientGroups:DB.clientGroups,clientOrder:DB.clientOrder||{},closing:DB.closing,minCharge:DB.minCharge||{},deliveryFee:DB.deliveryFee||{},packagingFee:DB.packagingFee||{},parkingEnabled:DB.parkingEnabled||{},slipCheckedThrough:DB.slipCheckedThrough||'',savedAt:new Date().toISOString(),saveId:tok});
   return db.ref('purims/data').transaction(current=>{
     if(current&&current.savedAt&&_lastAppliedSavedAt&&current.savedAt!==_lastAppliedSavedAt){
       return; // 他PCが先に更新 → abort
@@ -2355,11 +2382,11 @@ function fbApplyData(d,history){
   DB.products=d.products&&d.products.length?d.products:DB.products;
   DB.groups=d.groups&&d.groups.length?d.groups:DB.groups;
   DB.clientGroups=d.clientGroups||{};
-  DB.clientOrder=d.clientOrder||{};DB.closing=d.closing||{};DB.minCharge=d.minCharge||{};DB.deliveryFee=d.deliveryFee||{};DB.packagingFee=d.packagingFee||{};DB.parkingEnabled=d.parkingEnabled||{};
+  DB.clientOrder=d.clientOrder||{};DB.closing=d.closing||{};DB.minCharge=d.minCharge||{};DB.deliveryFee=d.deliveryFee||{};DB.packagingFee=d.packagingFee||{};DB.parkingEnabled=d.parkingEnabled||{};DB.slipCheckedThrough=d.slipCheckedThrough||'';
   _lastAppliedSavedAt=d.savedAt||null;
   DB.history=parseHistory(history);
   persistHistoryLocal();
-  localStorage.setItem('purims_v14',JSON.stringify({clients:DB.clients,cycles:DB.cycles,products:DB.products,groups:DB.groups,clientGroups:DB.clientGroups,clientOrder:DB.clientOrder,closing:DB.closing,minCharge:DB.minCharge||{},deliveryFee:DB.deliveryFee||{},packagingFee:DB.packagingFee||{},parkingEnabled:DB.parkingEnabled||{}}));
+  localStorage.setItem('purims_v14',JSON.stringify({clients:DB.clients,cycles:DB.cycles,products:DB.products,groups:DB.groups,clientGroups:DB.clientGroups,clientOrder:DB.clientOrder,closing:DB.closing,minCharge:DB.minCharge||{},deliveryFee:DB.deliveryFee||{},packagingFee:DB.packagingFee||{},parkingEnabled:DB.parkingEnabled||{},slipCheckedThrough:DB.slipCheckedThrough||''}));
   fillSel("csel",curC);fillSel("msel",editC);fillGrpSel("e-grp");fillGrpSel("nc-grp");
   renderProducts();renderHistory();renderGroups();renderClientGrpList();
   const pruned=pruneExpiredHistory({quiet:true});
@@ -2400,9 +2427,9 @@ function fbStartListeners(){
     DB.clients=d.clients;DB.cycles=d.cycles||{};
     DB.products=d.products&&d.products.length?d.products:DB.products;
     DB.groups=d.groups&&d.groups.length?d.groups:DB.groups;
-    DB.clientGroups=d.clientGroups||{};DB.clientOrder=d.clientOrder||{};DB.closing=d.closing||{};DB.minCharge=d.minCharge||{};DB.deliveryFee=d.deliveryFee||{};DB.packagingFee=d.packagingFee||{};DB.parkingEnabled=d.parkingEnabled||{};
+    DB.clientGroups=d.clientGroups||{};DB.clientOrder=d.clientOrder||{};DB.closing=d.closing||{};DB.minCharge=d.minCharge||{};DB.deliveryFee=d.deliveryFee||{};DB.packagingFee=d.packagingFee||{};DB.parkingEnabled=d.parkingEnabled||{};DB.slipCheckedThrough=d.slipCheckedThrough||'';
     _lastAppliedSavedAt=d.savedAt||_lastAppliedSavedAt;
-    localStorage.setItem('purims_v14',JSON.stringify({clients:DB.clients,cycles:DB.cycles,products:DB.products,groups:DB.groups,clientGroups:DB.clientGroups,clientOrder:DB.clientOrder,closing:DB.closing,minCharge:DB.minCharge||{},deliveryFee:DB.deliveryFee||{},packagingFee:DB.packagingFee||{},parkingEnabled:DB.parkingEnabled||{}}));
+    localStorage.setItem('purims_v14',JSON.stringify({clients:DB.clients,cycles:DB.cycles,products:DB.products,groups:DB.groups,clientGroups:DB.clientGroups,clientOrder:DB.clientOrder,closing:DB.closing,minCharge:DB.minCharge||{},deliveryFee:DB.deliveryFee||{},packagingFee:DB.packagingFee||{},parkingEnabled:DB.parkingEnabled||{},slipCheckedThrough:DB.slipCheckedThrough||''}));
     fillSel("csel",curC);fillSel("msel",editC);fillGrpSel("e-grp");fillGrpSel("nc-grp");
     renderProducts();renderGroups();renderClientGrpList();
     toast("☁️ 他のPCでマスタが更新されました");
@@ -2610,7 +2637,7 @@ function doLogout(){
 function exitApp(){
   clearTimeout(persist._t);
   persistHistoryLocal();
-  localStorage.setItem('purims_v14',JSON.stringify({clients:DB.clients,cycles:DB.cycles,products:DB.products,groups:DB.groups,clientGroups:DB.clientGroups,clientOrder:DB.clientOrder,closing:DB.closing,minCharge:DB.minCharge||{},deliveryFee:DB.deliveryFee||{},packagingFee:DB.packagingFee||{},parkingEnabled:DB.parkingEnabled||{}}));
+  localStorage.setItem('purims_v14',JSON.stringify({clients:DB.clients,cycles:DB.cycles,products:DB.products,groups:DB.groups,clientGroups:DB.clientGroups,clientOrder:DB.clientOrder,closing:DB.closing,minCharge:DB.minCharge||{},deliveryFee:DB.deliveryFee||{},packagingFee:DB.packagingFee||{},parkingEnabled:DB.parkingEnabled||{},slipCheckedThrough:DB.slipCheckedThrough||''}));
   toast('保存しています…');
   Promise.resolve(fbSave()).then(()=>toast('保存しました'));
 }
@@ -2727,6 +2754,7 @@ function closeLoginLog(){document.getElementById('loginlog-modal').style.display
 
 /* 更新情報（新しいものを上に追加） type: 'feat'=機能更新 / 'fix'=バグ修正 */
 const APP_UPDATES=[
+  {date:'2026-09-09',type:'feat',text:'発行履歴に「発行日○○までチェック済み」を追加（事務確認・再発行警告と連携）'},
   {date:'2026-09-09',type:'feat',text:'同じ客先・納品日・品目内容の再発行時に警告。続行すると「同じ内容ですが発行しました」と表示'},
   {date:'2026-09-07',type:'feat',text:'発行履歴を月フォルダ→日付フォルダの入れ子表示に変更。保存期間を6か月に短縮'},
   {date:'2026-09-07',type:'fix',text:'伝票発行タブからExcel出力ボタン類を外し、印刷モードと表示倍率だけにした'},
