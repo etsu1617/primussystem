@@ -860,6 +860,7 @@ select.cs:focus{outline:none;border-color:var(--ac)}
       <div class="help-step"><div class="help-step-num">3</div><div class="help-step-body"><div class="help-step-title">数量を入力して伝票発行</div>品目一覧に数量を入力し、<span class="help-tag">伝票発行</span>ボタンを押します。発行しない客先は <span class="help-tag">⏭ 飛ばす</span> で次の客先へ進めます（リストから選び直す必要はありません）。</div></div>
       <div class="help-step"><div class="help-step-num">4</div><div class="help-step-body"><div class="help-step-title">次の客先へ</div>発行後は <span class="help-tag">▶ 客先名</span> で次へ。<span class="help-tag">客先選択に戻る</span> はリストの先頭からやり直すとき。</div></div>
       <div class="help-step"><div class="help-step-num">5</div><div class="help-step-body"><div class="help-step-title">間違えたとき</div>完了画面の <span class="help-tag">入力に戻る（発行取消）</span> で履歴から取り消せます。</div></div>
+      <div class="help-step"><div class="help-step-num">注意</div><div class="help-step-body"><div class="help-step-title">同じ内容の再発行</div>同じ客先・同じ納品日・同じ品目内容で発行しようとすると警告が出ます。それでも発行する場合は確認後に進められ、完了画面で「同じ内容ですが発行しました」と表示されます。</div></div>
       <div class="help-step"><div class="help-step-num">履歴</div><div class="help-step-body"><div class="help-step-title">まとめて再印刷</div><span class="help-tag">発行履歴</span>（発行日別は <strong>月 → 日付</strong> のフォルダ）で伝票左のチェックを入れ → <span class="help-tag">選択した伝票をまとめて印刷</span>。1件だけなら明細内の <span class="help-tag">伝票印刷</span> でも再発行できます。</div></div>
       <div class="help-note">💡 データはクラウド（Firebase）に自動保存されます。別のPCで開いても同じデータが表示されます。</div>
       <div class="help-note">💡 <strong>発行履歴の保存期間は6か月</strong>です（納品日基準）。6か月を超えた伝票はアプリ起動・クラウド読み込み時に自動削除されます。必要な分は事前にCSV/請求Excelで保存してください。</div>
@@ -1039,7 +1040,8 @@ let printMode=localStorage.getItem('purims_printmode')||'single',printQueue=[];
 let _issueSession=null,_lastAppliedSavedAt=null,_selfSaveTokens=new Set();
 
 function newHistId(){newHistId._n=(newHistId._n||0)+1;return Date.now()*1000+(newHistId._n%1000);}
-function slipFingerprint(client,ds,items){return client+'\t'+ds+'\t'+items.map(it=>[it.code,it.qty,it.biko||''].join(':')).join('|');}
+function slipFingerprint(client,ds,items){const body=[...(items||[])].map(it=>[it.code||'',it.name||'',Number(it.qty)||0,it.biko||''].join(':')).sort().join('|');return String(client||'')+'\t'+String(ds||'')+'\t'+body;}
+function findDuplicateHist(client,ds,items){const fp=slipFingerprint(client,ds,items);return (DB.history||[]).find(h=>slipFingerprint(h.client,h.deliveryDate,h.items||[])===fp)||null;}
 function parseYMD(s){const p=String(s||'').split(/[\/\-]/).map(Number);if(p.length<3||p.some(n=>isNaN(n)))return 0;return new Date(p[0],p[1]-1,p[2]).getTime();}
 function loadLocalHistory(){try{const h=localStorage.getItem('purims_h');if(h){const arr=JSON.parse(h);if(Array.isArray(arr)){DB.history=arr;return;}}}catch(e){}DB.history=DB.history||[];}
 function persistHistoryLocal(){localStorage.setItem('purims_h',JSON.stringify(DB.history||[]));}
@@ -1173,10 +1175,19 @@ function showPrev(){
     toast('同じ内容は発行済みです');
     return;
   }
+  const dupHist=findDuplicateHist(curC,ds,allItems);
+  let issuedAsDuplicate=false;
+  if(dupHist){
+    const ok=confirm('同じ客先・同じ納品日・同じ品目内容の伝票が既にあります。\n\n客先: '+curC+'\n納品日: '+ds+(dupHist.date?'\n（既存の発行日: '+dupHist.date+'）':'')+'\n\nそれでも発行しますか？');
+    if(!ok){toast('発行をキャンセルしました');return;}
+    issuedAsDuplicate=true;
+  }
   document.getElementById('print-area').innerHTML=slipHTML;
   document.getElementById('input-view').style.display='none';
   document.getElementById('complete-view').style.display='block';
-  document.getElementById('complete-sub').innerHTML=`<strong>${curC}</strong>　納品日: ${ds}<br>${allItems.length}品目　合計 <strong>${allItems.reduce((s,it)=>s+it.qty,0)}点</strong>`;
+  const titleEl=document.querySelector('#complete-view .complete-title');
+  if(titleEl)titleEl.textContent=issuedAsDuplicate?'同じ内容ですが発行しました':'伝票を発行しました';
+  document.getElementById('complete-sub').innerHTML='<strong>'+curC+'</strong>　納品日: '+ds+'<br>'+allItems.length+'品目　合計 <strong>'+allItems.reduce((sum,it)=>sum+it.qty,0)+'点</strong>'+(issuedAsDuplicate?'<br><span style="color:#854f0b;font-weight:600">※同じ内容の伝票が既にありましたが、追加で発行しました</span>':'');
   const cpBtn=document.getElementById('complete-print-btn');
   if(cpBtn){
     if(printMode==='batch'){cpBtn.style.display='none';}
@@ -1232,6 +1243,7 @@ function showPrev(){
   fbSaveHistoryEntry(entry);
   _issueSession={fp,histId,queued};
   updateBillingPendingBadge();
+  if(issuedAsDuplicate)toast('同じ内容ですが発行しました');
   if(addedToMaster.length)toast('📋 マスタに追加: '+addedToMaster.join('、'));
 }
 function backToInput(){
@@ -1260,6 +1272,7 @@ function backToInput(){
     }
     toast('発行を取り消して入力画面に戻ります');
   }
+  const _ct=document.querySelector('#complete-view .complete-title');if(_ct)_ct.textContent='伝票を発行しました';
   document.getElementById('complete-view').style.display='none';
   document.getElementById('input-view').style.display='block';
 }
@@ -2714,6 +2727,7 @@ function closeLoginLog(){document.getElementById('loginlog-modal').style.display
 
 /* 更新情報（新しいものを上に追加） type: 'feat'=機能更新 / 'fix'=バグ修正 */
 const APP_UPDATES=[
+  {date:'2026-09-09',type:'feat',text:'同じ客先・納品日・品目内容の再発行時に警告。続行すると「同じ内容ですが発行しました」と表示'},
   {date:'2026-09-07',type:'feat',text:'発行履歴を月フォルダ→日付フォルダの入れ子表示に変更。保存期間を6か月に短縮'},
   {date:'2026-09-07',type:'fix',text:'伝票発行タブからExcel出力ボタン類を外し、印刷モードと表示倍率だけにした'},
   {date:'2026-09-07',type:'fix',text:'駐車場代入力から点数列を削除（金額のみ）'},
