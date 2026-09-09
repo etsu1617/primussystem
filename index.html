@@ -792,11 +792,6 @@ select.cs:focus{outline:none;border-color:var(--ac)}
     <span style="font-size:15px;font-weight:600;color:var(--nv)">発行履歴</span>
     <button class="btn ng" style="padding:5px 12px;font-size:12px" onclick="clearHist()">全履歴クリア</button>
   </div>
-  <div id="slip-check-bar" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;padding:10px 12px;background:#eef6ee;border:1px solid #b7d4b7;border-radius:8px;font-size:13px;color:var(--tx)">
-    <span style="font-weight:700;color:#2e7d32">✓ 事務チェック</span>
-    <span id="slip-check-status" style="flex:1;min-width:160px">チェック済み: 未設定</span>
-    <button type="button" class="btn" style="font-size:12px;padding:5px 10px" onclick="clearSlipCheckedThrough()">解除</button>
-  </div>
   <div class="m-tabs" style="margin-bottom:12px">
     <button class="m-tab on" id="hist-tab-date" onclick="setHistView('date')">📅 発行日別</button>
     <button class="m-tab" id="hist-tab-client" onclick="setHistView('client')">🏢 客先別</button>
@@ -807,7 +802,7 @@ select.cs:focus{outline:none;border-color:var(--ac)}
     <button type="button" class="btn" style="font-size:12px;padding:7px 12px" onclick="selectAllVisibleHist()">表示中をすべて選択</button>
     <button type="button" class="btn" style="font-size:12px;padding:7px 12px" onclick="clearHistSelection()">選択解除</button>
   </div>
-  <div style="font-size:12px;color:var(--mu);margin-bottom:10px" id="hist-hint">月ごとのフォルダの中に発行日があります。事務チェック（納品日）は<span style="font-weight:600;color:var(--tx)">請求</span>タブのカレンダーで行います。履歴の保存期間は<strong>6か月</strong>（納品日基準）です。</div>
+  <div style="font-size:12px;color:var(--mu);margin-bottom:10px" id="hist-hint">月ごとのフォルダの中に発行日があります。履歴の保存期間は<strong>6か月</strong>（納品日基準）です。</div>
   <div id="hlist"></div>
 </div>
 
@@ -1583,7 +1578,7 @@ function updateSlipCheckStatus(){
   const closing=normalizeCheckClosing(_checkCalClosing);
   const through=getSlipCheckedThrough(closing);
   const text=through?(closingCheckLabel(closing)+' チェック済み: 納品日 '+through+' まで'):(closingCheckLabel(closing)+' チェック済み: 未設定');
-  ['slip-check-status','billing-check-status','meisai-check-status'].forEach(id=>{
+  ['billing-check-status','meisai-check-status'].forEach(id=>{
     const el=document.getElementById(id);if(el)el.textContent=text;
   });
   const allEl=document.getElementById('billing-check-status-all');
@@ -2618,7 +2613,6 @@ function renderHistory(){
   const bar=document.getElementById('hist-print-bar');
   const recs=histFiltered();
   updateHistSelCount();
-  updateSlipCheckStatus();
   if(!(DB.history||[]).length){
     if(bar)bar.style.display='none';
     el.innerHTML='<div class="emp">発行履歴はありません</div>';if(hint)hint.textContent='';return;
@@ -2626,7 +2620,7 @@ function renderHistory(){
   if(bar)bar.style.display='flex';
   if(!recs.length){el.innerHTML='<div class="emp">該当する履歴がありません</div>';if(hint)hint.textContent='検索条件に一致する伝票はありません。';return;}
   const byClient=histViewMode==='client';
-  if(hint)hint.textContent=(byClient?'客先ごとにまとまっています。フォルダをクリックして開きます。':'月ごとのフォルダの中に発行日があります。フォルダをクリックして開きます。事務チェック（納品日）は請求タブのカレンダーで行います。')+' 数量の誤りは「訂正して再発行」から直します。チェックを入れた伝票だけまとめて再印刷できます。履歴の保存期間は6か月（納品日基準）です。';
+  if(hint)hint.textContent=(byClient?'客先ごとにまとまっています。フォルダをクリックして開きます。':'月ごとのフォルダの中に発行日があります。フォルダをクリックして開きます。')+' 数量の誤りは「訂正して再発行」から直します。チェックを入れた伝票だけまとめて再印刷できます。履歴の保存期間は6か月（納品日基準）です。';
   if(byClient){
     const groups={};
     recs.forEach(h=>{const k=h.client||'（客先なし）';if(!groups[k])groups[k]=[];groups[k].push(h);});
@@ -3160,6 +3154,7 @@ function closeLoginLog(){document.getElementById('loginlog-modal').style.display
 
 /* 更新情報（新しいものを上に追加） type: 'feat'=機能更新 / 'fix'=バグ修正 */
 const APP_UPDATES=[
+  {date:'2026-09-09',type:'fix',text:'発行履歴から事務チェック表示を削除（請求タブのみに集約）'},
   {date:'2026-09-09',type:'fix',text:'Enter移動は単価／数量の列だけ縦に進む。品番・備考はスキップ（クリック時のみ）'},
   {date:'2026-09-09',type:'fix',text:'Enter移動は備考欄をスキップ（必要なときだけクリックして入力）'},
   {date:'2026-09-09',type:'feat',text:'数値・テキスト入力で Enter を押すと次のマス／次の行へ進む'},
